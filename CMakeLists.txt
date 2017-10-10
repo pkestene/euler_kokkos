@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.1)
 project(euler_kokkos CXX C)
 
 # options
-option (USE_MPI "Activate / want MPI build" ON)
+option (USE_MPI "Activate / want MPI build" OFF)
 option (USE_VTK "Activate / want VTK build" OFF)
 option (USE_DOUBLE "build with double precision" ON)
 option (USE_HDF5 "build HDF5 input/output support" OFF)
@@ -177,8 +177,12 @@ add_definitions( -Wall )
 # sources
 #
 add_subdirectory(kokkos)
+
+# pass Kokkos include directories to our target application
+include_directories(${Kokkos_INCLUDE_DIRS_RET})
+
 add_subdirectory(test)
-#add_subdirectory(src)
+add_subdirectory(src)
 
 ############################ PRINT CONFIGURE STATUS ############################
 

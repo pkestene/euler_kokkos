@@ -126,6 +126,9 @@ public:
 int main(int argc, char* argv[])
 {
 
+  // namespace alias
+  namespace io = ::euler_kokkos::io;
+  
   // Create MPI session if MPI enabled
 #ifdef USE_MPI
   hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
@@ -195,13 +198,13 @@ int main(int argc, char* argv[])
 
     // save to file
 #ifdef USE_MPI
-    ppkMHD::io::Save_HDF5_mpi<TWO_D> writer(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
+    io::Save_HDF5_mpi<TWO_D> writer(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
-    ppkMHD::io::writeXdmfForHdf5Wrapper(params, configMap, 1, false);
+    io::writeXdmfForHdf5Wrapper(params, configMap, 1, false);
 #else
-    ppkMHD::io::Save_HDF5<TWO_D> writer(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
+    io::Save_HDF5<TWO_D> writer(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
-    ppkMHD::io::writeXdmfForHdf5Wrapper(params, configMap, 1, false);
+    io::writeXdmfForHdf5Wrapper(params, configMap, 1, false);
 #endif
     
   }
@@ -222,13 +225,13 @@ int main(int argc, char* argv[])
 
     // save to file
 #ifdef USE_MPI
-    ppkMHD::io::Save_HDF5_mpi<THREE_D> writer(data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
+    io::Save_HDF5_mpi<THREE_D> writer(data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
-    ppkMHD::io::writeXdmfForHdf5Wrapper(params, configMap, 1, false);
+    io::writeXdmfForHdf5Wrapper(params, configMap, 1, false);
 #else
-    ppkMHD::io::Save_HDF5<THREE_D> writer(data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
+    io::Save_HDF5<THREE_D> writer(data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
-    ppkMHD::io::writeXdmfForHdf5Wrapper(params, configMap, 1, false);
+    io::writeXdmfForHdf5Wrapper(params, configMap, 1, false);
 #endif
     
   }

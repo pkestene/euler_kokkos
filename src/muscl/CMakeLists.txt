@@ -1,0 +1,35 @@
+set (muscl_SRCS
+  ${CMAKE_CURRENT_SOURCE_DIR}/hydro_shared.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/HydroBaseFunctor2D.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/HydroBaseFunctor3D.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/HydroRunFunctors2D.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/HydroRunFunctors3D.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/HydroInitFunctors2D.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/HydroInitFunctors3D.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/OrszagTangInit.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MHDBaseFunctor2D.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MHDBaseFunctor3D.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MHDRunFunctors2D.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MHDRunFunctors3D.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MHDInitFunctors2D.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MHDInitFunctors3D.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/SolverHydroMuscl.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/SolverHydroMuscl.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/SolverMHDMuscl.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/SolverMHDMuscl.cpp
+  )
+
+add_library(muscl
+  ${muscl_SRCS}
+  )
+target_include_directories(muscl
+  PUBLIC
+  ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/kokkos/core/src
+  ${CMAKE_SOURCE_DIR}/kokkos/containers/src
+  ${CMAKE_SOURCE_DIR}/kokkos/algorithms/src
+  ${CMAKE_BINARY_DIR}/kokkos
+  ) 
+target_link_libraries(muscl
+  kokkos
+  )
