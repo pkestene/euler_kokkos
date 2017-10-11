@@ -24,7 +24,7 @@ target_include_directories(${EXE_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
-target_link_libraries(${EXE_NAME} solver_factory config kokkos hwloc dl muscl shared io monitoring)
+target_link_libraries(${EXE_NAME} solver_factory config kokkos dl muscl shared io monitoring)
 
 if (USE_MPI)
   target_link_libraries(${EXE_NAME} mpiUtils)

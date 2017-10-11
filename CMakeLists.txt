@@ -194,6 +194,7 @@ message(STATUS "CUDA     enabled : ${KOKKOS_ENABLE_CUDA}")
 message(STATUS "HDF5     enabled : ${USE_HDF5}")
 message(STATUS "PNETCDF  enabled : ${USE_PNETCDF}")
 message(STATUS "DOUBLE precision : ${USE_DOUBLE}")
+message(STATUS "HWLOC    enabled : ${KOKKOS_ENABLE_HWLOC}")
 
 message(STATUS "****************** *************** ******************")
 
