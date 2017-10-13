@@ -23,6 +23,7 @@ set (shared_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mhd_utils.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/solver_utils.h
   )
 
 # if (USE_MPI)
