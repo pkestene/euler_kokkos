@@ -22,14 +22,12 @@ inline void print_solver_monitoring_info(SolverBase* solver)
 
 
 #ifdef USE_MPI
-
   myRank = solver->params.myRank;
   nProcs = solver->params.nProcs;
-
+#endif // USE_MPI
+  
   // only print on master
   if (myRank == 0) {
-
-#endif // USE_MPI
     
     printf("total       time : %5.3f secondes\n",t_tot);
     printf("godunov     time : %5.3f secondes %5.2f%%\n",t_comp,100*t_comp/t_tot);
@@ -38,11 +36,9 @@ inline void print_solver_monitoring_info(SolverBase* solver)
     printf("io          time : %5.3f secondes %5.2f%%\n",t_io,100*t_io/t_tot);
     
     printf("Perf             : %5.3f number of Mcell-updates/s\n",solver->m_iteration*solver->m_nCells*nProcs/t_tot*1e-6);
-    
-#ifdef USE_MPI
+
   } // end myRank==0
-#endif
-  
+    
 } // print_solver_monitoring_info
 
 } // namespace euler_kokkos
