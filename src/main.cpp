@@ -64,6 +64,9 @@ int main(int argc, char *argv[])
   Kokkos::initialize(argc, argv);
 #endif
 
+  int rank=0;
+  int nRanks=1;
+  
   {
     std::cout << "##########################\n";
     std::cout << "KOKKOS CONFIG             \n";
@@ -97,11 +100,10 @@ int main(int argc, char *argv[])
 #endif // USE_FPE_DEBUG
     
 #ifdef USE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &nRanks);
 # ifdef CUDA
     {
-      int rank, nRanks;
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      MPI_Comm_size(MPI_COMM_WORLD, &nRanks);
       
       int cudaDeviceId;
       cudaGetDevice(&cudaDeviceId);
@@ -115,7 +117,8 @@ int main(int argc, char *argv[])
   }
 
   if (argc != 2) {
-    fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter on the command line\n");
+    if (rank==0)
+      fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter on the command line\n");
     exit(EXIT_FAILURE);
   }
 
@@ -140,7 +143,7 @@ int main(int argc, char *argv[])
     solver->save_solution();
   
   // start computation
-  std::cout << "Start computation....\n";
+  if (rank==0) std::cout << "Start computation....\n";
   solver->timers[TIMER_TOTAL]->start();
 
   // Hydrodynamics solver loop
@@ -165,7 +168,7 @@ int main(int argc, char *argv[])
   }
 #endif // USE_HDF5
   
-  printf("final time is %f\n", solver->m_t);
+  if (rank==0) printf("final time is %f\n", solver->m_t);
   
   print_solver_monitoring_info(solver);
   
