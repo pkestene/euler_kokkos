@@ -463,18 +463,27 @@ template<int dim>
 void SolverMHDMuscl<dim>::next_iteration_impl()
 {
 
+  int myRank=0;
+  
+#ifdef USE_MPI
+  myRank = params.myRank;
+#endif // USE_MPI
+
   if (m_iteration % 10 == 0) {
-    //std::cout << "time step=" << m_iteration << std::endl;
-    printf("time step=%7d (dt=% 10.8f t=% 10.8f)\n",m_iteration,m_dt, m_t);
+    if (myRank==0) {
+      printf("time step=%7d (dt=% 10.8f t=% 10.8f)\n",m_iteration,m_dt, m_t);
+    }
   }
   
   // output
   if (params.enableOutput) {
     if ( should_save_solution() ) {
-      
-      std::cout << "Output results at time t=" << m_t
-		<< " step " << m_iteration
-		<< " dt=" << m_dt << std::endl;
+
+      if (myRank==0) {
+	std::cout << "Output results at time t=" << m_t
+		  << " step " << m_iteration
+		  << " dt=" << m_dt << std::endl;
+      }
       
       save_solution();
       
