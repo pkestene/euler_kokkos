@@ -90,7 +90,7 @@ void save_VTK_2D(DataArray2d             Udata,
   outFile << "  <ImageData WholeExtent=\""
 	  << 0 << " " << nx << " "
 	  << 0 << " " << ny << " "
-	  << 0 << " " << 0  << " "
+	  << 0 << " " << 1  << " "
 	  <<  "\" Origin=\"0 0 0\" Spacing=\"1 1 1\">\n";
   outFile << "  <Piece Extent=\""
 	  << 0 << " " << nx << " "
@@ -474,7 +474,7 @@ void save_VTK_2D_mpi(DataArray2d             Udata,
   outFile << "  <ImageData WholeExtent=\""
 	  << xmin << " " << xmax << " " 
 	  << ymin << " " << ymax << " " 
-	  << 0    << " " << 0    << ""
+	  << 0    << " " << 1    << ""
 	  << "\" Origin=\"0 0 0\" Spacing=\"" << dx << " " << dy << " " << dz << "\">" << std::endl;
   outFile << "  <Piece Extent=\"" 
 	  << xmin << " " << xmax << " " 
