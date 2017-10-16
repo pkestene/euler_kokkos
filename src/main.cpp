@@ -53,16 +53,17 @@ int main(int argc, char *argv[])
   hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
 #endif // USE_MPI
   
-#ifdef CUDA
-  // Initialize Host mirror device
-  Kokkos::HostSpace::execution_space::initialize(1);
-  const unsigned device_count = Kokkos::Cuda::detect_device_count();
+// #ifdef CUDA
+//   // Initialize Host mirror device
+//   Kokkos::HostSpace::execution_space::initialize(1);
+//   const unsigned device_count = Kokkos::Cuda::detect_device_count();
 
-  // Use the last device:
-  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_count-1) );
-#else
+//   // Use the last device:
+//   Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_count-1) );
+// #else
+//   Kokkos::initialize(argc, argv);
+// #endif
   Kokkos::initialize(argc, argv);
-#endif
 
   int rank=0;
   int nRanks=1;
@@ -116,11 +117,11 @@ int main(int argc, char *argv[])
     
   }
 
-  if (argc != 2) {
-    if (rank==0)
-      fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter on the command line\n");
-    exit(EXIT_FAILURE);
-  }
+  // if (argc != 2) {
+  //   if (rank==0)
+  //     fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter on the command line\n");
+  //   exit(EXIT_FAILURE);
+  // }
 
   // read parameter file and initialize parameter
   // parse parameters from input file
@@ -130,7 +131,7 @@ int main(int argc, char *argv[])
   // test: create a HydroParams object
   HydroParams params = HydroParams();
   params.setup(configMap);
-  
+
   // retrieve solver name from settings
   const std::string solver_name = configMap.getString("run", "solver_name", "Unknown");
 
