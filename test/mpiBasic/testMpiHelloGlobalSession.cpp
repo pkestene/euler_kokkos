@@ -29,17 +29,9 @@ int main(int argc,char **argv)
   // MPI resources
   hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
 
-  numProcs  = MPI::COMM_WORLD.Get_size();
-  myRank    = MPI::COMM_WORLD.Get_rank();
-  try {
-    MPI::Get_processor_name(processor_name,namelength);
-  } catch (MPI::Exception e) {
-    std::cout << "MPI ERROR: " << e.Get_error_code()	\
-  	      << " -" << e.Get_error_string()		\
-  	      << std::endl;
-    std::cout << "Unable to get processor name; set to \" unknown\" \n";
-    strcpy(processor_name, "unknown");
-  }
+  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  MPI_Get_processor_name(processor_name,&namelength);
   
   // print local time on rank 0 machine
   if ( myRank == 0 ) {
