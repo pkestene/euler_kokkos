@@ -45,19 +45,27 @@ make -j 4
 
 ### Build with MPI / With Kokkos-cuda
 
+
+Please make sure to use a CUDA-aware MPI implementation (OpenMPI or MVAPICH2) built with the proper flags for activating CUDA support.
+
+
 * Make sure MPI compiler wrapper will use `nvcc_wrapper` from Kokkos
 ```shell
+export CXX=mpicxx 
 export OMPI_CXX=/path/to/nvcc_wrapper
 ```
 
 * Create a build directory, configure and make
 ```shell
 mkdir build; cd build
-CXX=mpicxx cmake ..
+cmake ..
 make -j 4
 ```
 
-NB: for better performance on a GPU cluster, make sure to use a CUDA-aware MPI implementation (OpenMPI or MVAPICH2) built with the proper flags for CUDA.
+Example command line to run the application (1 GPU used per MPI task)
+```shell
+mpirun -np 4 ./euler_kokkos ./test_implode_2D_mpi.ini --kokkos-ndevices=4
+```
 
 ### Developping with vim and youcomplete plugin
 
