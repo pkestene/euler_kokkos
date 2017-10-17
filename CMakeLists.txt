@@ -76,6 +76,9 @@ if (USE_MPI)
     find_program(OMPI_INFO
       NAMES ompi_info
       HINTS ${MPI_CXX_LIBRARIES}/../bin)
+
+    # Full command line to probe if cuda support in MPI implementation is enabled
+    # ompi_info --parsable --all | grep mpi_built_with_cuda_support:value
     if (OMPI_INFO)
       execute_process(COMMAND ${OMPI_INFO}
         OUTPUT_VARIABLE _output)
