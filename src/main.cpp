@@ -53,16 +53,6 @@ int main(int argc, char *argv[])
   hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
 #endif // USE_MPI
   
-// #ifdef CUDA
-//   // Initialize Host mirror device
-//   Kokkos::HostSpace::execution_space::initialize(1);
-//   const unsigned device_count = Kokkos::Cuda::detect_device_count();
-
-//   // Use the last device:
-//   Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_count-1) );
-// #else
-//   Kokkos::initialize(argc, argv);
-// #endif
   Kokkos::initialize(argc, argv);
 
   int rank=0;
@@ -82,11 +72,7 @@ int main(int argc, char *argv[])
           << "] )"
           << std::endl ;
     }
-#if defined( CUDA )
-    Kokkos::Cuda::print_configuration( msg );
-#else
-    Kokkos::OpenMP::print_configuration( msg );
-#endif
+    Kokkos::DefaultExecutionSpace::print_configuration( msg );
     std::cout << msg.str();
     std::cout << "##########################\n";
 
@@ -175,12 +161,7 @@ int main(int argc, char *argv[])
   
   delete solver;
 
-#ifdef CUDA
-  Kokkos::Cuda::finalize();
-  Kokkos::HostSpace::execution_space::finalize();
-#else
   Kokkos::finalize();
-#endif
   
   return EXIT_SUCCESS;
 

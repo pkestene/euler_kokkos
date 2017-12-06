@@ -9,19 +9,7 @@
 #include "shared/real_type.h"
 #include "shared/utils.h"
 
-
-#ifdef CUDA
-# define DEVICE Kokkos::Cuda
-#include <cuda.h>
-#endif
-
-#ifdef OPENMP
-# define DEVICE Kokkos::OpenMP
-#endif
-
-#ifndef DEVICE
-# define DEVICE Kokkos::OpenMP
-#endif
+using Device = Kokkos::DefaultExecutionSpace;
 
 enum KokkosLayout {
   KOKKOS_LAYOUT_LEFT,
@@ -30,20 +18,20 @@ enum KokkosLayout {
 
 // last index is hydro variable
 // n-1 first indexes are space (i,j,k,....)
-typedef Kokkos::View<real_t***, DEVICE>   DataArray2d;
+typedef Kokkos::View<real_t***, Device>   DataArray2d;
 typedef DataArray2d::HostMirror           DataArray2dHost;
 
-typedef Kokkos::View<real_t****, DEVICE>  DataArray3d;
+typedef Kokkos::View<real_t****, Device>  DataArray3d;
 typedef DataArray3d::HostMirror           DataArray3dHost;
 //typedef DataArray2d     DataArray3d;
 //typedef DataArray2dHost DataArray3dHost;
 
 // for 2D
-typedef Kokkos::View<real_t**,        DEVICE> DataArrayScalar;
+typedef Kokkos::View<real_t**,        Device> DataArrayScalar;
 typedef DataArrayScalar::HostMirror           DataArrayScalarHost;
 
 // for 3D
-typedef Kokkos::View<real_t***[3],     DEVICE> DataArrayVector3;
+typedef Kokkos::View<real_t***[3],     Device> DataArrayVector3;
 typedef DataArrayVector3::HostMirror           DataArrayVector3Host;
 
 /**
@@ -65,7 +53,7 @@ void index2coord(int index, int &i, int &j, int Nx, int Ny)
   UNUSED(Nx);
   UNUSED(Ny);
   
-#ifdef CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   j = index / Nx;
   i = index - j*Nx;
 #else
@@ -79,7 +67,7 @@ int coord2index(int i, int j, int Nx, int Ny)
 {
   UNUSED(Nx);
   UNUSED(Ny);
-#ifdef CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   return i + Nx*j; // left layout
 #else
   return j + Ny*i; // right layout
@@ -95,7 +83,7 @@ void index2coord(int index,
 {
   UNUSED(Nx);
   UNUSED(Nz);
-#ifdef CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   int NxNy = Nx*Ny;
   k = index / NxNy;
   j = (index - k*NxNy) / Nx;
@@ -114,12 +102,11 @@ int coord2index(int i,  int j,  int k,
 {
   UNUSED(Nx);
   UNUSED(Nz);
-#ifdef CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   return i + Nx*j + Nx*Ny*k; // left layout
 #else
   return k + Nz*j + Nz*Ny*i; // right layout
 #endif
 }
-
 
 #endif // KOKKOS_SHARED_H_
