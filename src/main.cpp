@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
           << "] )"
           << std::endl ;
     }
-    Kokkos::DefaultExecutionSpace::print_configuration( msg );
+    Kokkos::print_configuration( msg );
     std::cout << msg.str();
     std::cout << "##########################\n";
 
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 #ifdef USE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nRanks);
-# ifdef CUDA
+# ifdef KOKKOS_ENABLE_CUDA
     {
       
       int cudaDeviceId;
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
       std::cout << "I'm MPI task #" << rank << " (out of " << nRanks << ")"
 		<< " pinned to GPU #" << cudaDeviceId << "\n";
     }
-# endif // CUDA
+# endif // KOKKOS_ENABLE_CUDA
 #endif // USE_MPI
 
     

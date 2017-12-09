@@ -9,7 +9,7 @@
 #include <memory> // for std::unique_ptr / std::shared_ptr
 
 // for timer
-#ifdef CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #include "utils/monitoring/CudaTimer.h"
 #else
 #include "utils/monitoring/OpenMPTimer.h"
@@ -123,7 +123,7 @@ public:
   std::map<int, std::string> m_variables_names;
 
   //! timers
-#ifdef CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   using Timer = CudaTimer;
 #else
   using Timer = OpenMPTimer;

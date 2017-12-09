@@ -282,7 +282,7 @@ void HydroParams::setup_mpi(ConfigMap& configMap)
    * If we want the ration 1 MPI process <-> 1 GPU, we need to allocate
    * N nodes and 2*N tasks (MPI process). 
    */
-#ifdef CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   // // get device count
   // int count;
   // cutilSafeCall( cudaGetDeviceCount(&count) );
@@ -301,7 +301,7 @@ void HydroParams::setup_mpi(ConfigMap& configMap)
   
   // std::cout << "MPI process " << myRank << " is using GPU device num " << myDevId << std::endl;
 
-#endif // CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
     // fix space resolution :
     // need to take into account number of MPI process in each direction
