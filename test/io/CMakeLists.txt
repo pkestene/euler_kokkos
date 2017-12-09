@@ -1,3 +1,7 @@
+configure_file(test_io_2d.ini test_io_2d.ini COPYONLY)
+configure_file(test_io_3d.ini test_io_3d.ini COPYONLY)
+
+
 add_executable(test_io_vtk
   test_io_vtk.cpp
   )
