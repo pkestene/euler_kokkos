@@ -18,7 +18,7 @@ A few example builds
 * Create a build directory, configure and make
 ```shell
 mkdir build; cd build
-cmake -DUSE_MPI=OFF ..
+cmake -DUSE_MPI=OFF -DKOKKOS_ENABLE_OPENMP=ON -DKOKKOS_ENABLE_HWLOC=ON ..
 make -j 4
 ```
 
@@ -30,16 +30,21 @@ Add variable CXX on the cmake command line to change the compiler (clang++, icpc
 ```shell
 export CXX=icpc
 mkdir build; cd build
-cmake -DUSE_MPI=OFF -DHOST_ARCH=KNL ..
+cmake -DUSE_MPI=OFF -DKOKKOS_ARCH=KNL -DKOKKOS_ENABLE_OPENMP=ON ..
 make -j 4
 ```
 
 ### Build without MPI / With Kokkos-cuda
 
+Check for a valid KOKKOS_ARCH by looking into external/kokkos/Makefile.kokkos.
+To be able to build with CUDA backend, you need to use nvcc_wrapper located in
+kokkos source (external/kokkos/bin/nvcc_wrapper).
+
 * Create a build directory, configure and make
 ```shell
 mkdir build; cd build
-CXX=/path/to/nvcc_wrapper cmake -DUSE_MPI=OFF ..
+export CXX=/path/to/nvcc_wrapper
+cmake -DUSE_MPI=OFF -DKOKKOS_ENABLE_CUDA=ON -DKOKKOS_ARCH=Maxwell50 ..
 make -j 4
 ```
 
@@ -58,13 +63,13 @@ export OMPI_CXX=/path/to/nvcc_wrapper
 * Create a build directory, configure and make
 ```shell
 mkdir build; cd build
-cmake ..
+cmake -DUSE_MPI=ON -DKOKKOS_ENABLE_CUDA=ON -DKOKKOS_ARCH=Maxwell50 ..
 make -j 4
 ```
 
 Example command line to run the application (1 GPU used per MPI task)
 ```shell
-mpirun -np 4 ./euler_kokkos ./test_implode_2D_mpi.ini --kokkos-ndevices=4
+mpirun -np 4 ./euler_kokkos ./test_implode_2D_mpi.ini
 ```
 
 ### Developping with vim and youcomplete plugin
