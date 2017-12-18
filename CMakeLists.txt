@@ -162,7 +162,7 @@ add_definitions( -Wall )
 #
 # sources
 #
-add_subdirectory(kokkos)
+add_subdirectory(external/kokkos)
 
 # pass Kokkos include directories to our target application
 include_directories(${Kokkos_INCLUDE_DIRS_RET})
