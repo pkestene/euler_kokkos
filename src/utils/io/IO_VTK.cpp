@@ -29,6 +29,12 @@ void save_VTK_2D(DataArray2d             Udata,
   const int nx = params.nx;
   const int ny = params.ny;
 
+  const real_t dx = params.dx;
+  const real_t dy = params.dy;
+
+  const real_t xmin = params.xmin;
+  const real_t ymin = params.ymin;
+
   const int imin = params.imin;
   const int imax = params.imax;
 
@@ -92,14 +98,17 @@ void save_VTK_2D(DataArray2d             Udata,
   outFile << "  <ImageData WholeExtent=\""
 	  << 0 << " " << nx << " "
 	  << 0 << " " << ny << " "
-	  << 0 << " " << 1  << " "
-	  <<  "\" Origin=\"0 0 0\" Spacing=\"1 1 1\">\n";
+	  << 0 << " " << 0  << "\" "
+	  << "Origin=\""
+	  << xmin << " " << ymin << " " << 0 << "\" "
+	  << "Spacing=\""
+          << dx << " " << dy << " " << ZERO_F << "\">\n";
   outFile << "  <Piece Extent=\""
 	  << 0 << " " << nx << " "
 	  << 0 << " " << ny << " "
-	  << 0 << " " << 1  << " "    
+	  << 0 << " " << 0  << " "
 	  << "\">\n";
-  
+
   outFile << "    <PointData>\n";
   outFile << "    </PointData>\n";
 
@@ -202,6 +211,14 @@ void save_VTK_3D(DataArray3d             Udata,
   const int ny = params.ny;
   const int nz = params.nz;
 
+  const real_t dx = params.dx;
+  const real_t dy = params.dy;
+  const real_t dz = params.dz;
+
+  const real_t xmin = params.xmin;
+  const real_t ymin = params.ymin;
+  const real_t zmin = params.zmin;
+
   const int imin = params.imin;
   const int imax = params.imax;
 
@@ -271,8 +288,11 @@ void save_VTK_3D(DataArray3d             Udata,
   outFile << "  <ImageData WholeExtent=\""
 	  << 0 << " " << nx << " "
 	  << 0 << " " << ny << " "
-	  << 0 << " " << nz  << " "
-	  <<  "\" Origin=\"0 0 0\" Spacing=\"1 1 1\">\n";
+	  << 0 << " " << nz << "\" "
+	  << "Origin=\""
+	  << xmin << " " << ymin << " " << zmin << "\" "
+	  << "Spacing=\""
+	  << dx << " " << dy << " " << dz << "\">\n";
   outFile << "  <Piece Extent=\""
 	  << 0 << " " << nx << " "
 	  << 0 << " " << ny << " "
@@ -394,7 +414,7 @@ void save_VTK_2D_mpi(DataArray2d             Udata,
 
   const real_t dx = params.dx;
   const real_t dy = params.dy;
-  const real_t dz = dx;
+  const real_t dz = 0.0;
   
   const int isize = params.isize;
   const int jsize = params.jsize;
@@ -476,12 +496,15 @@ void save_VTK_2D_mpi(DataArray2d             Udata,
   outFile << "  <ImageData WholeExtent=\""
 	  << xmin << " " << xmax << " " 
 	  << ymin << " " << ymax << " " 
-	  << 0    << " " << 1    << ""
-	  << "\" Origin=\"0 0 0\" Spacing=\"" << dx << " " << dy << " " << dz << "\">" << std::endl;
+	  << 0    << " " << 0    << "\" "
+	  << "Origin=\""
+	  << params.xmin << " " << params.ymin << " " << 0.0 << "\" "
+	  << "Spacing=\""
+	  << dx << " " << dy << " " << dz << "\">" << std::endl;
   outFile << "  <Piece Extent=\"" 
 	  << xmin << " " << xmax << " " 
 	  << ymin << " " << ymax << " " 
-	  << 0    << " " << 1    << ""
+	  << 0    << " " << 0    << ""
 	  << "\">" << std::endl;
   
   outFile << "    <PointData>\n";
@@ -689,8 +712,11 @@ void save_VTK_3D_mpi(DataArray3d             Udata,
   outFile << "  <ImageData WholeExtent=\""
 	  << xmin << " " << xmax << " " 
 	  << ymin << " " << ymax << " " 
-	  << zmin << " " << zmax << ""
-	  << "\" Origin=\"0 0 0\" Spacing=\"" << dx << " " << dy << " " << dz << "\">" << std::endl;
+	  << zmin << " " << zmax << "\" "
+	  << "Origin=\""
+	  << params.xmin << " " << params.ymin << " " << params.zmin << "\" "
+	  << "Spacing=\""
+	  << dx << " " << dy << " " << dz << "\">" << std::endl;
   outFile << "  <Piece Extent=\"" 
 	  << xmin << " " << xmax << " " 
 	  << ymin << " " << ymax << " " 
@@ -827,16 +853,16 @@ void write_pvti_header(std::string headerFilename,
   // local sub-domain sizes
   const int nx = params.nx;
   const int ny = params.ny;
-  const int nz = params.nz;
+  const int nz = (dimType == THREE_D) ? params.nz : 0;
 
   // sizes of MPI Cartesian topology
   const int mx = params.mx;
   const int my = params.my;
-  const int mz = params.mz;
+  const int mz = (dimType == THREE_D) ? params.mz : 0;
 
   const real_t dx = params.dx;
   const real_t dy = params.dy;
-  const real_t dz = (dimType == THREE_D) ? params.dz : params.dx;
+  const real_t dz = (dimType == THREE_D) ? params.dz : 0.0;
 
   // open pvti header file
   outHeader.open (headerFilename.c_str(), std::ios_base::out);
@@ -850,8 +876,10 @@ void write_pvti_header(std::string headerFilename,
   outHeader << 0 << " " << mx*nx << " ";
   outHeader << 0 << " " << my*ny << " ";
   outHeader << 0 << " " << mz*nz << "\" GhostLevel=\"0\" "
-	    << "Origin=\"0 0 0\" "
-	    << "Spacing=\"" << dx << " " << dy << " " << dz << "\">"
+	    << "Origin=\""
+	    << params.xmin << " " << params.ymin << " " << params.zmin << "\" "
+	    << "Spacing=\""
+	    << dx << " " << dy << " " << dz << "\">"
 	    << std::endl;
   outHeader << "    <PCellData Scalars=\"Scalars_\">" << std::endl;
   for (int iVar=0; iVar<nbvar; iVar++) {
