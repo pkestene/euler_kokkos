@@ -9,6 +9,15 @@ Provide performance portable Kokkos implementation for compressible hydrodynamic
 * [Kokkos](https://github.com/kokkos/kokkos)
 * [cmake](https://cmake.org/) with version >= 3.1
    
+Current application is configured with kokkos library as a git submodule.
+
+```shell
+git submodule init
+git submodule update
+```
+
+Kokkos is built with the same flags as the main application.
+
 ## Build
 
 A few example builds
