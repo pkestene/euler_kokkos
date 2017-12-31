@@ -5,7 +5,7 @@
 #include <string>
 
 #include <shared/kokkos_shared.h>
-class HydroParams;
+struct HydroParams;
 class ConfigMap;
 
 namespace euler_kokkos { namespace io {

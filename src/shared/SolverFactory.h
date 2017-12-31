@@ -6,7 +6,7 @@
 #include <cstdlib>
 
 #include "SolverBase.h"
-class HydroParams;
+struct HydroParams;
 class ConfigMap;
 
 namespace euler_kokkos {
