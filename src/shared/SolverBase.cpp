@@ -314,13 +314,11 @@ SolverBase::make_boundary(DataArray2d Udata, FaceIdType faceId, bool mhd_enabled
 
     if (mhd_enabled) {
     
-      MakeBoundariesFunctor2D_MHD<FACE_XMIN> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor2D_MHD<FACE_XMIN>::apply(params, Udata, nbIter);
             
     } else {
 
-      MakeBoundariesFunctor2D<FACE_XMIN> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor2D<FACE_XMIN>::apply(params, Udata, nbIter);
 
     }
 
@@ -330,13 +328,11 @@ SolverBase::make_boundary(DataArray2d Udata, FaceIdType faceId, bool mhd_enabled
 
     if (mhd_enabled) {
     
-      MakeBoundariesFunctor2D_MHD<FACE_XMAX> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor2D_MHD<FACE_XMAX>::apply(params, Udata, nbIter);
             
     } else {
 
-      MakeBoundariesFunctor2D<FACE_XMAX> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor2D<FACE_XMAX>::apply(params, Udata, nbIter);
 
     }
 
@@ -346,13 +342,11 @@ SolverBase::make_boundary(DataArray2d Udata, FaceIdType faceId, bool mhd_enabled
 
     if (mhd_enabled) {
     
-      MakeBoundariesFunctor2D_MHD<FACE_YMIN> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor2D_MHD<FACE_YMIN>::apply(params, Udata, nbIter);
             
     } else {
 
-      MakeBoundariesFunctor2D<FACE_YMIN> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor2D<FACE_YMIN>::apply(params, Udata, nbIter);
 
     }
 
@@ -362,13 +356,11 @@ SolverBase::make_boundary(DataArray2d Udata, FaceIdType faceId, bool mhd_enabled
 
     if (mhd_enabled) {
     
-      MakeBoundariesFunctor2D_MHD<FACE_YMAX> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor2D_MHD<FACE_YMAX>::apply(params, Udata, nbIter);
             
     } else {
 
-      MakeBoundariesFunctor2D<FACE_YMAX> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor2D<FACE_YMAX>::apply(params, Udata, nbIter);
 
     }
 
@@ -392,13 +384,11 @@ SolverBase::make_boundary(DataArray3d Udata, FaceIdType faceId, bool mhd_enabled
 
     if (mhd_enabled) {
     
-      MakeBoundariesFunctor3D_MHD<FACE_XMIN> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor3D_MHD<FACE_XMIN>::apply(params, Udata, nbIter);
             
     } else {
 
-      MakeBoundariesFunctor3D<FACE_XMIN> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor3D<FACE_XMIN>::apply(params, Udata, nbIter);
 
     }
 
@@ -408,13 +398,11 @@ SolverBase::make_boundary(DataArray3d Udata, FaceIdType faceId, bool mhd_enabled
 
     if (mhd_enabled) {
     
-      MakeBoundariesFunctor3D_MHD<FACE_XMAX> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor3D_MHD<FACE_XMAX>::apply(params, Udata, nbIter);
             
     } else {
 
-      MakeBoundariesFunctor3D<FACE_XMAX> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor3D<FACE_XMAX>::apply(params, Udata, nbIter);
 
     }
 
@@ -424,13 +412,11 @@ SolverBase::make_boundary(DataArray3d Udata, FaceIdType faceId, bool mhd_enabled
 
     if (mhd_enabled) {
     
-      MakeBoundariesFunctor3D_MHD<FACE_YMIN> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor3D_MHD<FACE_YMIN>::apply(params, Udata, nbIter);
             
     } else {
 
-      MakeBoundariesFunctor3D<FACE_YMIN> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor3D<FACE_YMIN>::apply(params, Udata, nbIter);
 
     }
 
@@ -440,13 +426,11 @@ SolverBase::make_boundary(DataArray3d Udata, FaceIdType faceId, bool mhd_enabled
 
     if (mhd_enabled) {
     
-      MakeBoundariesFunctor3D_MHD<FACE_YMAX> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor3D_MHD<FACE_YMAX>::apply(params, Udata, nbIter);
             
     } else {
 
-      MakeBoundariesFunctor3D<FACE_YMAX> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor3D<FACE_YMAX>::apply(params, Udata, nbIter);
 
     }
 
@@ -456,13 +440,11 @@ SolverBase::make_boundary(DataArray3d Udata, FaceIdType faceId, bool mhd_enabled
 
     if (mhd_enabled) {
     
-      MakeBoundariesFunctor3D_MHD<FACE_ZMIN> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor3D_MHD<FACE_ZMIN>::apply(params, Udata, nbIter);
             
     } else {
 
-      MakeBoundariesFunctor3D<FACE_ZMIN> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor3D<FACE_ZMIN>::apply(params, Udata, nbIter);
 
     }
 
@@ -472,13 +454,11 @@ SolverBase::make_boundary(DataArray3d Udata, FaceIdType faceId, bool mhd_enabled
 
     if (mhd_enabled) {
     
-      MakeBoundariesFunctor3D_MHD<FACE_ZMAX> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor3D_MHD<FACE_ZMAX>::apply(params, Udata, nbIter);
             
     } else {
 
-      MakeBoundariesFunctor3D<FACE_ZMAX> functor(params, Udata);
-      Kokkos::parallel_for(nbIter, functor);
+      MakeBoundariesFunctor3D<FACE_ZMAX>::apply(params, Udata, nbIter);
 
     }
 

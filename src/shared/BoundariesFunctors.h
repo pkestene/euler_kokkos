@@ -20,6 +20,15 @@ public:
 			  DataArray2d Udata) :
     params(params), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray2d Udata,
+                    int nbIter)
+  {
+    MakeBoundariesFunctor2D<faceId> functor(params, Udata);
+    Kokkos::parallel_for(nbIter, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -180,9 +189,18 @@ class MakeBoundariesFunctor3D {
 public:
 
   MakeBoundariesFunctor3D(HydroParams params,
-			DataArray3d Udata) :
+			  DataArray3d Udata) :
     params(params), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata,
+                    int nbIter)
+  {
+    MakeBoundariesFunctor3D<faceId> functor(params, Udata);
+    Kokkos::parallel_for(nbIter, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -434,6 +452,15 @@ public:
 			      DataArray2d Udata) :
     params(params), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray2d Udata,
+                    int nbIter)
+  {
+    MakeBoundariesFunctor2D_MHD<faceId> functor(params, Udata);
+    Kokkos::parallel_for(nbIter, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -598,6 +625,15 @@ public:
 			      DataArray3d Udata) :
     params(params), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata,
+                    int nbIter)
+  {
+    MakeBoundariesFunctor3D_MHD<faceId> functor(params, Udata);
+    Kokkos::parallel_for(nbIter, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
