@@ -212,6 +212,16 @@ public:
     MHDBaseFunctor3D(params),
     Udata(Udata), Qdata(Qdata), ElecField(ElecField) {};
 
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata,
+                    DataArray3d Qdata,
+		    DataArrayVector3 ElecField,
+		    int nbCells) {
+    ComputeElecFieldFunctor3D functor(params, Udata, Qdata, ElecField);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -309,6 +319,17 @@ public:
 			    DataArrayVector3 DeltaC) :
     MHDBaseFunctor3D(params), Udata(Udata),
     DeltaA(DeltaA), DeltaB(DeltaB), DeltaC(DeltaC) {};
+
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams      params,
+                    DataArray3d      Udata,
+		    DataArrayVector3 DeltaA,
+		    DataArrayVector3 DeltaB,
+		    DataArrayVector3 DeltaC,
+		    int nbCells) {
+    ComputeMagSlopesFunctor3D functor(params, Udata, DeltaA, DeltaB, DeltaC);
+    Kokkos::parallel_for(nbCells, functor);
+  }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
@@ -421,6 +442,48 @@ public:
     QEdge_RT2(QEdge_RT2), QEdge_RB2(QEdge_RB2), QEdge_LT2(QEdge_LT2), QEdge_LB2(QEdge_LB2),
     QEdge_RT3(QEdge_RT3), QEdge_RB3(QEdge_RB3), QEdge_LT3(QEdge_LT3), QEdge_LB3(QEdge_LB3),
     dtdx(dtdx), dtdy(dtdy), dtdz(dtdz) {};
+
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    DataArray3d Udata,
+		    DataArray3d Qdata,
+		    DataArrayVector3 DeltaA,
+		    DataArrayVector3 DeltaB,
+		    DataArrayVector3 DeltaC,
+		    DataArrayVector3 ElecField,
+		    DataArray3d Qm_x,
+		    DataArray3d Qm_y,
+		    DataArray3d Qm_z,
+		    DataArray3d Qp_x,
+		    DataArray3d Qp_y,
+		    DataArray3d Qp_z,
+		    DataArray3d QEdge_RT,
+		    DataArray3d QEdge_RB,
+		    DataArray3d QEdge_LT,
+		    DataArray3d QEdge_LB,
+		    DataArray3d QEdge_RT2,
+		    DataArray3d QEdge_RB2,
+		    DataArray3d QEdge_LT2,
+		    DataArray3d QEdge_LB2,
+		    DataArray3d QEdge_RT3,
+		    DataArray3d QEdge_RB3,
+		    DataArray3d QEdge_LT3,
+		    DataArray3d QEdge_LB3,
+		    real_t dtdx,
+		    real_t dtdy,
+		    real_t dtdz,
+		    int    nbCells)
+  {
+    ComputeTraceFunctor3D_MHD functor(params, Udata, Qdata,
+				      DeltaA, DeltaB, DeltaC, ElecField,
+				      Qm_x, Qm_y, Qm_z,
+				      Qp_x, Qp_y, Qp_z,
+				      QEdge_RT,  QEdge_RB,  QEdge_LT,  QEdge_LB,
+				      QEdge_RT2, QEdge_RB2, QEdge_LT2, QEdge_LB2,
+				      QEdge_RT3, QEdge_RB3, QEdge_LT3, QEdge_LB3,
+				      dtdx, dtdy, dtdz);
+    Kokkos::parallel_for(nbCells, functor);
+  }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
@@ -768,6 +831,35 @@ public:
     Emf(Emf),
     dtdx(dtdx), dtdy(dtdy), dtdz(dtdz) {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    DataArray3d QEdge_RT,
+		    DataArray3d QEdge_RB,
+		    DataArray3d QEdge_LT,
+		    DataArray3d QEdge_LB,
+		    DataArray3d QEdge_RT2,
+		    DataArray3d QEdge_RB2,
+		    DataArray3d QEdge_LT2,
+		    DataArray3d QEdge_LB2,
+		    DataArray3d QEdge_RT3,
+		    DataArray3d QEdge_RB3,
+		    DataArray3d QEdge_LT3,
+		    DataArray3d QEdge_LB3,
+		    DataArrayVector3 Emf,
+		    real_t      dtdx,
+		    real_t      dtdy,
+		    real_t      dtdz,
+		    int         nbCells)
+  {
+    ComputeEmfAndStoreFunctor3D functor(params,
+					QEdge_RT , QEdge_RB , QEdge_LT , QEdge_LB ,
+					QEdge_RT2, QEdge_RB2, QEdge_LT2, QEdge_LB2,
+					QEdge_RT3, QEdge_RB3, QEdge_LT3, QEdge_LB3,
+					Emf,
+					dtdx, dtdy, dtdz);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {

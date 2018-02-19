@@ -78,8 +78,7 @@ void SolverMHDMuscl<3>::computeElectricField(DataArray Udata)
 {
 
   // call device functor
-  ComputeElecFieldFunctor3D functor(params, Udata, Q, ElecField);
-  Kokkos::parallel_for(nbCells, functor);
+  ComputeElecFieldFunctor3D::apply(params, Udata, Q, ElecField, nbCells);
   
 } // SolverMHDMuscl<3>::computeElectricField
 
@@ -103,8 +102,7 @@ void SolverMHDMuscl<3>::computeMagSlopes(DataArray Udata)
 {
 
   // call device functor
-  ComputeMagSlopesFunctor3D functor(params, Udata, DeltaA, DeltaB, DeltaC);
-  Kokkos::parallel_for(nbCells, functor);
+  ComputeMagSlopesFunctor3D::apply(params, Udata, DeltaA, DeltaB, DeltaC, nbCells);
   
 } // SolverMHDMuscl3D::computeMagSlopes
 
@@ -139,13 +137,12 @@ void SolverMHDMuscl<2>::computeTrace(DataArray Udata, real_t dt)
   dtdy = dt / params.dy;
 
   // call device functor
-  ComputeTraceFunctor2D_MHD computeTraceFunctor(params, Udata, Q,
-						Qm_x, Qm_y,
-						Qp_x, Qp_y,
-						QEdge_RT, QEdge_RB,
-						QEdge_LT, QEdge_LB,
-						dtdx, dtdy);
-  Kokkos::parallel_for(nbCells, computeTraceFunctor);
+  ComputeTraceFunctor2D_MHD::apply(params, Udata, Q,
+				   Qm_x, Qm_y,
+				   Qp_x, Qp_y,
+				   QEdge_RT, QEdge_RB,
+				   QEdge_LT, QEdge_LB,
+				   dtdx, dtdy, nbCells);
   
 } // SolverMHDMuscl<2>::computeTrace
 
@@ -169,15 +166,15 @@ void SolverMHDMuscl<3>::computeTrace(DataArray Udata, real_t dt)
   dtdz = dt / params.dz;
 
   // call device functor
-  ComputeTraceFunctor3D_MHD functor(params, Udata, Q,
-				    DeltaA, DeltaB, DeltaC, ElecField,
-				    Qm_x, Qm_y, Qm_z,
-				    Qp_x, Qp_y, Qp_z,
-				    QEdge_RT,  QEdge_RB,  QEdge_LT,  QEdge_LB,
-				    QEdge_RT2, QEdge_RB2, QEdge_LT2, QEdge_LB2,
-				    QEdge_RT3, QEdge_RB3, QEdge_LT3, QEdge_LB3,
-				    dtdx, dtdy, dtdz);
-  Kokkos::parallel_for(nbCells, functor);
+  ComputeTraceFunctor3D_MHD::apply(params, Udata, Q,
+				   DeltaA, DeltaB, DeltaC, ElecField,
+				   Qm_x, Qm_y, Qm_z,
+				   Qp_x, Qp_y, Qp_z,
+				   QEdge_RT,  QEdge_RB,  QEdge_LT,  QEdge_LB,
+				   QEdge_RT2, QEdge_RB2, QEdge_LT2, QEdge_LB2,
+				   QEdge_RT3, QEdge_RB3, QEdge_LT3, QEdge_LB3,
+				   dtdx, dtdy, dtdz,
+				   nbCells);
   
 } // SolverMHDMuscl<3>::computeTrace
 
@@ -239,13 +236,11 @@ void SolverMHDMuscl<2>::computeEmfAndStore(real_t dt)
   real_t dtdy = dt / params.dy;
 
   // call device functor
-  ComputeEmfAndStoreFunctor2D
-    computeEmfAndStoreFunctor(params,
-			      QEdge_RT, QEdge_RB,
-			      QEdge_LT, QEdge_LB,
-			      Emf1,
-			      dtdx, dtdy);
-  Kokkos::parallel_for(nbCells, computeEmfAndStoreFunctor);
+  ComputeEmfAndStoreFunctor2D::apply(params,
+				     QEdge_RT, QEdge_RB,
+				     QEdge_LT, QEdge_LB,
+				     Emf1,
+				     dtdx, dtdy, nbCells);
   
 } // SolverMHSMuscl<2>::computeEmfAndStore
 
@@ -263,13 +258,12 @@ void SolverMHDMuscl<3>::computeEmfAndStore(real_t dt)
   real_t dtdz = dt / params.dz;
 
   // call device functor
-  ComputeEmfAndStoreFunctor3D functor(params,
-				      QEdge_RT,  QEdge_RB,  QEdge_LT,  QEdge_LB,
-				      QEdge_RT2, QEdge_RB2, QEdge_LT2, QEdge_LB2,
-				      QEdge_RT3, QEdge_RB3, QEdge_LT3, QEdge_LB3,
-				      Emf,
-				      dtdx, dtdy, dtdz);
-  Kokkos::parallel_for(nbCells, functor);
+  ComputeEmfAndStoreFunctor3D::apply(params,
+				     QEdge_RT,  QEdge_RB,  QEdge_LT,  QEdge_LB,
+				     QEdge_RT2, QEdge_RB2, QEdge_LT2, QEdge_LB2,
+				     QEdge_RT3, QEdge_RB3, QEdge_LT3, QEdge_LB3,
+				     Emf,
+				     dtdx, dtdy, dtdz, nbCells);
   
 } // SolverMHDMuscl<3>::computeEmfAndStore
 

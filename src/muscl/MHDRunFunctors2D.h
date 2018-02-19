@@ -310,6 +310,24 @@ public:
     Emf(Emf),
     dtdx(dtdx), dtdy(dtdy) {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    DataArray2d QEdge_RT,
+		    DataArray2d QEdge_RB,
+		    DataArray2d QEdge_LT,
+		    DataArray2d QEdge_LB,
+		    DataArrayScalar Emf,
+		    real_t      dtdx,
+		    real_t      dtdy,
+		    int         nbCells)
+  {
+    ComputeEmfAndStoreFunctor2D functor(params,
+					QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB,
+					Emf,
+					dtdx, dtdy);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -378,6 +396,30 @@ public:
     QEdge_LT(QEdge_LT), QEdge_LB(QEdge_LB), 
     dtdx(dtdx), dtdy(dtdy) {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    DataArray2d Udata,
+		    DataArray2d Qdata,
+		    DataArray2d Qm_x,
+		    DataArray2d Qm_y,
+		    DataArray2d Qp_x,
+		    DataArray2d Qp_y,
+		    DataArray2d QEdge_RT,
+		    DataArray2d QEdge_RB,
+		    DataArray2d QEdge_LT,
+		    DataArray2d QEdge_LB,
+		    real_t dtdx,
+		    real_t dtdy,
+		    int    nbCells)
+  {
+    ComputeTraceFunctor2D_MHD functor(params, Udata, Qdata,
+				      Qm_x, Qm_y,
+				      Qp_x, Qp_y,
+				      QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB,
+				      dtdx, dtdy);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
