@@ -242,25 +242,21 @@ void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in,
   if (params.implementationVersion == 0) {
     
     // compute fluxes
-    {
-      ComputeAndStoreFluxesFunctor2D functor(params, Q,
-					     Fluxes_x, Fluxes_y,
-					     dtdx, dtdy);
-      Kokkos::parallel_for(nbCells, functor);
-
-    }
-
+    ComputeAndStoreFluxesFunctor2D::apply(params, Q,
+					  Fluxes_x, Fluxes_y,
+					  dtdx, dtdy,
+					  nbCells);
+    
     // actual update
-    {
-      UpdateFunctor2D functor(params, data_out,
-			      Fluxes_x, Fluxes_y);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    UpdateFunctor2D::apply(params, data_out,
+			   Fluxes_x, Fluxes_y,
+			   nbCells);
     
   } else if (params.implementationVersion == 1) {
 
     // call device functor to compute slopes
-    ComputeSlopesFunctor2D computeSlopesFunctor(params, Q, Slopes_x, Slopes_y);
+    ComputeSlopesFunctor2D computeSlopesFunctor(params, Q,
+						Slopes_x, Slopes_y);
     Kokkos::parallel_for(nbCells, computeSlopesFunctor);
 
     // now trace along X axis
@@ -335,19 +331,15 @@ void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
   if (params.implementationVersion == 0) {
     
     // compute fluxes
-    {
-      ComputeAndStoreFluxesFunctor3D functor(params, Q,
-					     Fluxes_x, Fluxes_y, Fluxes_z,
-					     dtdx, dtdy, dtdz);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    ComputeAndStoreFluxesFunctor3D::apply(params, Q,
+					  Fluxes_x, Fluxes_y, Fluxes_z,
+					  dtdx, dtdy, dtdz,
+					  nbCells);
 
     // actual update
-    {
-      UpdateFunctor3D functor(params, data_out,
-			      Fluxes_x, Fluxes_y, Fluxes_z);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    UpdateFunctor3D::apply(params, data_out,
+			   Fluxes_x, Fluxes_y, Fluxes_z,
+			   nbCells);
     
   } else if (params.implementationVersion == 1) {
 

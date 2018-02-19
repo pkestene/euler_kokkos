@@ -31,7 +31,8 @@ public:
   static void apply(HydroParams params,
                     DataArray3d Udata,
 		    int nbCells,
-                    real_t& invDt) {
+                    real_t& invDt)
+  {
     ComputeDtFunctor3D functor(params, Udata);
     Kokkos::parallel_reduce(nbCells, functor, invDt);
   }
@@ -129,7 +130,8 @@ public:
   static void apply(HydroParams params,
                     DataArray3d Udata,
                     DataArray3d Qdata,
-		    int nbCells) {
+		    int nbCells)
+  {
     ConvertToPrimitivesFunctor3D functor(params, Udata, Qdata);
     Kokkos::parallel_for(nbCells, functor);
   }
@@ -204,6 +206,23 @@ public:
     dtdy(dtdy),
     dtdz(dtdz) {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Qdata,
+		    DataArray3d FluxData_x,
+		    DataArray3d FluxData_y,
+		    DataArray3d FluxData_z,
+		    real_t dtdx,
+		    real_t dtdy,
+		    real_t dtdz,
+		    int    nbCells)
+  {
+    ComputeAndStoreFluxesFunctor3D functor(params, Qdata,
+					   FluxData_x, FluxData_y, FluxData_z,
+					   dtdx, dtdy, dtdz);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -567,6 +586,18 @@ public:
     FluxData_y(FluxData_y),
     FluxData_z(FluxData_z) {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata,
+		    DataArray3d FluxData_x,
+		    DataArray3d FluxData_y,
+		    DataArray3d FluxData_z,
+		    int nbCells)
+  {
+    UpdateFunctor3D functor(params, Udata, FluxData_x, FluxData_y, FluxData_z);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
