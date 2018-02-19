@@ -7,7 +7,7 @@ Provide performance portable Kokkos implementation for compressible hydrodynamic
 ## Dependencies
 
 * [Kokkos](https://github.com/kokkos/kokkos)
-* [cmake](https://cmake.org/) with version >= 3.1
+* [cmake](https://cmake.org/) with version >= 3.X (3.X is chosen to meet Kokkos own requirement for CMake; i.e. it might increase in the futur)
    
 Current application is configured with kokkos library as a git submodule.
 
