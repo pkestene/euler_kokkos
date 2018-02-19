@@ -432,8 +432,7 @@ void SolverHydroMuscl<dim>::convertToPrimitives(DataArray Udata)
 			      ConvertToPrimitivesFunctor3D>::type;
 
   // call device functor
-  ConvertToPrimitivesFunctor convertToPrimitivesFunctor(params, Udata, Q);
-  Kokkos::parallel_for(nbCells, convertToPrimitivesFunctor);
+  ConvertToPrimitivesFunctor::apply(params, Udata, Q, nbCells);
   
 } // SolverHydroMuscl::convertToPrimitives
 

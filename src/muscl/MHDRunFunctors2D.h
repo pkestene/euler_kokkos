@@ -126,6 +126,15 @@ public:
 				   DataArray2d Qdata) :
     MHDBaseFunctor2D(params), Udata(Udata), Qdata(Qdata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray2d Udata,
+                    DataArray2d Qdata,
+		    int nbCells) {
+    ConvertToPrimitivesFunctor2D_MHD functor(params, Udata, Qdata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {

@@ -125,6 +125,15 @@ public:
 			       DataArray3d Qdata) :
     HydroBaseFunctor3D(params), Udata(Udata), Qdata(Qdata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata,
+                    DataArray3d Qdata,
+		    int nbCells) {
+    ConvertToPrimitivesFunctor3D functor(params, Udata, Qdata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {

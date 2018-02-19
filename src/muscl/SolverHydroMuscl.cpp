@@ -96,10 +96,9 @@ void SolverHydroMuscl<2>::init_four_quadrant(DataArray Udata)
   primToCons_2D(U2, params.settings.gamma0);
   primToCons_2D(U3, params.settings.gamma0);
 
-  InitFourQuadrantFunctor2D functor(params, Udata, configNumber,
-				    U0, U1, U2, U3,
-				    xt, yt);
-  Kokkos::parallel_for(nbCells, functor);
+  InitFourQuadrantFunctor2D::apply(params, Udata, configNumber,
+				   U0, U1, U2, U3,
+				   xt, yt, nbCells);
   
 } // SolverHydroMuscl<2>::init_four_quadrant
 
@@ -127,8 +126,7 @@ void SolverHydroMuscl<2>::init_isentropic_vortex(DataArray Udata)
   
   IsentropicVortexParams iparams(configMap);
   
-  InitIsentropicVortexFunctor2D functor(params, iparams, Udata);
-  Kokkos::parallel_for(nbCells, functor);
+  InitIsentropicVortexFunctor2D::apply(params, iparams, Udata, nbCells);
   
 } // SolverHydroMuscl<2>::init_isentropic_vortex
 
@@ -249,8 +247,7 @@ void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in,
 					     Fluxes_x, Fluxes_y,
 					     dtdx, dtdy);
       Kokkos::parallel_for(nbCells, functor);
-      //save_data_debug(Fluxes_x, Uhost, m_times_saved, m_t, "flux_x");
-      //save_data_debug(Fluxes_y, Uhost, m_times_saved, m_t, "flux_y");
+
     }
 
     // actual update
