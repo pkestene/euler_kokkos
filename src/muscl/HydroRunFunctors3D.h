@@ -27,6 +27,15 @@ public:
     HydroBaseFunctor3D(params),
     Udata(Udata)  {};
 
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata,
+		    int nbCells,
+                    real_t& invDt) {
+    ComputeDtFunctor3D functor(params, Udata);
+    Kokkos::parallel_reduce(nbCells, functor, invDt);
+  }
+
   // Tell each thread how to initialize its reduction result.
   KOKKOS_INLINE_FUNCTION
   void init (real_t& dst) const

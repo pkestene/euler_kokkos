@@ -31,6 +31,15 @@ public:
     MHDBaseFunctor2D(params),
     Qdata(Qdata)  {};
 
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray2d Udata,
+		    int nbCells,
+                    real_t& invDt) {
+    ComputeDtFunctor2D_MHD functor(params, Udata);
+    Kokkos::parallel_reduce(nbCells, functor, invDt);
+  }
+
   // Tell each thread how to initialize its reduction result.
   KOKKOS_INLINE_FUNCTION
   void init (real_t& dst) const

@@ -445,8 +445,7 @@ double SolverMHDMuscl<dim>::compute_dt_local()
 			      ComputeDtFunctor3D_MHD>::type;
 
   // call device functor
-  ComputeDtFunctor computeDtFunctor(params, Udata);
-  Kokkos::parallel_reduce(nbCells, computeDtFunctor, invDt);
+  ComputeDtFunctor::apply(params, Udata, nbCells, invDt);
     
   dt = params.settings.cfl/invDt;
 
