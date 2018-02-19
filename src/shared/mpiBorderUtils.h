@@ -47,6 +47,16 @@ public:
 			     int       ghostWidth) :
     U(U), b(b), ghostWidth(ghostWidth) {};
   
+  // static method which does it all: create and execute functor
+  static void apply(DataArray U,
+		    DataArray b,
+		    int       ghostWidth,
+                    int       nbIter)
+  {
+    CopyBorderBuf_To_DataArray<boundaryLoc,dimType> functor(U,b,ghostWidth);
+    Kokkos::parallel_for(nbIter, functor);
+  }
+
   
   template<DimensionType dimType_ = dimType>
   KOKKOS_INLINE_FUNCTION
@@ -179,6 +189,16 @@ public:
 			     int       ghostWidth) :
     b(b), U(U), ghostWidth(ghostWidth) {};
     
+  // static method which does it all: create and execute functor
+  static void apply(DataArray b,
+		    DataArray U,
+		    int       ghostWidth,
+                    int       nbIter)
+  {
+    CopyDataArray_To_BorderBuf<boundaryLoc,dimType> functor(b,U,ghostWidth);
+    Kokkos::parallel_for(nbIter, functor);
+  }
+
   template<DimensionType dimType_ = dimType>
   KOKKOS_INLINE_FUNCTION
   void operator()(const typename Kokkos::Impl::enable_if<dimType_==TWO_D, int>::type&  index) const

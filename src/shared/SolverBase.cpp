@@ -645,28 +645,17 @@ SolverBase::copy_boundaries(DataArray2d Udata, Direction dir)
     
     const int nbIter = gw * jsize;
     
-    {
-      CopyDataArray_To_BorderBuf<XMIN, TWO_D> functor(borderBufSend_xmin_2d, Udata, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
-    {
-      CopyDataArray_To_BorderBuf<XMAX, TWO_D> functor(borderBufSend_xmax_2d, Udata, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyDataArray_To_BorderBuf<XMIN, TWO_D>::apply(borderBufSend_xmin_2d, Udata, gw, nbIter);
+    CopyDataArray_To_BorderBuf<XMAX, TWO_D>::apply(borderBufSend_xmax_2d, Udata, gw, nbIter);
+    
   }
 
   else if (dir == YDIR) {
     
     const int nbIter = isize * gw;
     
-    {
-      CopyDataArray_To_BorderBuf<YMIN, TWO_D> functor(borderBufSend_ymin_2d, Udata, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
-    {
-      CopyDataArray_To_BorderBuf<YMAX, TWO_D> functor(borderBufSend_ymax_2d, Udata, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyDataArray_To_BorderBuf<YMIN, TWO_D>::apply(borderBufSend_ymin_2d, Udata, gw, nbIter);
+    CopyDataArray_To_BorderBuf<YMAX, TWO_D>::apply(borderBufSend_ymax_2d, Udata, gw, nbIter);
     
   }
 
@@ -689,28 +678,16 @@ SolverBase::copy_boundaries(DataArray3d Udata, Direction dir)
     
     const int nbIter = gw * jsize * ksize;
     
-    {
-      CopyDataArray_To_BorderBuf<XMIN, THREE_D> functor(borderBufSend_xmin_3d, Udata, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
-    {
-      CopyDataArray_To_BorderBuf<XMAX, THREE_D> functor(borderBufSend_xmax_3d, Udata, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyDataArray_To_BorderBuf<XMIN, THREE_D>::apply(borderBufSend_xmin_3d, Udata, gw, nbIter);
+    CopyDataArray_To_BorderBuf<XMAX, THREE_D>::apply(borderBufSend_xmax_3d, Udata, gw, nbIter);
   }
 
   else if (dir == YDIR) {
     
     const int nbIter = isize * gw * ksize;
     
-    {
-      CopyDataArray_To_BorderBuf<YMIN, THREE_D> functor(borderBufSend_ymin_3d, Udata, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
-    {
-      CopyDataArray_To_BorderBuf<YMAX, THREE_D> functor(borderBufSend_ymax_3d, Udata, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyDataArray_To_BorderBuf<YMIN, THREE_D>::apply(borderBufSend_ymin_3d, Udata, gw, nbIter);
+    CopyDataArray_To_BorderBuf<YMAX, THREE_D>::apply(borderBufSend_ymax_3d, Udata, gw, nbIter);
     
   }
   
@@ -718,14 +695,8 @@ SolverBase::copy_boundaries(DataArray3d Udata, Direction dir)
     
     const int nbIter = isize * jsize * gw;
     
-    {
-      CopyDataArray_To_BorderBuf<ZMIN, THREE_D> functor(borderBufSend_zmin_3d, Udata, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
-    {
-      CopyDataArray_To_BorderBuf<ZMAX, THREE_D> functor(borderBufSend_zmax_3d, Udata, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyDataArray_To_BorderBuf<ZMIN, THREE_D>::apply(borderBufSend_zmin_3d, Udata, gw, nbIter);
+    CopyDataArray_To_BorderBuf<ZMAX, THREE_D>::apply(borderBufSend_zmax_3d, Udata, gw, nbIter);
     
   }
 
@@ -861,10 +832,7 @@ SolverBase::copy_boundaries_back(DataArray2d Udata, BoundaryLocation loc)
     
     const int nbIter = gw * jsize;
     
-    {
-      CopyBorderBuf_To_DataArray<XMIN, TWO_D> functor(Udata, borderBufRecv_xmin_2d, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyBorderBuf_To_DataArray<XMIN, TWO_D>::apply(Udata, borderBufRecv_xmin_2d, gw, nbIter);
 
   }
 
@@ -872,10 +840,7 @@ SolverBase::copy_boundaries_back(DataArray2d Udata, BoundaryLocation loc)
 
     const int nbIter = gw * jsize;
     
-    {
-      CopyBorderBuf_To_DataArray<XMAX, TWO_D> functor(Udata, borderBufRecv_xmax_2d, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyBorderBuf_To_DataArray<XMAX, TWO_D>::apply(Udata, borderBufRecv_xmax_2d, gw, nbIter);
     
   }
 
@@ -883,10 +848,7 @@ SolverBase::copy_boundaries_back(DataArray2d Udata, BoundaryLocation loc)
     
     const int nbIter = isize * gw;
     
-    {
-      CopyBorderBuf_To_DataArray<YMIN, TWO_D> functor(Udata, borderBufRecv_ymin_2d, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyBorderBuf_To_DataArray<YMIN, TWO_D>::apply(Udata, borderBufRecv_ymin_2d, gw, nbIter);
 
   }
 
@@ -894,10 +856,7 @@ SolverBase::copy_boundaries_back(DataArray2d Udata, BoundaryLocation loc)
     
     const int nbIter = isize * gw;
 
-    {
-      CopyBorderBuf_To_DataArray<YMAX, TWO_D> functor(Udata, borderBufRecv_ymax_2d, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyBorderBuf_To_DataArray<YMAX, TWO_D>::apply(Udata, borderBufRecv_ymax_2d, gw, nbIter);
     
   }
   
@@ -918,10 +877,7 @@ SolverBase::copy_boundaries_back(DataArray3d Udata, BoundaryLocation loc)
     
     const int nbIter = gw * jsize * ksize;
     
-    {
-      CopyBorderBuf_To_DataArray<XMIN, THREE_D> functor(Udata, borderBufRecv_xmin_3d, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyBorderBuf_To_DataArray<XMIN, THREE_D>::apply(Udata, borderBufRecv_xmin_3d, gw, nbIter);
 
   }
 
@@ -929,10 +885,7 @@ SolverBase::copy_boundaries_back(DataArray3d Udata, BoundaryLocation loc)
 
     const int nbIter = gw * jsize * ksize;
     
-    {
-      CopyBorderBuf_To_DataArray<XMAX, THREE_D> functor(Udata, borderBufRecv_xmax_3d, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyBorderBuf_To_DataArray<XMAX, THREE_D>::apply(Udata, borderBufRecv_xmax_3d, gw, nbIter);
     
   }
 
@@ -940,21 +893,15 @@ SolverBase::copy_boundaries_back(DataArray3d Udata, BoundaryLocation loc)
     
     const int nbIter = isize * gw * ksize;
     
-    {
-      CopyBorderBuf_To_DataArray<YMIN, THREE_D> functor(Udata, borderBufRecv_ymin_3d, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyBorderBuf_To_DataArray<YMIN, THREE_D>::apply(Udata, borderBufRecv_ymin_3d, gw, nbIter);
 
   }
 
   if (loc == YMAX) {
     
     const int nbIter = isize * gw * ksize;
-
-    {
-      CopyBorderBuf_To_DataArray<YMAX, THREE_D> functor(Udata, borderBufRecv_ymax_3d, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    
+    CopyBorderBuf_To_DataArray<YMAX, THREE_D>::apply(Udata, borderBufRecv_ymax_3d, gw, nbIter);
     
   }
   
@@ -962,10 +909,7 @@ SolverBase::copy_boundaries_back(DataArray3d Udata, BoundaryLocation loc)
     
     const int nbIter = isize * jsize * gw;
     
-    {
-      CopyBorderBuf_To_DataArray<ZMIN, THREE_D> functor(Udata, borderBufRecv_zmin_3d, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyBorderBuf_To_DataArray<ZMIN, THREE_D>::apply(Udata, borderBufRecv_zmin_3d, gw, nbIter);
 
   }
 
@@ -973,10 +917,7 @@ SolverBase::copy_boundaries_back(DataArray3d Udata, BoundaryLocation loc)
     
     const int nbIter = isize * jsize * gw;
 
-    {
-      CopyBorderBuf_To_DataArray<ZMAX, THREE_D> functor(Udata, borderBufRecv_zmax_3d, gw);
-      Kokkos::parallel_for(nbIter, functor);
-    }
+    CopyBorderBuf_To_DataArray<ZMAX, THREE_D>::apply(Udata, borderBufRecv_zmax_3d, gw, nbIter);
     
   }
   
