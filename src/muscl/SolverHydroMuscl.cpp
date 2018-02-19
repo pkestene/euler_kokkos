@@ -255,39 +255,26 @@ void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in,
   } else if (params.implementationVersion == 1) {
 
     // call device functor to compute slopes
-    ComputeSlopesFunctor2D computeSlopesFunctor(params, Q,
-						Slopes_x, Slopes_y);
-    Kokkos::parallel_for(nbCells, computeSlopesFunctor);
+    ComputeSlopesFunctor2D::apply(params, Q,
+				  Slopes_x, Slopes_y, nbCells);
 
     // now trace along X axis
-    {
-      ComputeTraceAndFluxes_Functor2D<XDIR> functor(params, Q,
-						    Slopes_x, Slopes_y,
-						    Fluxes_x,
-						    dtdx, dtdy);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    ComputeTraceAndFluxes_Functor2D<XDIR>::apply(params, Q,
+						 Slopes_x, Slopes_y,
+						 Fluxes_x,
+						 dtdx, dtdy, nbCells);
     
     // and update along X axis
-    {
-      UpdateDirFunctor2D<XDIR> functor(params, data_out, Fluxes_x);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    UpdateDirFunctor2D<XDIR>::apply(params, data_out, Fluxes_x, nbCells);
     
     // now trace along Y axis
-    {
-      ComputeTraceAndFluxes_Functor2D<YDIR> functor(params, Q,
-						    Slopes_x, Slopes_y,
-						    Fluxes_y,
-						    dtdx, dtdy);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    ComputeTraceAndFluxes_Functor2D<YDIR>::apply(params, Q,
+						 Slopes_x, Slopes_y,
+						 Fluxes_y,
+						 dtdx, dtdy, nbCells);
     
     // and update along Y axis
-    {
-      UpdateDirFunctor2D<YDIR> functor(params, data_out, Fluxes_y);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    UpdateDirFunctor2D<YDIR>::apply(params, data_out, Fluxes_y, nbCells);
     
   } // end params.implementationVersion == 1
   
@@ -344,54 +331,36 @@ void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
   } else if (params.implementationVersion == 1) {
 
     // call device functor to compute slopes
-    ComputeSlopesFunctor3D computeSlopesFunctor(params, Q,
-						Slopes_x, Slopes_y, Slopes_z);
-    Kokkos::parallel_for(nbCells, computeSlopesFunctor);
+    ComputeSlopesFunctor3D::apply(params, Q,
+				  Slopes_x, Slopes_y, Slopes_z,
+				  nbCells);
 
     // now trace along X axis
-    {
-      ComputeTraceAndFluxes_Functor3D<XDIR> functor(params, Q,
-						    Slopes_x, Slopes_y, Slopes_z,
-						    Fluxes_x,
-						    dtdx, dtdy, dtdz);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    ComputeTraceAndFluxes_Functor3D<XDIR>::apply(params, Q,
+						 Slopes_x, Slopes_y, Slopes_z,
+						 Fluxes_x,
+						 dtdx, dtdy, dtdz, nbCells);
     
     // and update along X axis
-    {
-      UpdateDirFunctor3D<XDIR> functor(params, data_out, Fluxes_x);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    UpdateDirFunctor3D<XDIR>::apply(params, data_out, Fluxes_x, nbCells);
 
     // now trace along Y axis
-    {
-      ComputeTraceAndFluxes_Functor3D<YDIR> functor(params, Q,
-						    Slopes_x, Slopes_y, Slopes_z,
-						    Fluxes_y,
-						    dtdx, dtdy, dtdz);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    ComputeTraceAndFluxes_Functor3D<YDIR>::apply(params, Q,
+						 Slopes_x, Slopes_y, Slopes_z,
+						 Fluxes_y,
+						 dtdx, dtdy, dtdz, nbCells);
     
     // and update along Y axis
-    {
-      UpdateDirFunctor3D<YDIR> functor(params, data_out, Fluxes_y);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    UpdateDirFunctor3D<YDIR>::apply(params, data_out, Fluxes_y, nbCells);
 
     // now trace along Z axis
-    {
-      ComputeTraceAndFluxes_Functor3D<ZDIR> functor(params, Q,
-						    Slopes_x, Slopes_y, Slopes_z,
-						    Fluxes_z,
-						    dtdx, dtdy, dtdz);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    ComputeTraceAndFluxes_Functor3D<ZDIR>::apply(params, Q,
+						 Slopes_x, Slopes_y, Slopes_z,
+						 Fluxes_z,
+						 dtdx, dtdy, dtdz, nbCells);
     
     // and update along Z axis
-    {
-      UpdateDirFunctor3D<ZDIR> functor(params, data_out, Fluxes_z);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    UpdateDirFunctor3D<ZDIR>::apply(params, data_out, Fluxes_z, nbCells);
 
   } // end params.implementationVersion == 1
   

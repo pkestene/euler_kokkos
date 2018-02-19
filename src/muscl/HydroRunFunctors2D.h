@@ -716,6 +716,16 @@ public:
     Udata(Udata), 
     FluxData(FluxData) {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray2d Udata,
+		    DataArray2d FluxData,
+		    int nbCells)
+  {
+    UpdateDirFunctor2D<dir> functor(params, Udata, FluxData);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -779,6 +789,17 @@ public:
     HydroBaseFunctor2D(params), Qdata(Qdata),
     Slopes_x(Slopes_x), Slopes_y(Slopes_y) {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray2d Qdata,
+		    DataArray2d Slopes_x,
+		    DataArray2d Slopes_y,  
+		    int nbCells)
+  {
+    ComputeSlopesFunctor2D functor(params, Qdata, Slopes_x, Slopes_y);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -877,6 +898,23 @@ public:
     Fluxes(Fluxes),
     dtdx(dtdx), dtdy(dtdy) {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray2d Qdata,
+		    DataArray2d Slopes_x,
+		    DataArray2d Slopes_y,  
+		    DataArray2d Fluxes,
+		    real_t      dtdx,
+		    real_t      dtdy,
+		    int nbCells)
+  {
+    ComputeTraceAndFluxes_Functor2D<dir> functor(params, Qdata,
+						 Slopes_x, Slopes_y,
+						 Fluxes,
+						 dtdx, dtdy);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
