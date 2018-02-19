@@ -350,8 +350,7 @@ void SolverMHDMuscl<dim>::init_blast(DataArray Udata)
 			      InitBlastFunctor3D_MHD>::type;
 
   // perform init
-  InitBlastFunctor functor(params, blastParams, Udata);
-  Kokkos::parallel_for(nbCells, functor);
+  InitBlastFunctor::apply(params, blastParams, Udata, nbCells);
 
 } // SolverMHDMuscl::init_blast
 
@@ -373,8 +372,7 @@ void SolverMHDMuscl<dim>::init_orszag_tang(DataArray Udata)
 				InitOrszagTangFunctor2D<INIT_ALL_VAR_BUT_ENERGY>,
 				InitOrszagTangFunctor3D<INIT_ALL_VAR_BUT_ENERGY>>::type;
     
-    InitOrszagTangFunctor functor(params, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    InitOrszagTangFunctor::apply(params, Udata, nbCells);
   }
 
   // init energy
@@ -385,8 +383,7 @@ void SolverMHDMuscl<dim>::init_orszag_tang(DataArray Udata)
 				InitOrszagTangFunctor2D<INIT_ENERGY>,
 				InitOrszagTangFunctor3D<INIT_ENERGY>>::type;
     
-    InitOrszagTangFunctor functor(params, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    InitOrszagTangFunctor::apply(params, Udata, nbCells);
   }  
   
 } // init_orszag_tang

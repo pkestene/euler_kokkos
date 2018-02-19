@@ -30,6 +30,15 @@ public:
 			   DataArray2d Udata) :
     MHDBaseFunctor2D(params), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray2d Udata,
+		    int         nbCells)
+  {
+    InitImplodeFunctor2D_MHD functor(params, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -100,6 +109,16 @@ public:
 			 DataArray2d Udata) :
     MHDBaseFunctor2D(params), bParams(bParams), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    BlastParams bParams,
+                    DataArray2d Udata,
+		    int         nbCells)
+  {
+    InitBlastFunctor2D_MHD functor(params, bParams, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -192,6 +211,15 @@ public:
 			  DataArray2d Udata) :
     MHDBaseFunctor2D(params), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray2d Udata,
+		    int         nbCells)
+  {
+    InitOrszagTangFunctor2D<ot_type> functor(params, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {

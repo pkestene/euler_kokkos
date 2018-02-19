@@ -22,13 +22,22 @@ namespace euler_kokkos { namespace muscl {
 /*************************************************/
 /*************************************************/
 /*************************************************/
-class InitImplodeFunctor : public MHDBaseFunctor3D {
+class InitImplodeFunctor3D_MHD : public MHDBaseFunctor3D {
 
 public:
-  InitImplodeFunctor(HydroParams params,
-		     DataArray3d Udata) :
+  InitImplodeFunctor3D_MHD(HydroParams params,
+			   DataArray3d Udata) :
     MHDBaseFunctor3D(params), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata,
+		    int         nbCells)
+  {
+    InitImplodeFunctor3D_MHD functor(params, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -100,7 +109,7 @@ public:
 
   DataArray3d Udata;
 
-}; // InitImplodeFunctor
+}; // InitImplodeFunctor3D_MHD
 
 /*************************************************/
 /*************************************************/
@@ -113,6 +122,16 @@ public:
 			 DataArray3d Udata) :
     MHDBaseFunctor3D(params), bParams(bParams), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    BlastParams bParams,
+                    DataArray3d Udata,
+		    int         nbCells)
+  {
+    InitBlastFunctor3D_MHD functor(params, bParams, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -215,6 +234,15 @@ public:
 			  DataArray3d Udata) :
     MHDBaseFunctor3D(params), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata,
+		    int         nbCells)
+  {
+    InitOrszagTangFunctor3D<ot_type> functor(params, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
