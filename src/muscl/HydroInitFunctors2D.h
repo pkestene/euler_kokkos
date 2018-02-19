@@ -25,7 +25,16 @@ public:
   InitImplodeFunctor2D(HydroParams params,
 		       DataArray2d Udata) :
     HydroBaseFunctor2D(params), Udata(Udata)  {};
-  
+
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray2d Udata,
+		    int         nbCells)
+  {
+    InitImplodeFunctor2D functor(params, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -88,6 +97,16 @@ public:
 		     DataArray2d Udata) :
     HydroBaseFunctor2D(params), bParams(bParams), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    BlastParams bParams,
+                    DataArray2d Udata,
+		    int         nbCells)
+  {
+    InitBlastFunctor2D functor(params, bParams, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -172,6 +191,23 @@ public:
     U0(U0), U1(U1), U2(U2), U3(U3), xt(xt), yt(yt)
   {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray2d Udata,
+		    int configNumber,
+		    HydroState U0,
+		    HydroState U1,
+		    HydroState U2,
+		    HydroState U3,
+		    real_t xt,
+		    real_t yt,
+		    int    nbCells)
+  {
+    InitFourQuadrantFunctor2D functor(params, Udata, configNumber,
+				      U0, U1, U2, U3, xt, yt);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -250,6 +286,16 @@ public:
 				IsentropicVortexParams iparams,
 				DataArray2d Udata) :
     HydroBaseFunctor2D(params), iparams(iparams), Udata(Udata)  {};
+  
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    IsentropicVortexParams iparams,
+                    DataArray2d Udata,
+		    int         nbCells)
+  {
+    InitIsentropicVortexFunctor2D functor(params, iparams, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
   
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const

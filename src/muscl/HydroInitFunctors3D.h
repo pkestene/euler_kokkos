@@ -24,6 +24,15 @@ public:
 		    DataArray3d Udata) :
     HydroBaseFunctor3D(params), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata,
+		    int         nbCells)
+  {
+    InitFakeFunctor3D functor(params, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -58,6 +67,15 @@ public:
 		       DataArray3d Udata) :
     HydroBaseFunctor3D(params), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata,
+		    int         nbCells)
+  {
+    InitImplodeFunctor3D functor(params, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -130,6 +148,16 @@ public:
 		     DataArray3d Udata) :
     HydroBaseFunctor3D(params), bParams(bParams), Udata(Udata)  {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    BlastParams bParams,
+                    DataArray3d Udata,
+		    int         nbCells)
+  {
+    InitBlastFunctor3D functor(params, bParams, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {

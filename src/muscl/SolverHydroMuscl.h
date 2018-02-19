@@ -293,8 +293,7 @@ void SolverHydroMuscl<dim>::init_implode(DataArray Udata)
 			      InitImplodeFunctor3D>::type;
 
   // perform init
-  InitImplodeFunctor functor(params, Udata);
-  Kokkos::parallel_for(nbCells, functor);
+  InitImplodeFunctor::apply(params, Udata, nbCells);
 
 } // SolverHydroMuscl::init_implode
 
@@ -317,8 +316,7 @@ void SolverHydroMuscl<dim>::init_blast(DataArray Udata)
 			      InitBlastFunctor3D>::type;
 
   // perform init
-  InitBlastFunctor functor(params, blastParams, Udata);
-  Kokkos::parallel_for(nbCells, functor);
+  InitBlastFunctor::apply(params, blastParams, Udata, nbCells);
 
 } // SolverHydroMuscl::init_blast
 
