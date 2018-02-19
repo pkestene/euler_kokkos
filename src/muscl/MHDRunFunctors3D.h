@@ -638,6 +638,30 @@ public:
     Fluxes_x(Fluxes_x), Fluxes_y(Fluxes_y), Fluxes_z(Fluxes_z),
     dtdx(dtdx), dtdy(dtdy), dtdz(dtdz) {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Qm_x,
+                    DataArray3d Qm_y,
+                    DataArray3d Qm_z,
+                    DataArray3d Qp_x,
+                    DataArray3d Qp_y,
+                    DataArray3d Qp_z,
+		    DataArray3d Flux_x,
+		    DataArray3d Flux_y,
+		    DataArray3d Flux_z,
+		    real_t dtdx,
+		    real_t dtdy,
+		    real_t dtdz,
+		    int    nbCells)
+  {
+    ComputeFluxesAndStoreFunctor3D_MHD functor(params,
+					       Qm_x, Qm_y, Qm_z,
+					       Qp_x, Qp_y, Qp_z,
+					       Flux_x, Flux_y, Flux_z,
+					       dtdx, dtdy, dtdz);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -827,6 +851,23 @@ public:
     dtdy(dtdy),
     dtdz(dtdz) {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata,
+		    DataArray3d FluxData_x,
+		    DataArray3d FluxData_y,
+		    DataArray3d FluxData_z,
+		    real_t      dtdx,
+		    real_t      dtdy,
+		    real_t      dtdz,
+		    int         nbCells)
+  {
+    UpdateFunctor3D_MHD functor(params, Udata,
+				FluxData_x, FluxData_y, FluxData_z,
+				dtdx, dtdy, dtdz);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -923,6 +964,20 @@ public:
     dtdy(dtdy),
     dtdz(dtdz) {};
   
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata,
+		    DataArrayVector3 Emf,
+		    real_t      dtdx,
+		    real_t      dtdy,
+		    real_t      dtdz,
+		    int         nbCells)
+  {
+    UpdateEmfFunctor3D functor(params, Udata, Emf,
+			       dtdx, dtdy, dtdz);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {

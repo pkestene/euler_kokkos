@@ -194,13 +194,12 @@ void SolverMHDMuscl<2>::computeFluxesAndStore(real_t dt)
   real_t dtdy = dt / params.dy;
 
   // call device functor
-  ComputeFluxesAndStoreFunctor2D_MHD
-    computeFluxesAndStoreFunctor(params,
-				 Qm_x, Qm_y,
-				 Qp_x, Qp_y,
-				 Fluxes_x, Fluxes_y,
-				 dtdx, dtdy);
-  Kokkos::parallel_for(nbCells, computeFluxesAndStoreFunctor);
+  ComputeFluxesAndStoreFunctor2D_MHD::apply(params,
+					    Qm_x, Qm_y,
+					    Qp_x, Qp_y,
+					    Fluxes_x, Fluxes_y,
+					    dtdx, dtdy,
+					    nbCells);
   
 } // SolverMHDMuscl<2>::computeFluxesAndStore
 
@@ -218,13 +217,12 @@ void SolverMHDMuscl<3>::computeFluxesAndStore(real_t dt)
   real_t dtdz = dt / params.dz;
 
   // call device functor
-  ComputeFluxesAndStoreFunctor3D_MHD
-    functor(params,
-	    Qm_x, Qm_y, Qm_z,
-	    Qp_x, Qp_y, Qp_z,
-	    Fluxes_x, Fluxes_y, Fluxes_z,
-	    dtdx, dtdy, dtdz);
-  Kokkos::parallel_for(nbCells, functor);
+  ComputeFluxesAndStoreFunctor3D_MHD::apply(params,
+					    Qm_x, Qm_y, Qm_z,
+					    Qp_x, Qp_y, Qp_z,
+					    Fluxes_x, Fluxes_y, Fluxes_z,
+					    dtdx, dtdy, dtdz,
+					    nbCells);
   
 } // SolverMHDMuscl<3>::computeFluxesAndStore
 
@@ -319,18 +317,15 @@ void SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in,
     computeEmfAndStore(dt);
     
     // actual update with fluxes
-    {
-      UpdateFunctor2D_MHD functor(params, data_out,
-				  Fluxes_x, Fluxes_y, dtdx, dtdy);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    UpdateFunctor2D_MHD::apply(params, data_out,
+			       Fluxes_x, Fluxes_y,
+			       dtdx, dtdy,
+			       nbCells);
     
     // actual update with emf
-    {
-      UpdateEmfFunctor2D functor(params, data_out,
-				 Emf1, dtdx, dtdy);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    UpdateEmfFunctor2D::apply(params, data_out,
+			      Emf1, dtdx, dtdy,
+			      nbCells);
     
   }
   timers[TIMER_NUM_SCHEME]->stop();
@@ -389,18 +384,15 @@ void SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in,
     computeEmfAndStore(dt);
     
     // actual update with fluxes
-    {
-      UpdateFunctor3D_MHD functor(params, data_out,
-				  Fluxes_x, Fluxes_y, Fluxes_z, dtdx, dtdy, dtdz);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    UpdateFunctor3D_MHD::apply(params, data_out,
+			       Fluxes_x, Fluxes_y, Fluxes_z,
+			       dtdx, dtdy, dtdz,
+			       nbCells);
 
     // actual update with emf
-    {
-      UpdateEmfFunctor3D functor(params, data_out,
-				 Emf, dtdx, dtdy, dtdz);
-      Kokkos::parallel_for(nbCells, functor);
-    }
+    UpdateEmfFunctor3D::apply(params, data_out,
+			      Emf, dtdx, dtdy, dtdz,
+			      nbCells);
     
   }
   timers[TIMER_NUM_SCHEME]->stop();
