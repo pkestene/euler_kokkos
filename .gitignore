@@ -3,6 +3,7 @@
 compile_commands.json
 euler2d.omp
 euler2d.cuda
+build
 build_openmp
 build_openmp_new
 build_cuda
