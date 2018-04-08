@@ -36,6 +36,7 @@
 
 // for init condition
 #include "shared/BlastParams.h"
+#include "shared/RotorParams.h"
 
 namespace euler_kokkos { namespace muscl {
 
@@ -119,7 +120,8 @@ public:
   // host routines (initialization)  
   void init_blast(DataArray Udata);
   void init_orszag_tang(DataArray Udata);
-
+  void init_rotor(DataArray Udata);
+  
   //! init wrapper (actual initialization)
   void init(DataArray Udata);
 
@@ -390,6 +392,29 @@ void SolverMHDMuscl<dim>::init_orszag_tang(DataArray Udata)
 
 // =======================================================
 // =======================================================
+/**
+ * Rotor test.
+ * 
+ */
+template<int dim>
+void SolverMHDMuscl<dim>::init_rotor(DataArray Udata)
+{
+
+  RotorParams rotorParams = RotorParams(configMap);
+
+  // alias to actual device functor
+  using InitRotorFunctor =
+    typename std::conditional<dim==2,
+			      InitRotorFunctor2D_MHD,
+			      InitRotorFunctor3D_MHD>::type;
+
+  // perform init
+  InitRotorFunctor::apply(params, rotorParams, Udata, nbCells);
+
+} // SolverMHDMuscl::init_rotor
+
+// =======================================================
+// =======================================================
 template<int dim>
 void SolverMHDMuscl<dim>::init(DataArray Udata)
 {
@@ -404,6 +429,10 @@ void SolverMHDMuscl<dim>::init(DataArray Udata)
   } else if ( !m_problem_name.compare("orszag_tang") ) {
     
     init_orszag_tang(U);
+    
+  } else if ( !m_problem_name.compare("rotor") ) {
+    
+    init_rotor(U);
     
   } else {
 

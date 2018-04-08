@@ -13,6 +13,7 @@
 #include "shared/BlastParams.h"
 
 #include "muscl/OrszagTangInit.h"
+#include "shared/RotorParams.h"
 
 #ifndef SQR
 #define SQR(x) ((x)*(x))
@@ -353,6 +354,117 @@ public:
   DataArray2d Udata;
   
 }; // InitOrszagTangFunctor2D
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
+/**
+ * The two-dimensional MHD rotor problem. Some references:
+ * - Balsara and Spicer, 1999, JCP, 149, 270.
+ * - G. Toth, "The div(B)=0 constraint in shock-capturing MHD codes",
+ *   JCP, 161, 605 (2000)
+ * 
+ * Initial conditions are taken from Toth's paper.
+ *
+ */
+class InitRotorFunctor2D_MHD : public MHDBaseFunctor2D {
+
+public:
+  InitRotorFunctor2D_MHD(HydroParams params,
+			 RotorParams rParams,
+			 DataArray2d Udata) :
+    MHDBaseFunctor2D(params), rParams(rParams), Udata(Udata)  {};
+  
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    RotorParams rParams,
+                    DataArray2d Udata,
+		    int         nbCells)
+  {
+    InitRotorFunctor2D_MHD functor(params, rParams, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+  
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int& index) const
+  {
+    
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ghostWidth = params.ghostWidth;
+    
+#ifdef USE_MPI
+    const int i_mpi = params.myMpiPos[IX];
+    const int j_mpi = params.myMpiPos[IY];
+#else
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+#endif
+
+    const int nx = params.nx;
+    const int ny = params.ny;
+
+    const real_t xmin = params.xmin;
+    const real_t ymin = params.ymin;
+    const real_t xmax = params.xmax;
+    const real_t ymax = params.ymax;
+
+    const real_t dx = params.dx;
+    const real_t dy = params.dy;
+    
+    const real_t gamma0 = params.settings.gamma0;
+
+    // blast problem parameters
+    const real_t r0      = rParams.r0;
+    const real_t r1      = rParams.r1;
+    const real_t u0      = rParams.u0;
+    const real_t p0      = rParams.p0;
+    const real_t b0      = rParams.b0;
+
+    const real_t xCenter = (xmax + xmin)/2;
+    const real_t yCenter = (ymax + ymin)/2;
+
+    int i,j;
+    index2coord(index,i,j,isize,jsize);
+    
+    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
+    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
+    
+    real_t r = SQRT( (x-xCenter)*(x-xCenter) +
+		     (y-yCenter)*(y-yCenter) );
+    real_t f_r = (r1-r)/(r1-r0);
+
+    if (r<=r0) {
+      Udata(i,j,ID) =  10.0;
+      Udata(i,j,IU) = -Udata(i,j,ID)*f_r*u0*(y-yCenter)/r0;
+      Udata(i,j,IV) =  Udata(i,j,ID)*f_r*u0*(x-xCenter)/r0;
+    } else if (r<=r1) {
+      Udata(i,j,ID) = 1+9*f_r;
+      Udata(i,j,IU) = -Udata(i,j,ID)*f_r*u0*(y-yCenter)/r;
+      Udata(i,j,IV) =  Udata(i,j,ID)*f_r*u0*(x-xCenter)/r;
+    } else {
+      Udata(i,j,ID) = 1.0;
+      Udata(i,j,IU) = 0.0;
+      Udata(i,j,IV) = 0.0;
+    }
+
+    Udata(i,j,IW) = 0.0;
+    Udata(i,j,IA) = b0; //5.0/SQRT(FourPi);
+    Udata(i,j,IB) = 0.0;
+    Udata(i,j,IC) = 0.0;
+    Udata(i,j,IP) = p0/(gamma0-1.0) + 
+      0.5*( Udata(i,j,IU)*Udata(i,j,IU) + 
+	    Udata(i,j,IV)*Udata(i,j,IV) +
+	    Udata(i,j,IW)*Udata(i,j,IW) ) / Udata(i,j,ID) +
+      0.5*( Udata(i,j,IA)*Udata(i,j,IA) );
+    
+    
+  } // end operator ()
+  
+  RotorParams rParams;
+  DataArray2d Udata;
+  
+}; // InitRotorFunctor2D_MHD
 
 } // namespace muscl
 
