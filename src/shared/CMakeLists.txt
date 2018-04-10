@@ -7,6 +7,8 @@ set (shared_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/WedgeParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/JetParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/IsentropicVortexParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/RotorParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/FieldLoopParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/initRiemannConfig2d.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BoundariesFunctors.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BoundariesFunctorsWedge.h
