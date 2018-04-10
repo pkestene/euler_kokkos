@@ -493,12 +493,35 @@ public:
  *
  */
 class InitFieldLoopFunctor2D_MHD : public MHDBaseFunctor2D {
+
+private:
+  enum PhaseType {
+    COMPUTE_VECTOR_POTENTIAL,
+    DO_INIT_CONDITION
+  };
   
 public:
-  InitFieldLoopFunctor2D_MHD(HydroParams params,
+
+  struct TagComputeVectorPotential {};
+  struct TagInitCond {};
+  
+  InitFieldLoopFunctor2D_MHD(HydroParams     params,
 			     FieldLoopParams flParams,
-			     DataArray2d Udata) :
-    MHDBaseFunctor2D(params), flParams(flParams), Udata(Udata)  {};
+			     DataArray2d     Udata,
+			     int             nbCells) :
+    MHDBaseFunctor2D(params),
+    flParams(flParams),
+    Udata(Udata)
+  {
+    Az = DataArrayScalar("Az", params.isize, params.jsize);
+
+    phase = COMPUTE_VECTOR_POTENTIAL;
+    Kokkos::parallel_for(nbCells, *this);
+
+    phase = DO_INIT_CONDITION;
+    Kokkos::parallel_for(nbCells, *this);
+
+  };
   
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
@@ -506,18 +529,30 @@ public:
                     DataArray2d Udata,
 		    int         nbCells)
   {
-    InitFieldLoopFunctor2D_MHD functor(params, flParams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
-  }
+    InitFieldLoopFunctor2D_MHD functor(params, flParams, Udata, nbCells);
+  } // apply
   
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
+  {
+    if ( phase == COMPUTE_VECTOR_POTENTIAL ) {
+      compute_vector_potential(index);
+    } else if (phase == DO_INIT_CONDITION) {
+      do_init_condition(index);
+    }
+  }
+  
+  KOKKOS_INLINE_FUNCTION
+  void compute_vector_potential(const int& index) const
   {
     
     const int isize = params.isize;
     const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
     
+    const int nx = params.nx;
+    const int ny = params.ny;
+
 #ifdef USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IY];
@@ -526,13 +561,53 @@ public:
     const int j_mpi = 0;
 #endif
 
-    const int nx = params.nx;
-    const int ny = params.ny;
-
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
-    const real_t xmax = params.xmax;
-    const real_t ymax = params.ymax;
+
+    const real_t dx = params.dx;
+    const real_t dy = params.dy;
+
+    // field loop problem parameters
+    const real_t radius    = flParams.radius;
+    const real_t amplitude = flParams.amplitude;
+
+    int i,j;
+    index2coord(index,i,j,isize,jsize);
+    
+    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
+    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
+    
+    real_t r = sqrt(x*x+y*y);
+    if ( r < radius ) {
+      Az(i,j,0) = amplitude * ( radius - r );
+    } else {
+      Az(i,j,0) = 0.0;
+    }
+    
+  } // compute_vector_potential
+
+  KOKKOS_INLINE_FUNCTION
+  void do_init_condition(const int& index) const
+  {
+    
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ghostWidth = params.ghostWidth;
+
+    const int nx = params.nx;
+    const int ny = params.ny;
+    const int nz = params.nz;
+   
+#ifdef USE_MPI
+    const int i_mpi = params.myMpiPos[IX];
+    const int j_mpi = params.myMpiPos[IY];
+#else
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+#endif
+    
+    const real_t xmin = params.xmin;
+    const real_t ymin = params.ymin;
 
     const real_t dx = params.dx;
     const real_t dy = params.dy;
@@ -542,31 +617,67 @@ public:
     // field loop problem parameters
     const real_t radius    = flParams.radius;
     const real_t density_in= flParams.density_in;
-    const real_t amplitude = flParams.amplitude;
     const real_t vflow     = flParams.vflow;
+    //const real_t amp       = flParams.amp;
     
     const real_t cos_theta = 2.0/sqrt(5.0);
     const real_t sin_theta = sqrt(1-cos_theta*cos_theta);
 
-    // geometry
-    const real_t xCenter = (xmax + xmin)/2;
-    const real_t yCenter = (ymax + ymin)/2;
 
     int i,j;
     index2coord(index,i,j,isize,jsize);
     
-    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
-    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
+    if (i>=ghostWidth and i<isize-ghostWidth and
+	j>=ghostWidth and j<jsize-ghostWidth) {
 
-    // unfinished
-    
-  } // end operator ()
+      real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
+      real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
+
+      real_t diag = sqrt(1.0*(nx*nx + ny*ny + nz*nz));
+      real_t r    = sqrt(x*x+y*y);
+      
+      // density
+      if (r < radius)
+	Udata(i,j,ID) = density_in;
+      else
+	Udata(i,j,ID) = 1.0;
+      
+      // rho*vx
+      //Udata(i,j,IU) = Udata(i,j,ID)*vflow*nx/diag;
+      Udata(i,j,IU) = Udata(i,j,ID)*vflow*cos_theta;
+
+      // rho*vy
+      //Udata(i,j,IV) = Udata(i,j,ID)*vflow*ny/diag;
+      Udata(i,j,IV) = Udata(i,j,ID)*vflow*sin_theta;
+      
+      // rho*vz
+      Udata(i,j,IW) = Udata(i,j,ID)*vflow*nz/diag; //ZERO_F;
+      
+      // bx
+      Udata(i,j,IA) =   (Az(i  ,j+1,0) - Az(i,j,0))/dy; // + amp*(drand48()-0.5);
+      
+      // by
+      Udata(i,j,IB) = - (Az(i+1,j  ,0) - Az(i,j,0))/dx; // + amp*(drand48()-0.5);
+      
+      // bz
+      Udata(i,j,IC) = ZERO_F;
+      
+      // total energy
+      Udata(i,j,IP) = 1.0/(gamma0-1.0) + 
+	0.5 * (Udata(i,j,IA) * Udata(i,j,IA) + Udata(i,j,IB) * Udata(i,j,IB)) +
+	0.5 * (Udata(i,j,IU) * Udata(i,j,IU) + Udata(i,j,IV) * Udata(i,j,IV))/Udata(i,j,ID);
+
+    }
+
+  } // do_init_condition
   
   FieldLoopParams flParams;
-  DataArray2d Udata;
+  DataArray2d     Udata;
 
   // vector potential
   DataArrayScalar Az;
+
+  PhaseType       phase ;
   
 }; // InitFieldLoopFunctor2D_MHD
 
