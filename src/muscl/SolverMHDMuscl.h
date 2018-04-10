@@ -121,6 +121,7 @@ public:
   void init_blast(DataArray Udata);
   void init_orszag_tang(DataArray Udata);
   void init_rotor(DataArray Udata);
+  void init_field_loop(DataArray Udata);
   
   //! init wrapper (actual initialization)
   void init(DataArray Udata);
@@ -415,6 +416,29 @@ void SolverMHDMuscl<dim>::init_rotor(DataArray Udata)
 
 // =======================================================
 // =======================================================
+/**
+ * Field loop test.
+ * 
+ */
+template<int dim>
+void SolverMHDMuscl<dim>::init_field_loop(DataArray Udata)
+{
+
+  FieldLoopParams flParams = FieldLoopParams(configMap);
+
+  // alias to actual device functor
+  using InitFieldLoopFunctor =
+    typename std::conditional<dim==2,
+			      InitFieldLoopFunctor2D_MHD,
+			      InitFieldLoopFunctor3D_MHD>::type;
+
+  // perform init
+  InitFieldLoopFunctor::apply(params, flParams, Udata, nbCells);
+
+} // SolverMHDMuscl::init_field_loop
+
+// =======================================================
+// =======================================================
 template<int dim>
 void SolverMHDMuscl<dim>::init(DataArray Udata)
 {
@@ -433,6 +457,11 @@ void SolverMHDMuscl<dim>::init(DataArray Udata)
   } else if ( !m_problem_name.compare("rotor") ) {
     
     init_rotor(U);
+    
+  } else if ( !m_problem_name.compare("field_loop") ||
+	      !m_problem_name.compare("field loop")) {
+    
+    init_field_loop(U);
     
   } else {
 

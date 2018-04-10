@@ -14,6 +14,7 @@
 
 #include "muscl/OrszagTangInit.h"
 #include "shared/RotorParams.h"
+#include "shared/FieldLoopParams.h"
 
 #ifndef SQR
 #define SQR(x) ((x)*(x))
@@ -465,6 +466,109 @@ public:
   DataArray2d Udata;
   
 }; // InitRotorFunctor2D_MHD
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
+/**
+ * The 2D/3D MHD field loop advection problem.
+ * 
+ * Parameters that can be set in the ini file :
+ * - radius       : radius of field loop
+ * - amplitude    : amplitude of vector potential (and therefore B in loop)
+ * - vflow        : flow velocity
+ * - densityRatio : density ratio in loop.  Enables density advection and
+ *                  thermal conduction tests.
+ * The flow is automatically set to run along the diagonal. 
+ * - direction : integer 
+ *   direction 0 -> field loop in x-y plane (cylinder in 3D)
+ *   direction 1 -> field loop in y-z plane (cylinder in 3D)
+ *   direction 2 -> field loop in z-x plane (cylinder in 3D)
+ *   direction 3 -> rotated cylindrical field loop in 3D.
+ *
+ * Reference :
+ * - T. Gardiner & J.M. Stone, "An unsplit Godunov method for ideal MHD
+ *   via constrined transport", JCP, 205, 509 (2005)
+ * - http://www.astro.princeton.edu/~jstone/Athena/tests/field-loop/Field-loop.html
+ *
+ */
+class InitFieldLoopFunctor2D_MHD : public MHDBaseFunctor2D {
+  
+public:
+  InitFieldLoopFunctor2D_MHD(HydroParams params,
+			     FieldLoopParams flParams,
+			     DataArray2d Udata) :
+    MHDBaseFunctor2D(params), flParams(flParams), Udata(Udata)  {};
+  
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    FieldLoopParams flParams,
+                    DataArray2d Udata,
+		    int         nbCells)
+  {
+    InitFieldLoopFunctor2D_MHD functor(params, flParams, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+  
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int& index) const
+  {
+    
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ghostWidth = params.ghostWidth;
+    
+#ifdef USE_MPI
+    const int i_mpi = params.myMpiPos[IX];
+    const int j_mpi = params.myMpiPos[IY];
+#else
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+#endif
+
+    const int nx = params.nx;
+    const int ny = params.ny;
+
+    const real_t xmin = params.xmin;
+    const real_t ymin = params.ymin;
+    const real_t xmax = params.xmax;
+    const real_t ymax = params.ymax;
+
+    const real_t dx = params.dx;
+    const real_t dy = params.dy;
+    
+    const real_t gamma0 = params.settings.gamma0;
+
+    // field loop problem parameters
+    const real_t radius    = flParams.radius;
+    const real_t density_in= flParams.density_in;
+    const real_t amplitude = flParams.amplitude;
+    const real_t vflow     = flParams.vflow;
+    
+    const real_t cos_theta = 2.0/sqrt(5.0);
+    const real_t sin_theta = sqrt(1-cos_theta*cos_theta);
+
+    // geometry
+    const real_t xCenter = (xmax + xmin)/2;
+    const real_t yCenter = (ymax + ymin)/2;
+
+    int i,j;
+    index2coord(index,i,j,isize,jsize);
+    
+    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
+    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
+
+    // unfinished
+    
+  } // end operator ()
+  
+  FieldLoopParams flParams;
+  DataArray2d Udata;
+
+  // vector potential
+  DataArrayScalar Az;
+  
+}; // InitFieldLoopFunctor2D_MHD
 
 } // namespace muscl
 

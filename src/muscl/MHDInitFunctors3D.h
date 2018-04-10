@@ -512,6 +512,114 @@ public:
   
 }; // InitRotorFunctor3D_MHD
 
+/*************************************************/
+/*************************************************/
+/*************************************************/
+/**
+ * The 2D/3D MHD field loop advection problem.
+ * 
+ * Parameters that can be set in the ini file :
+ * - radius       : radius of field loop
+ * - amplitude    : amplitude of vector potential (and therefore B in loop)
+ * - vflow        : flow velocity
+ * - densityRatio : density ratio in loop.  Enables density advection and
+ *                  thermal conduction tests.
+ * The flow is automatically set to run along the diagonal. 
+ * - direction : integer 
+ *   direction 0 -> field loop in x-y plane (cylinder in 3D)
+ *   direction 1 -> field loop in y-z plane (cylinder in 3D)
+ *   direction 2 -> field loop in z-x plane (cylinder in 3D)
+ *   direction 3 -> rotated cylindrical field loop in 3D.
+ *
+ * Reference :
+ * - T. Gardiner & J.M. Stone, "An unsplit Godunov method for ideal MHD
+ *   via constrined transport", JCP, 205, 509 (2005)
+ * - http://www.astro.princeton.edu/~jstone/Athena/tests/field-loop/Field-loop.html
+ *
+ */
+class InitFieldLoopFunctor3D_MHD : public MHDBaseFunctor3D {
+  
+public:
+  InitFieldLoopFunctor3D_MHD(HydroParams params,
+			     FieldLoopParams flParams,
+			     DataArray3d Udata) :
+    MHDBaseFunctor3D(params), flParams(flParams), Udata(Udata)  {};
+  
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    FieldLoopParams flParams,
+                    DataArray3d Udata,
+		    int         nbCells)
+  {
+    InitFieldLoopFunctor3D_MHD functor(params, flParams, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+  
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int& index) const
+  {
+    
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ksize = params.ksize;
+    const int ghostWidth = params.ghostWidth;
+    
+#ifdef USE_MPI
+    const int i_mpi = params.myMpiPos[IX];
+    const int j_mpi = params.myMpiPos[IY];
+    const int k_mpi = params.myMpiPos[IZ];
+#else
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+    const int k_mpi = 0;
+#endif
+
+    const int nx = params.nx;
+    const int ny = params.ny;
+    const int nz = params.nz;
+
+    const real_t xmin = params.xmin;
+    const real_t ymin = params.ymin;
+    const real_t zmin = params.zmin;
+    
+    const real_t xmax = params.xmax;
+    const real_t ymax = params.ymax;
+    const real_t zmax = params.zmax;
+
+    const real_t dx = params.dx;
+    const real_t dy = params.dy;
+    const real_t dz = params.dz;
+    
+    const real_t gamma0 = params.settings.gamma0;
+
+    // field loop problem parameters
+    const real_t radius    = flParams.radius;
+    const real_t density_in= flParams.density_in;
+    const real_t amplitude = flParams.amplitude;
+    const real_t vflow     = flParams.vflow;
+    
+    const real_t cos_theta = 2.0/sqrt(5.0);
+    const real_t sin_theta = sqrt(1-cos_theta*cos_theta);
+    
+    int i,j,k;
+    index2coord(index,i,j,k,isize,jsize,ksize);
+    
+    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
+    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
+    real_t z = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
+
+    // unfinished
+    
+  } // end operator ()
+  
+  FieldLoopParams flParams;
+  DataArray3d Udata;
+
+  // vector potential
+  DataArrayVector3 A;
+  
+}; // InitFieldLoopFunctor3D_MHD
+
 } // namespace muscl
 
 } // namespace euler_kokkos
