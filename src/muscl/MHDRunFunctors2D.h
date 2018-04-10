@@ -257,7 +257,7 @@ public:
       get_state(Qp_x, i  , j  , qright);
       
       // compute hydro flux along X
-      riemann_hlld(qleft,qright,flux,params);
+      riemann_mhd(qleft,qright,flux,params);
 
       // store fluxes
       set_state(Fluxes_x, i  , j  , flux);
@@ -274,7 +274,7 @@ public:
       swapValues(&(qright[IBX]) ,&(qright[IBY]) );
       
       // compute hydro flux along Y
-      riemann_hlld(qleft,qright,flux,params);
+      riemann_mhd(qleft,qright,flux,params);
             
       // store fluxes
       set_state(Fluxes_y, i  ,j  , flux);
@@ -750,7 +750,7 @@ public:
 				     dtdx, dtdy, FACE_XMAX, qleft);
 	  
 	  // Solve Riemann problem at X-interfaces and compute X-fluxes
-	  riemann_hlld(qleft,qright,flux,params);
+	  riemann_mhd(qleft,qright,flux,params);
 
 	  //
 	  // store fluxes
@@ -791,7 +791,7 @@ public:
 	  // Solve Riemann problem at Y-interfaces and compute Y-fluxes
 	  swapValues(&(qleft[IU]) ,&(qleft[IV]) );
 	  swapValues(&(qright[IU]),&(qright[IV]));
-	  riemann_hlld(qleft,qright,flux,params);
+	  riemann_mhd(qleft,qright,flux,params);
 	  
 	  //
 	  // update hydro array

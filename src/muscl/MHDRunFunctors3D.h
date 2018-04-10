@@ -750,7 +750,7 @@ public:
       get_state(Qp_x, i  ,j  ,k, qright);
       
       // compute hydro flux along X
-      riemann_hlld(qleft,qright,flux,params);
+      riemann_mhd(qleft,qright,flux,params);
 
       // store fluxes
       set_state(Fluxes_x, i, j, k, flux);
@@ -767,7 +767,7 @@ public:
       swapValues(&(qright[IBX]) ,&(qright[IBY]) );
       
       // compute hydro flux along Y
-      riemann_hlld(qleft,qright,flux,params);
+      riemann_mhd(qleft,qright,flux,params);
             
       // store fluxes
       set_state(Fluxes_y, i,j,k, flux);
@@ -784,7 +784,7 @@ public:
       swapValues(&(qright[IBX]) ,&(qright[IBZ]) );
       
       // compute hydro flux along Z
-      riemann_hlld(qleft,qright,flux,params);
+      riemann_mhd(qleft,qright,flux,params);
             
       // store fluxes
       set_state(Fluxes_z, i,j,k, flux);

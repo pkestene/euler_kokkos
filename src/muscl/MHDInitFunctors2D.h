@@ -414,7 +414,7 @@ public:
     
     const real_t gamma0 = params.settings.gamma0;
 
-    // blast problem parameters
+    // rotor problem parameters
     const real_t r0      = rParams.r0;
     const real_t r1      = rParams.r1;
     const real_t u0      = rParams.u0;

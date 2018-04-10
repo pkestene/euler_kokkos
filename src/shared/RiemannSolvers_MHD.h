@@ -73,6 +73,52 @@ void riemann_hll(MHDState &qleft,
     
 } // riemann_hll
 
+/*
+ * MHD LLF (Local Lax-Friedrich) Riemann solver
+ *
+ * qleft, qright and flux have now NVAR_MHD=8 components.
+ *
+ * The following code is adapted from Dumses.
+ *
+ * @param[in] qleft  : input left state
+ * @param[in] qright : input right state
+ * @param[out] flux  : output flux
+ *
+ */
+KOKKOS_INLINE_FUNCTION
+void riemann_llf(MHDState &qleft,
+		 MHDState &qright,
+		 MHDState &flux,
+		 const HydroParams &params)
+{
+  
+  // enforce continuity of normal component
+  real_t bx_mean = HALF_F * ( qleft[IA] + qright[IA] );
+  qleft [IA] = bx_mean;
+  qright[IA] = bx_mean;
+  
+  MHDState uleft,  fleft;
+  MHDState uright, fright;
+  
+  find_mhd_flux(qleft ,uleft ,fleft ,params);
+  find_mhd_flux(qright,uright,fright,params);
+  
+  // compute mean flux
+  for (int iVar=0; iVar<MHD_NBVAR; iVar++)
+    flux[iVar] = (fleft[iVar]+fright[iVar])/2;
+
+  // find the largest eigenvalue in the normal direction to the interface
+  real_t cleft  = find_speed_info(qleft ,params);
+  real_t cright = find_speed_info(qright,params);
+  
+  real_t vel_info = FMAX(cleft,cright);
+
+  // the Local Lax-Friedrich flux
+  for (int iVar=0; iVar<MHD_NBVAR; iVar++)
+    flux[iVar] -= vel_info*(uright[iVar]-uleft[iVar])/2;
+  
+} // riemann_llf
+
 /** 
  * Riemann solver, equivalent to riemann_hlld in RAMSES/DUMSES (see file
  * godunov_utils.f90 in RAMSES/DUMSES).
@@ -299,7 +345,32 @@ void riemann_hlld(MHDState &qleft,
   flux[IBZ] = co*uo-a*wo;
     
 } // riemann_hlld
-      
+
+/**
+ * Wrapper function calling the actual riemann solver for MHD.
+ */
+KOKKOS_INLINE_FUNCTION
+void riemann_mhd(MHDState& qleft,
+		 MHDState& qright,
+		 MHDState& flux,
+		 const HydroParams& params)
+{
+  if (params.riemannSolverType == RIEMANN_HLLD) {
+    
+    riemann_hlld(qleft,qright,flux,params);
+
+  } else if (params.riemannSolverType == RIEMANN_HLL) {
+
+    riemann_hll(qleft,qright,flux,params);
+
+  } else if (params.riemannSolverType == RIEMANN_LLF) {
+    
+    riemann_llf(qleft,qright,flux,params);
+
+  }
+  
+} // riemann_mhd
+
 /**
  * 2D magnetic riemann solver of type HLLD
  *
