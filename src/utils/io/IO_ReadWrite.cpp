@@ -1,4 +1,4 @@
-#include "IO_Writer.h"
+#include "IO_ReadWrite.h"
 
 #include <shared/HydroParams.h>
 #include <utils/config/ConfigMap.h>
@@ -18,10 +18,10 @@ namespace euler_kokkos { namespace io {
 
 // =======================================================
 // =======================================================
-IO_Writer::IO_Writer(HydroParams& params,
-		     ConfigMap& configMap,
-		     std::map<int, std::string>& variables_names) :
-  IO_WriterBase(),
+IO_ReadWrite::IO_ReadWrite(HydroParams& params,
+			   ConfigMap& configMap,
+			   std::map<int, std::string>& variables_names) :
+  IO_ReadWriteBase(),
   params(params),
   configMap(configMap),
   variables_names(variables_names),
@@ -39,16 +39,39 @@ IO_Writer::IO_Writer(HydroParams& params,
   // do we want Parallel NETCDF output ? Only valid/activated for MPI run
   pnetcdf_enabled = configMap.getBool("output","pnetcdf_enabled", false);
   
-} // IO_Writer::IO_Writer
-
+} // IO_ReadWrite::IO_ReadWrite
 
 // =======================================================
 // =======================================================
-void IO_Writer::save_data_impl(DataArray2d             Udata,
-			       DataArray2d::HostMirror Uhost,
-			       int iStep,
-			       real_t time,
-			       std::string debug_name)
+void IO_ReadWrite::save_data(DataArray2d             Udata,
+			     DataArray2d::HostMirror Uhost,
+			     int iStep,
+			     real_t time,
+			     std::string debug_name) {
+
+  save_data_impl(Udata, Uhost, iStep, time, debug_name);
+
+} // IO_ReadWrite::save_data
+  
+// =======================================================
+// =======================================================
+void IO_ReadWrite::save_data(DataArray3d             Udata,
+			     DataArray3d::HostMirror Uhost,
+			     int iStep,
+			     real_t time,
+			     std::string debug_name) {
+
+  save_data_impl(Udata, Uhost, iStep, time, debug_name);
+  
+} // IO_ReadWrite::save_data
+
+// =======================================================
+// =======================================================
+void IO_ReadWrite::save_data_impl(DataArray2d             Udata,
+				  DataArray2d::HostMirror Uhost,
+				  int iStep,
+				  real_t time,
+				  std::string debug_name)
 {
 
   if (vtk_enabled) {
@@ -82,15 +105,15 @@ void IO_Writer::save_data_impl(DataArray2d             Udata,
   }
 #endif // USE_PNETCDF
   
-} // IO_Writer::save_data_impl
+} // IO_ReadWrite::save_data_impl
 
 // =======================================================
 // =======================================================
-void IO_Writer::save_data_impl(DataArray3d             Udata,
-			       DataArray3d::HostMirror Uhost,
-			       int iStep,
-			       real_t time,
-			       std::string debug_name)
+void IO_ReadWrite::save_data_impl(DataArray3d             Udata,
+				  DataArray3d::HostMirror Uhost,
+				  int iStep,
+				  real_t time,
+				  std::string debug_name)
 {
 
   if (vtk_enabled) {
@@ -124,31 +147,54 @@ void IO_Writer::save_data_impl(DataArray3d             Udata,
   }
 #endif // USE_PNETCDF
   
-} // IO_Writer::save_data_impl
+} // IO_ReadWrite::save_data_impl
 
 // =======================================================
 // =======================================================
-void IO_Writer::save_data(DataArray2d             Udata,
-			  DataArray2d::HostMirror Uhost,
-			  int iStep,
-			  real_t time,
-			  std::string debug_name) {
+void IO_ReadWrite::load_data(DataArray2d             Udata,
+			     DataArray2d::HostMirror Uhost,
+			     int& iStep,
+			     real_t& time) {
+  
+  load_data_impl(Udata, Uhost, iStep, time);
 
-  save_data_impl(Udata, Uhost, iStep, time, debug_name);
-
-} // IO_Writer::save_data
+} // IO_ReadWrite::save_data
   
 // =======================================================
 // =======================================================
-void IO_Writer::save_data(DataArray3d             Udata,
-			  DataArray3d::HostMirror Uhost,
-			  int iStep,
-			  real_t time,
-			  std::string debug_name) {
+void IO_ReadWrite::load_data(DataArray3d             Udata,
+			     DataArray3d::HostMirror Uhost,
+			     int& iStep,
+			     real_t& time) {
 
-  save_data_impl(Udata, Uhost, iStep, time, debug_name);
+  load_data_impl(Udata, Uhost, iStep, time);
   
-} // IO_Writer::save_data
+} // IO_ReadWrite::load_data
+
+// =======================================================
+// =======================================================
+void IO_ReadWrite::load_data_impl(DataArray2d             Udata,
+				  DataArray2d::HostMirror Uhost,
+				  int& iStep,
+				  real_t& time)
+{
+
+  // TODO
+  
+} // IO_ReadWrite::load_data_impl - 2d
+
+// =======================================================
+// =======================================================
+void IO_ReadWrite::load_data_impl(DataArray3d             Udata,
+				  DataArray3d::HostMirror Uhost,
+				  int& iStep,
+				  real_t& time)
+{
+  
+  // TODO
+  
+} // IO_ReadWrite::load_data_impl - 3d
+
 
 } // namespace io
 

@@ -32,7 +32,7 @@
 #include "shared/BoundariesFunctors.h"
 
 // for IO
-#include <utils/io/IO_Writer.h>
+#include <utils/io/IO_ReadWrite.h>
 
 // for init condition
 #include "shared/BlastParams.h"

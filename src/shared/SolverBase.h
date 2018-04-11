@@ -22,7 +22,7 @@ enum solver_type_t {
 };
 
 namespace euler_kokkos { namespace io {
-class IO_WriterBase;
+class IO_ReadWriteBase;
 } }
 
 enum TimerIds {
@@ -153,6 +153,21 @@ public:
 		       int iStep,
 		       real_t time,
 		       std::string debug_name);
+
+  /** 
+   * Routine to load data from file (for a restart run). 
+   * This routine change iStep and time (loaded from file).
+   */
+  void load_data(DataArray2d             U,
+		 DataArray2d::HostMirror Uh,
+		 int& iStep,
+		 real_t& time);
+  
+  void load_data(DataArray3d             U,
+		 DataArray3d::HostMirror Uh,
+		 int& iStep,
+		 real_t& time);
+  
   
   virtual void make_boundary(DataArray2d Udata, FaceIdType faceId, bool mhd_enabled);
   virtual void make_boundary(DataArray3d Udata, FaceIdType faceId, bool mhd_enabled);
@@ -176,12 +191,12 @@ public:
 #endif // USE_MPI
 
   //! initialize m_io_writer (can be override in a derived class)
-  virtual void init_io_writer();
+  virtual void init_io();
   
 protected:
 
   //! io writer
-  std::shared_ptr<io::IO_WriterBase>  m_io_writer;
+  std::shared_ptr<io::IO_ReadWriteBase>  m_io_reader_writer;
 
 #ifdef USE_MPI
   //! \defgroup BorderBuffer data arrays for border exchange handling

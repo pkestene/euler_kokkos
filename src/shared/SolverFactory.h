@@ -85,7 +85,7 @@ public:
       SolverBase *solver = it->second(params, configMap);
 
       // additionnal initialization (each solver might override this method)
-      solver->init_io_writer();
+      solver->init_io();
       
       return solver;
     }
