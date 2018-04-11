@@ -113,6 +113,7 @@ SolverBase::read_config()
   m_tEnd  = configMap.getFloat("run", "tEnd", 0.0);
   m_dt    = m_tEnd;
   m_cfl   = configMap.getFloat("hydro", "cfl", 1.0);
+  m_nlog  = configMap.getFloat("run", "nlog", 10);
   m_iteration = 0;
 
   m_problem_name = configMap.getString("hydro", "problem", "unknown");

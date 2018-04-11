@@ -64,7 +64,8 @@ public:
   int                  m_iteration; //!< the current iteration (integer)
   double               m_tEnd;      //!< maximun time
   double               m_cfl;       //!< Courant number
-
+  int                  m_nlog;      //!< number of steps between two monitoring print on screen
+  
   long long int        m_nCells;       //!< number of cells
   long long int        m_nDofsPerCell; //!< number of degrees of freedom per cell 
 

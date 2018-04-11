@@ -368,7 +368,7 @@ void SolverHydroMuscl<dim>::next_iteration_impl()
   myRank = params.myRank;
 #endif // USE_MPI
   
-  if (m_iteration % 10 == 0) {    
+  if (m_iteration % m_nlog == 0) {
     if (myRank==0) {
       printf("time step=%7d (dt=% 10.8f t=% 10.8f)\n",m_iteration,m_dt, m_t);
     }
