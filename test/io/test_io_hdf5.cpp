@@ -56,7 +56,7 @@ public:
 #else
     const int i_mpi = 0;
     const int j_mpi = 0;
-#endif    
+#endif // USE_MPI
     
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
@@ -95,7 +95,7 @@ public:
     const int i_mpi = 0;
     const int j_mpi = 0;
     const int k_mpi = 0;
-#endif    
+#endif // USE_MPI
     
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
 #ifdef USE_MPI
   hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
 #endif // USE_MPI
-
+  
   Kokkos::initialize(argc, argv);
   
   {
@@ -171,6 +171,11 @@ int main(int argc, char* argv[])
   HydroParams params = HydroParams();
   params.setup(configMap);
 
+  int rank = 0;
+#ifdef USE_MPI
+  rank = params.myRank;
+#endif
+
   std::map<int, std::string> var_names;
   var_names[ID] = "rho";
   var_names[IP] = "energy";
@@ -193,6 +198,9 @@ int main(int argc, char* argv[])
     Kokkos::parallel_for(params.isize*params.jsize, functor);
 
     // save to file
+    if (rank==0)
+      std::cout << "2D test -- save data\n";
+    
 #ifdef USE_MPI
     io::Save_HDF5_mpi<TWO_D> writer(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
@@ -202,9 +210,32 @@ int main(int argc, char* argv[])
     writer.save();
     io::writeXdmfForHdf5Wrapper(params, configMap, 1, false);
 #endif
+
+    // try to reload file
+    if (rank==0)
+      std::cout << "2D test -- reload data\n";
+
+#ifdef USE_MPI
+    ppkMHD::io::Load_HDF5_mpi<TWO_D> reader(data, params, configMap, HYDRO_2D_NBVAR, var_names);
+#else
+    ppkMHD::io::Load_HDF5<TWO_D> reader(data, params, configMap, HYDRO_2D_NBVAR, var_names);
+    reader.load("output2d_0000000.h5");
+    
+    configMap.setString("output","outputPrefix","output2d_save");
+    {
+      ppkMHD::io::Save_HDF5<TWO_D> writer(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
+      writer.save();
+      ppkMHD::io::writeXdmfForHdf5Wrapper(params, configMap, 1, false);
+    }
+    // the two files should contain the same data
+#endif    
     
   }
 
+  // TODO : add more testing for other options :
+  // allghostincluded , halfResolution, ...
+  // add a functor to compared data re-read with expected data, for all field
+  
   // =================
   // ==== 3D test ====
   // =================
@@ -231,7 +262,7 @@ int main(int argc, char* argv[])
 #endif
     
   }
- 
+
   Kokkos::finalize();
 
   return EXIT_SUCCESS;
