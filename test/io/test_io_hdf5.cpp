@@ -216,16 +216,16 @@ int main(int argc, char* argv[])
       std::cout << "2D test -- reload data\n";
 
 #ifdef USE_MPI
-    ppkMHD::io::Load_HDF5_mpi<TWO_D> reader(data, params, configMap, HYDRO_2D_NBVAR, var_names);
+    io::Load_HDF5_mpi<TWO_D> reader(data, params, configMap, HYDRO_2D_NBVAR, var_names);
 #else
-    ppkMHD::io::Load_HDF5<TWO_D> reader(data, params, configMap, HYDRO_2D_NBVAR, var_names);
+    io::Load_HDF5<TWO_D> reader(data, params, configMap, HYDRO_2D_NBVAR, var_names);
     reader.load("output2d_0000000.h5");
     
     configMap.setString("output","outputPrefix","output2d_save");
     {
-      ppkMHD::io::Save_HDF5<TWO_D> writer(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
+      io::Save_HDF5<TWO_D> writer(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
       writer.save();
-      ppkMHD::io::writeXdmfForHdf5Wrapper(params, configMap, 1, false);
+      io::writeXdmfForHdf5Wrapper(params, configMap, 1, false);
     }
     // the two files should contain the same data
 #endif    
