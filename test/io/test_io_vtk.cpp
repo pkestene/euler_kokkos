@@ -133,10 +133,15 @@ int main(int argc, char* argv[])
 #ifdef USE_MPI
   hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
 #endif // USE_MPI
-
-  Kokkos::initialize(argc, argv);
   
-  {
+  Kokkos::initialize(argc, argv);
+
+  int mpi_rank = 0;
+#ifdef USE_MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+#endif  
+
+  if (mpi_rank==0) {
     std::cout << "##########################\n";
     std::cout << "KOKKOS CONFIG             \n";
     std::cout << "##########################\n";
