@@ -79,6 +79,8 @@ int main( int argc , char ** argv )
 
 #endif
 
+  Kokkos::initialize(argc, argv);
+
   msg << "{" << std::endl ;
 
   if ( Kokkos::hwloc::available() ) {
