@@ -1,7 +1,9 @@
 configure_file(test_io_2d.ini test_io_2d.ini COPYONLY)
 configure_file(test_io_3d.ini test_io_3d.ini COPYONLY)
 
-
+################################
+# VTK test
+################################
 add_executable(test_io_vtk
   test_io_vtk.cpp
   )
@@ -24,7 +26,9 @@ if(USE_MPI)
     mpiUtils)
 endif(USE_MPI)
 
-
+###############################
+# HDF5 test
+###############################
 if(USE_HDF5)
   add_executable(test_io_hdf5
     test_io_hdf5.cpp

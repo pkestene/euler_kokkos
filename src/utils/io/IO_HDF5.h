@@ -55,6 +55,7 @@ namespace euler_kokkos { namespace io {
  */
 void writeXdmfForHdf5Wrapper(HydroParams& params,
 			     ConfigMap& configMap,
+			     const std::map<int, std::string>& variables_names,
 			     int totalNumberOfSteps,
 			     bool singleStep);
 
@@ -125,6 +126,33 @@ public:
   
   // =======================================================
   // =======================================================
+  herr_t write_field(int varId, real_t* &data, hid_t& file_id,
+		     hid_t& dataspace_memory,
+		     hid_t& dataspace_file, hid_t& propList_create_id,
+		     KokkosLayout& layout)
+  {
+    
+    hid_t dataType = (sizeof(real_t) == sizeof(float)) ?
+      H5T_NATIVE_FLOAT :
+      H5T_NATIVE_DOUBLE;
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ksize = params.ksize;
+   
+    const std::string varName = "/" + variables_names.at(varId);
+    hid_t dataset_id = H5Dcreate2(file_id, varName.c_str(),
+				  dataType, dataspace_file, 
+				  H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
+    copy_buffer(data, isize, jsize, ksize, varId, layout);
+    herr_t status = H5Dwrite(dataset_id, dataType,
+			     dataspace_memory, dataspace_file,
+			     H5P_DEFAULT, data);
+    H5Dclose(dataset_id);
+
+    return status;
+    
+  } // write_field
+
   /**
    * Dump computation results (conservative variables) into a file
    * (HDF5 file format) file extension is h5. File can be viewed by
@@ -300,61 +328,41 @@ public:
     }      
   
     // write density
-    hid_t dataset_id = H5Dcreate2(file_id, "/density", dataType, dataspace_file, 
-				  H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-    copy_buffer(data, isize, jsize, ksize, ID, layout);
-    status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, H5P_DEFAULT, data);
-    
+    write_field(ID, data, file_id, dataspace_memory,
+		dataspace_file, propList_create_id, layout);
+
     // write total energy
-    dataset_id = H5Dcreate2(file_id, "/energy", dataType, dataspace_file, 
-			    H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-    copy_buffer(data, isize, jsize, ksize, IP, layout);
-    status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, H5P_DEFAULT, data);
+    write_field(IE, data, file_id, dataspace_memory,
+		dataspace_file, propList_create_id, layout);
     
     // write momentum X
-    dataset_id = H5Dcreate2(file_id, "/momentum_x", dataType, dataspace_file, 
-			    H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-    copy_buffer(data, isize, jsize, ksize, IU, layout);
-    status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, H5P_DEFAULT, data);
+    write_field(IU, data, file_id, dataspace_memory,
+		dataspace_file, propList_create_id, layout);
     
     // write momentum Y
-    dataset_id = H5Dcreate2(file_id, "/momentum_y", dataType, dataspace_file, 
-			    H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-    copy_buffer(data, isize, jsize, ksize, IV, layout);
-    status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, H5P_DEFAULT, data);
-  
+    write_field(IV, data, file_id, dataspace_memory,
+		dataspace_file, propList_create_id, layout);
+    
     // write momentum Z (only if 3D hydro)
     if (dimType == THREE_D and !mhdEnabled) {
-      dataset_id = H5Dcreate2(file_id, "/momentum_z", dataType, dataspace_file, 
-			      H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-      copy_buffer(data, isize, jsize, ksize, IW, layout);
-      status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, H5P_DEFAULT, data);
+      write_field(IW, data, file_id, dataspace_memory,
+		  dataspace_file, propList_create_id, layout);      
     }
     
     if (mhdEnabled) {
       // write momentum mz
-      dataset_id = H5Dcreate2(file_id, "/momentum_z", dataType, dataspace_file, 
-			      H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-      copy_buffer(data, isize, jsize, ksize, IW, layout);
-      status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, H5P_DEFAULT, data);
-     
+      write_field(IW, data, file_id, dataspace_memory,
+		  dataspace_file, propList_create_id, layout);      
+      
       // write magnetic field components
-      dataset_id = H5Dcreate2(file_id, "/magnetic_field_x", dataType, dataspace_file, 
-			      H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-      copy_buffer(data, isize, jsize, ksize, IA, layout);
-      status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, H5P_DEFAULT, data);
-     
-      dataset_id = H5Dcreate2(file_id, "/magnetic_field_y", dataType, dataspace_file, 
-			      H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-      copy_buffer(data, isize, jsize, ksize, IB, layout);
-      status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, H5P_DEFAULT, data);
-    
-      dataset_id = H5Dcreate2(file_id, "/magnetic_field_z", dataType, dataspace_file, 
-			      H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-      copy_buffer(data, isize, jsize, ksize, IC, layout);
-      status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, H5P_DEFAULT, data);
-     
-    }
+      write_field(IA, data, file_id, dataspace_memory,
+		  dataspace_file, propList_create_id, layout);      
+      write_field(IB, data, file_id, dataspace_memory,
+		  dataspace_file, propList_create_id, layout);      
+      write_field(IC, data, file_id, dataspace_memory,
+		  dataspace_file, propList_create_id, layout);      
+      
+    } // end mhdEnabled
 
     // free memory if necessary
     if (layout == KOKKOS_LAYOUT_RIGHT) {
@@ -449,7 +457,6 @@ public:
     H5Pclose(propList_create_id);
     H5Sclose(dataspace_memory);
     H5Sclose(dataspace_file);
-    H5Dclose(dataset_id);
     H5Fflush(file_id, H5F_SCOPE_LOCAL);
     H5Fclose(file_id);
 
@@ -536,6 +543,38 @@ public:
 
   } // copy_buffer / 3D
   
+  // =======================================================
+  // =======================================================
+  herr_t write_field(int varId, real_t* &data, hid_t& file_id,
+		     hid_t& dataspace_memory,
+		     hid_t& dataspace_file,
+		     hid_t& propList_create_id,
+		     hid_t& propList_xfer_id,
+		     KokkosLayout& layout)
+  {
+    
+    hid_t dataType = (sizeof(real_t) == sizeof(float)) ?
+      H5T_NATIVE_FLOAT :
+      H5T_NATIVE_DOUBLE;
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ksize = params.ksize;
+   
+    const std::string varName = "/" + variables_names.at(varId);
+
+    hid_t dataset_id = H5Dcreate2(file_id, varName.c_str(),
+				  dataType, dataspace_file, 
+				  H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
+    copy_buffer(data, isize, jsize, ksize, varId, layout);
+    herr_t status = H5Dwrite(dataset_id, dataType,
+			     dataspace_memory, dataspace_file,
+			     propList_xfer_id, data);
+    H5Dclose(dataset_id);
+    
+    return status;
+    
+  } // write_field
+
   // =======================================================
   // =======================================================
   /**
@@ -628,7 +667,7 @@ public:
     (void) status;
 
      // make filename string
-    std::string outputDir    = configMap.getString("output", "outputDir", "./");
+    std::string outputDir    = configMap.getString("output", "outputDir", ".");
     std::string outputPrefix = configMap.getString("output", "outputPrefix", "output");
 
     std::ostringstream outNum;
@@ -652,9 +691,9 @@ public:
     // Create a new file using property list with parallel I/O access.
     MPI_Info mpi_info     = MPI_INFO_NULL;
     hid_t    propList_create_id = H5Pcreate(H5P_FILE_ACCESS);
-    status = H5Pset_fapl_mpio(propList_create_id, params.communicator->getComm(), mpi_info);
+    status = H5Pset_fapl_mpio(propList_create_id, /*MPI_COMM_WORLD*/ params.communicator->getComm(), mpi_info);
     HDF5_CHECK(status, "Can not access MPI IO parameters");
-    
+
     hid_t    file_id  = H5Fcreate(hdf5FilenameFull.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, propList_create_id);
     H5Pclose(propList_create_id);
 
@@ -826,13 +865,6 @@ public:
       } // end ghostIncluded / allghostIncluded
 
     } // end reassembleInFile is true
-
-    // Create the chunked datasets.
-    hid_t dataType;
-    if (sizeof(real_t) == sizeof(float))
-      dataType = H5T_NATIVE_FLOAT;
-    else
-      dataType = H5T_NATIVE_DOUBLE;
     
     /*
      * Memory space hyperslab :
@@ -1016,81 +1048,50 @@ public:
     hid_t propList_xfer_id = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(propList_xfer_id, H5FD_MPIO_COLLECTIVE);
 
-    hid_t dataset_id;
-
     /*
      * write density    
      */
-    dataset_id = H5Dcreate2(file_id, "/density", dataType, dataspace_file, 
-			    H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-    copy_buffer(data, isize, jsize, ksize, ID, layout);
-    status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, propList_xfer_id, data);
-    H5Dclose(dataset_id);
+    write_field(ID, data, file_id, dataspace_memory,
+    		dataspace_file, propList_create_id, propList_xfer_id, layout);
+
     
     /*
      * write energy
      */
-    dataset_id = H5Dcreate2(file_id, "/energy", dataType, dataspace_file, 
-			    H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-    copy_buffer(data, isize, jsize, ksize, IP, layout);
-    status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, propList_xfer_id, data);
-    H5Dclose(dataset_id);
+    write_field(IE, data, file_id, dataspace_memory,
+    		dataspace_file, propList_create_id, propList_xfer_id, layout);
     
     /*
      * write momentum X
      */
-    dataset_id = H5Dcreate2(file_id, "/momentum_x", dataType, dataspace_file, 
-			    H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-    copy_buffer(data, isize, jsize, ksize, IU, layout);
-    status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, propList_xfer_id, data);
-    H5Dclose(dataset_id);
-    
+    write_field(IU, data, file_id, dataspace_memory,
+    		dataspace_file, propList_create_id, propList_xfer_id, layout);    
     /*
      * write momentum Y
      */
-    dataset_id = H5Dcreate2(file_id, "/momentum_y", dataType, dataspace_file, 
-			    H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-    copy_buffer(data, isize, jsize, ksize, IV, layout);
-    status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, propList_xfer_id, data);
-    H5Dclose(dataset_id);
+    write_field(IV, data, file_id, dataspace_memory,
+    		dataspace_file, propList_create_id, propList_xfer_id, layout);
     
     /*
      * write momentum Z (only if 3D or MHD enabled)
      */
     if (dimType == THREE_D and !mhdEnabled) {
-      dataset_id = H5Dcreate2(file_id, "/momentum_z", dataType, dataspace_file, 
-			      H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-      copy_buffer(data, isize, jsize, ksize, IW, layout);
-      status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, propList_xfer_id, data);
-      H5Dclose(dataset_id);
+      write_field(IW, data, file_id, dataspace_memory,
+    		  dataspace_file, propList_create_id, propList_xfer_id, layout);
     }
     
     if (mhdEnabled) {
       // write momentum z
-      dataset_id = H5Dcreate2(file_id, "/momentum_z", dataType, dataspace_file, 
-			      H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-      copy_buffer(data, isize, jsize, ksize, IW, layout);
-      status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, propList_xfer_id, data);
-      H5Dclose(dataset_id);
-
+      write_field(IW, data, file_id, dataspace_memory,
+    		  dataspace_file, propList_create_id, propList_xfer_id, layout);
+      
       // write magnetic field components
-      dataset_id = H5Dcreate2(file_id, "/magnetic_field_x", dataType, dataspace_file, 
-			      H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-      copy_buffer(data, isize, jsize, ksize, IA, layout);
-      status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, propList_xfer_id, data);
-      H5Dclose(dataset_id);
-      
-      dataset_id = H5Dcreate2(file_id, "/magnetic_field_y", dataType, dataspace_file, 
-			      H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-      copy_buffer(data, isize, jsize, ksize, IB, layout);
-      status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, propList_xfer_id, data);
-      H5Dclose(dataset_id);
-      
-      dataset_id = H5Dcreate2(file_id, "/magnetic_field_z", dataType, dataspace_file, 
-			      H5P_DEFAULT, propList_create_id, H5P_DEFAULT);
-      copy_buffer(data, isize, jsize, ksize, IC, layout);
-      status = H5Dwrite(dataset_id, dataType, dataspace_memory, dataspace_file, propList_xfer_id, data);
-      H5Dclose(dataset_id);
+      write_field(IA, data, file_id, dataspace_memory,
+    		  dataspace_file, propList_create_id, propList_xfer_id, layout);
+      write_field(IB, data, file_id, dataspace_memory,
+    		  dataspace_file, propList_create_id, propList_xfer_id, layout);
+      write_field(IC, data, file_id, dataspace_memory,
+    		  dataspace_file, propList_create_id, propList_xfer_id, layout);
 
     }
 
@@ -1356,30 +1357,10 @@ public:
     nbvar(nbvar), variables_names(variables_names),
     iStep(0), totalTime(0.0)
   {
-    const int nx = params.nx;
-    const int ny = params.ny;
-    const int nz = params.nz;
-    const int ghostWidth = params.ghostWidth;
 
-    // make sure Uhost is allocated
-    bool ghostIncluded = configMap.getBool("output","ghostIncluded",false);
-
-    // upscale init data from a file twice smaller
-    // in this case we expected that ghost cells are present in input file
-    // we will also have to call upscale
-    bool halfResolution = configMap.getBool("run","restart_upscale",false);
     
     // allocate Uhost
-    if (d==2) Uhost = DataArrayHost("host_data",
-				    nx+2*ghostWidth, 
-				    ny+2*ghostWidth,
-				    nbvar);
-    
-    if (d==3) Uhost = DataArrayHost("host_data",
-				    nx+2*ghostWidth, 
-				    ny+2*ghostWidth,
-				    nz+2*ghostWidth,
-				    nbvar);
+    Uhost = Kokkos::create_mirror(Udata);
 
   }; // end constructor
 
@@ -1400,11 +1381,11 @@ public:
     if (halfResolution) {
 
       const int nx = params.nx;
-      const int ny = params.ny;
+      //const int ny = params.ny;
       const int ghostWidth = params.ghostWidth;
 
       const int iL = nx/2+2*ghostWidth;
-      const int jL = ny/2+2*ghostWidth;
+      //const int jL = ny/2+2*ghostWidth;
       
       // loop at high resolution
       for (int j=0; j<jsize; j++) {
@@ -1453,7 +1434,7 @@ public:
       } else {
 	// simple copy
 	real_t* tmp = Uhost.ptr_on_device() + isize*jsize*nvar;
-	memcpy(tmp,data,isize*jsize);
+	memcpy(tmp,data,isize*jsize*sizeof(real_t));
       }
     }
 
@@ -1472,12 +1453,12 @@ public:
 
       const int nx = params.nx;
       const int ny = params.ny;
-      const int nz = params.nz;
+      //const int nz = params.nz;
       const int ghostWidth = params.ghostWidth;
       
       const int iL = nx/2+2*ghostWidth;
       const int jL = ny/2+2*ghostWidth;
-      const int kL = nz/2+2*ghostWidth;
+      //const int kL = nz/2+2*ghostWidth;
       
       // loop at high resolution
       for (int k=0; k<ksize; k++) {
@@ -1528,6 +1509,7 @@ public:
       
     } else {
 
+      // regular copy - same size
       if (layout == KOKKOS_LAYOUT_RIGHT) {
 	// transpose array to make data contiguous in memory
 	for (int k=0; k<ksize; ++k) {
@@ -1542,12 +1524,49 @@ public:
       } else {
 	// simple copy
 	real_t* tmp = Uhost.ptr_on_device() + isize*jsize*ksize*nvar;
-	memcpy(tmp,data,isize*jsize*ksize);
+	memcpy(tmp,data,isize*jsize*ksize*sizeof(real_t));
       }
 
     } // end halfResolution
 
   } // copy_buffer / 3D
+
+  // =======================================================
+  // =======================================================
+  herr_t read_field(int varId, real_t* &data, hid_t& file_id,
+		    hid_t& dataspace_memory,
+		    hid_t& dataspace_file, 
+		    KokkosLayout& layout)
+  {
+    
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ksize = params.ksize;
+   
+    const std::string varName = "/" + variables_names.at(varId);
+    hid_t dataset_id = H5Dopen2(file_id, varName.c_str(), H5P_DEFAULT);
+
+    // cross check dataType
+    hid_t        dataType   = H5Dget_type(dataset_id);
+    H5T_class_t t_class = H5Tget_class(dataType);
+    hid_t        expectedDataType = (sizeof(real_t) == sizeof(float)) ?
+      H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
+    H5T_class_t t_class_expected = H5Tget_class(expectedDataType);
+    if (t_class != t_class_expected) {
+      std::cerr << "Wrong HDF5 datatype !!\n";
+      std::cerr << "expected     : " << t_class_expected << std::endl;
+      std::cerr << "but received : " << t_class          << std::endl;
+    }
+    herr_t status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
+			    H5P_DEFAULT, data);
+    HDF5_CHECK(status, "Problem reading field");
+
+    H5Dclose(dataset_id);
+    copy_buffer(data, isize, jsize, ksize, varId, layout);
+    
+    return status;
+    
+  } // read_field
 
   /**
    * \param[in] filename of the restart file
@@ -1572,8 +1591,6 @@ public:
 
     const bool mhdEnabled = params.mhdEnabled;
 
-    const int nbvar = params.nbvar;
-    
     bool ghostIncluded = configMap.getBool("output","ghostIncluded",false);
 
     // upscale init data from a file twice smaller
@@ -1582,13 +1599,14 @@ public:
 
     
     herr_t status;
-    hid_t  dataset_id;
+    
 
     // sizes to read
     int nx_r,  ny_r,  nz_r;  // logical sizes
     int nx_rg, ny_rg, nz_rg; // sizes with ghost zones included
 
     if (halfResolution) {
+
       nx_r  = nx/2;
       ny_r  = ny/2;
       nz_r  = nz/2;
@@ -1598,6 +1616,7 @@ public:
       nz_rg = nz/2+2*ghostWidth;
 
     } else { // use current resolution
+
       nx_r  = nx;
       ny_r  = ny;
       nz_r  = nz;
@@ -1605,6 +1624,7 @@ public:
       nx_rg = nx+2*ghostWidth;
       ny_rg = ny+2*ghostWidth;
       nz_rg = nz+2*ghostWidth;
+      
     }
    
     /*
@@ -1709,12 +1729,12 @@ public:
     }
 
     /* defines data type */
-    hid_t dataType, expectedDataType;
-    if (sizeof(real_t) == sizeof(float))
-      expectedDataType = H5T_NATIVE_FLOAT;
-    else
-      expectedDataType = H5T_NATIVE_DOUBLE;
-    H5T_class_t t_class_expected = H5Tget_class(expectedDataType);
+    // hid_t expectedDataType;
+    // if (sizeof(real_t) == sizeof(float))
+    //   expectedDataType = H5T_NATIVE_FLOAT;
+    // else
+    //   expectedDataType = H5T_NATIVE_DOUBLE;
+    // H5T_class_t t_class_expected = H5Tget_class(expectedDataType);
 
 
     // here we need to check Udata / Uhost memory layout 
@@ -1745,79 +1765,34 @@ public:
      */
 
     // read density
-    dataset_id = H5Dopen2(file_id, "/density", H5P_DEFAULT);
-    dataType  = H5Dget_type(dataset_id);
-    H5T_class_t t_class = H5Tget_class(dataType);
-    if (t_class != t_class_expected) {
-      std::cerr << "Wrong HDF5 datatype !!\n";
-      std::cerr << "expected     : " << t_class_expected << std::endl;
-      std::cerr << "but received : " << t_class          << std::endl;
-    }
-
-    status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		     H5P_DEFAULT, data);
-    H5Dclose(dataset_id);
-    copy_buffer(data, isize, jsize, ksize, ID, layout);
-
-    // read energy
-    dataset_id = H5Dopen2(file_id, "/energy", H5P_DEFAULT);
-    status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		     H5P_DEFAULT, data);
-    H5Dclose(dataset_id);
-    copy_buffer(data, isize, jsize, ksize, IE, layout);
-
-    // read momentum X
-    dataset_id = H5Dopen2(file_id, "/momentum_x", H5P_DEFAULT);
-    status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		     H5P_DEFAULT, data);
-    H5Dclose(dataset_id);
-    copy_buffer(data, isize, jsize, ksize, IU, layout);
-
-    // read momentum Y
-    dataset_id = H5Dopen2(file_id, "/momentum_y", H5P_DEFAULT);
-    status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		     H5P_DEFAULT, data);
-    H5Dclose(dataset_id);
-    copy_buffer(data, isize, jsize, ksize, IV, layout);
-
+    read_field(ID, data, file_id, dataspace_memory,
+	       dataspace_file, layout);
+    read_field(IE, data, file_id, dataspace_memory,
+	       dataspace_file, layout);
+    read_field(IU, data, file_id, dataspace_memory,
+	       dataspace_file, layout);
+    read_field(IV, data, file_id, dataspace_memory,
+	       dataspace_file, layout);
+    
     // read momentum Z (only if hydro 3D)
     if (dimType == THREE_D and !mhdEnabled) {
-      dataset_id = H5Dopen2(file_id, "/momentum_z", H5P_DEFAULT);      
-      status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		       H5P_DEFAULT, data);
-      H5Dclose(dataset_id);
-      copy_buffer(data, isize, jsize, ksize, IW, layout);
+      read_field(IW, data, file_id, dataspace_memory,
+		 dataspace_file, layout);
     }
 
     if (mhdEnabled) {
       // read momentum Z
-      dataset_id = H5Dopen2(file_id, "/momentum_z", H5P_DEFAULT);      
-      status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		       H5P_DEFAULT, data);
-      H5Dclose(dataset_id);
-      copy_buffer(data, isize, jsize, ksize, IW, layout);
+      read_field(IW, data, file_id, dataspace_memory,
+		 dataspace_file, layout);
 
-      // read magnetic field components X
-      dataset_id = H5Dopen2(file_id, "/magnetic_field_x", H5P_DEFAULT);      
-      status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		       H5P_DEFAULT, data);
-      H5Dclose(dataset_id);
-      copy_buffer(data, isize, jsize, ksize, IA, layout);
-
-      // read magnetic field components Y
-      dataset_id = H5Dopen2(file_id, "/magnetic_field_y", H5P_DEFAULT);      
-      status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		       H5P_DEFAULT, data);
-      H5Dclose(dataset_id);
-      copy_buffer(data, isize, jsize, ksize, IB, layout);
-
-      // read magnetic field components Z
-      dataset_id = H5Dopen2(file_id, "/magnetic_field_z", H5P_DEFAULT);      
-      status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		       H5P_DEFAULT, data);
-      H5Dclose(dataset_id);
-      copy_buffer(data, isize, jsize, ksize, IC, layout);
-
+      // read magnetif field component
+      read_field(IA, data, file_id, dataspace_memory,
+	       dataspace_file, layout);
+      read_field(IB, data, file_id, dataspace_memory,
+	       dataspace_file, layout);
+      read_field(IC, data, file_id, dataspace_memory,
+	       dataspace_file, layout);
+      
     } // end mhdEnabled
 
 
@@ -1855,11 +1830,10 @@ public:
     //H5Pclose(propList_create_id);
     H5Sclose(dataspace_memory);
     H5Sclose(dataspace_file);
-    //H5Dclose(dataset_id);
     H5Fclose(file_id);
 
     (void) status;
-
+    
     // copy host data to device
     Kokkos::deep_copy(Udata, Uhost);
 
@@ -1927,6 +1901,34 @@ public:
   
   ~Load_HDF5_mpi() {};
   
+  // =======================================================
+  // =======================================================
+  herr_t read_field(int varId, real_t* &data, hid_t& file_id,
+		    hid_t& dataspace_memory,
+		    hid_t& dataspace_file,
+		    hid_t& propList_xfer_id,
+		    KokkosLayout& layout)
+  {
+    
+    const int isize = this->params.isize;
+    const int jsize = this->params.jsize;
+    const int ksize = this->params.ksize;
+    hid_t dataType = (sizeof(real_t) == sizeof(float)) ?
+      H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
+    
+    const std::string varName = "/" + this->variables_names.at(varId);
+    hid_t dataset_id = H5Dopen2(file_id, varName.c_str(), H5P_DEFAULT);
+    herr_t status = H5Dread(dataset_id, dataType, dataspace_memory,
+			    dataspace_file, propList_xfer_id, data);
+    HDF5_CHECK(status, "Problem reading field");
+
+    H5Dclose(dataset_id);
+    this->copy_buffer(data, isize, jsize, ksize, varId, layout);
+
+    return status;
+    
+  } // read_field
+
   /**
    * \param[in] filename of the restart file
    *
@@ -2009,7 +2011,6 @@ public:
 
     herr_t status;
     (void) status;
-    hid_t  dataset_id;
 
     // TODO
     // here put some cross-check code
@@ -2120,14 +2121,7 @@ public:
 
       }
 
-    } // end ghostIncluded / allghostIncluded 
-
-    // set datatype
-    hid_t dataType;
-    if (sizeof(real_t) == sizeof(float))
-      dataType = H5T_NATIVE_FLOAT;
-    else
-      dataType = H5T_NATIVE_DOUBLE;
+    } // end ghostIncluded / allghostIncluded
     
     /*
      * Memory space hyperslab :
@@ -2254,7 +2248,7 @@ public:
     /* Set up MPIO file access property lists */
     //MPI_Info mpi_info   = MPI_INFO_NULL;
     hid_t access_plist  = H5Pcreate(H5P_FILE_ACCESS);
-    status = H5Pset_fapl_mpio(access_plist, this->params.communicator->getComm(), MPI_INFO_NULL);
+    status = H5Pset_fapl_mpio(access_plist, /*MPI_COMM_WORLD*/ this->params.communicator->getComm(), MPI_INFO_NULL);
 
     /* Open the file */
     hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, access_plist);
@@ -2302,72 +2296,41 @@ public:
     hid_t propList_xfer_id = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(propList_xfer_id, H5FD_MPIO_COLLECTIVE);
 
-    /* read density */
-    dataset_id = H5Dopen2(file_id, "/density", H5P_DEFAULT);
-    status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		     propList_xfer_id, data);
-    H5Dclose(dataset_id);
-    this->copy_buffer(data, isize, jsize, ksize, ID, layout);
+    // read density
+    read_field(ID, data, file_id, dataspace_memory,
+	       dataspace_file, propList_xfer_id, layout);
 
     // read energy
-    dataset_id = H5Dopen2(file_id, "/energy", H5P_DEFAULT);
-    status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		     propList_xfer_id, data);
-    H5Dclose(dataset_id);
-    this->copy_buffer(data, isize, jsize, ksize, IE, layout);
+    read_field(IE, data, file_id, dataspace_memory,
+	       dataspace_file, propList_xfer_id, layout);
 
     // read momentum X
-    dataset_id = H5Dopen2(file_id, "/momentum_x", H5P_DEFAULT);
-    status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		     propList_xfer_id, data);
-    H5Dclose(dataset_id);
-    this->copy_buffer(data, isize, jsize, ksize, IU, layout);
-
+    read_field(IU, data, file_id, dataspace_memory,
+	       dataspace_file, propList_xfer_id, layout);
+    
     // read momentum Y
-    dataset_id = H5Dopen2(file_id, "/momentum_y", H5P_DEFAULT);
-    status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		     propList_xfer_id, data);
-    H5Dclose(dataset_id);
-    this->copy_buffer(data, isize, jsize, ksize, IV, layout);
-
+    read_field(IV, data, file_id, dataspace_memory,
+	       dataspace_file, propList_xfer_id, layout);
+    
     // read momentum Z (only if hydro 3D)
     if (dimType == THREE_D and !mhdEnabled) {
-      dataset_id = H5Dopen2(file_id, "/momentum_z", H5P_DEFAULT);
-      status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		       propList_xfer_id, data);
-      H5Dclose(dataset_id);
-      this->copy_buffer(data, isize, jsize, ksize, IW, layout);
+      read_field(IW, data, file_id, dataspace_memory,
+		 dataspace_file, propList_xfer_id, layout);
     }
-
+    
     if (mhdEnabled) {
       // read momentum Z
-      dataset_id = H5Dopen2(file_id, "/momentum_z", H5P_DEFAULT);
-      status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		       propList_xfer_id, data);
-      H5Dclose(dataset_id);
-      this->copy_buffer(data, isize, jsize, ksize, IW, layout);
-
-      // read magnetic field components X
-      dataset_id = H5Dopen2(file_id, "/magnetic_field_x", H5P_DEFAULT);
-      status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		       propList_xfer_id, data);
-      H5Dclose(dataset_id);
-      this->copy_buffer(data, isize, jsize, ksize, IA, layout);
-
-      // read magnetic field components Y
-      dataset_id = H5Dopen2(file_id, "/magnetic_field_y", H5P_DEFAULT);
-      status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		       propList_xfer_id, data);
-      H5Dclose(dataset_id);
-      this->copy_buffer(data, isize, jsize, ksize, IB, layout);
-
-      // read magnetic field components Z
-      dataset_id = H5Dopen2(file_id, "/magnetic_field_z", H5P_DEFAULT);
-      status = H5Dread(dataset_id, dataType, dataspace_memory, dataspace_file,
-		       propList_xfer_id, data);
-      H5Dclose(dataset_id);
-      this->copy_buffer(data, isize, jsize, ksize, IC, layout);
-
+      read_field(IW, data, file_id, dataspace_memory,
+		 dataspace_file, propList_xfer_id, layout);
+      
+      // read magnetic field components X, Y, Z
+      read_field(IA, data, file_id, dataspace_memory,
+		 dataspace_file, propList_xfer_id, layout);
+      read_field(IB, data, file_id, dataspace_memory,
+		 dataspace_file, propList_xfer_id, layout);
+      read_field(IC, data, file_id, dataspace_memory,
+		 dataspace_file, propList_xfer_id, layout);
+      
     } // end mhdEnabled
 
     // free temporary memory
