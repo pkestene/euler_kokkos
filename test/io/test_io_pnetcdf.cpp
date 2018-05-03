@@ -62,7 +62,10 @@ public:
     real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
     real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
 
-    data(i,j,ID) = x+y;
+    data(i,j,ID) =   x+y;
+    data(i,j,IE) = 2*x+y;
+    data(i,j,IU) = 3*x+y;
+    data(i,j,IV) = 4*x+y;
     
   }
 
@@ -99,7 +102,17 @@ public:
     real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
     real_t z = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
 
-    data(i,j,k,ID) = x+y+z;
+    data(i,j,k,ID) =   x+y+z;
+    data(i,j,k,IE) = 2*x+y+z;
+    data(i,j,k,IU) = 3*x+y+z;
+    data(i,j,k,IV) = 4*x+y+z;
+    data(i,j,k,IW) = 5*x+y+z;
+
+    // data(i,j,k,ID) = index + 0*isize*jsize*ksize;//  x+y+z;
+    // data(i,j,k,IE) = index + 1*isize*jsize*ksize;//2*x+y+z;
+    // data(i,j,k,IU) = index + 2*isize*jsize*ksize;//3*x+y+z;
+    // data(i,j,k,IV) = index + 3*isize*jsize*ksize;//4*x+y+z;
+    // data(i,j,k,IW) = index + 4*isize*jsize*ksize;//5*x+y+z;
   }
 
   HydroParams params;
@@ -120,8 +133,10 @@ int main(int argc, char* argv[])
   hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
 
   Kokkos::initialize(argc, argv);
-  
-  {
+
+  int mpi_rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  if (mpi_rank==0) {
     std::cout << "##########################\n";
     std::cout << "KOKKOS CONFIG             \n";
     std::cout << "##########################\n";
@@ -141,11 +156,11 @@ int main(int argc, char* argv[])
     std::cout << "##########################\n";
   }
 
-  if (argc != 2) {
-    fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter on the command line\n");
-    Kokkos::finalize();
-    exit(EXIT_FAILURE);
-  }
+  // if (argc != 2) {
+  //   fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter on the command line\n");
+  //   Kokkos::finalize();
+  //   exit(EXIT_FAILURE);
+  // }
   
   // read parameter file and initialize parameter
   // parse parameters from input file
@@ -159,16 +174,17 @@ int main(int argc, char* argv[])
   std::map<int, std::string> var_names;
   var_names[ID] = "rho";
   var_names[IP] = "energy";
-  var_names[IU] = "mx";
-  var_names[IV] = "my";
-  var_names[IW] = "mz";
+  var_names[IU] = "rho_vx";
+  var_names[IV] = "rho_vy";
+  var_names[IW] = "rho_vz";
   
   // =================
   // ==== 2D test ====
   // =================
   if (params.nz == 1) {
 
-    std::cout << "2D test\n";
+    if (mpi_rank==0)
+      std::cout << "2D test\n";
     
     DataArray2d     data("data",params.isize,params.jsize,HYDRO_2D_NBVAR);
     DataArray2dHost data_host = Kokkos::create_mirror(data);
@@ -188,7 +204,8 @@ int main(int argc, char* argv[])
   // =================
   if (params.nz > 1) {
     
-    std::cout << "3D test\n";
+    if (mpi_rank==0)
+      std::cout << "3D test\n";
 
     DataArray3d     data("data",params.isize,params.jsize,params.ksize,HYDRO_3D_NBVAR);
     DataArray3dHost data_host = Kokkos::create_mirror(data);

@@ -59,31 +59,54 @@ public:
   ~Save_PNETCDF() {};
 
   template<DimensionType d_ = d>
-  void copy_buffer(typename std::enable_if<d_==TWO_D, real_t>::type *data,
-		   int iStop, int jStop, int kStop, int iVar)
+  void copy_buffer(typename std::enable_if<d_==TWO_D, real_t>::type *&data,
+		   int iStop, int jStop, int kStop, int iVar, KokkosLayout layout)
   {
-    int dI=0;
-    for (int j= 0; j < jStop; j++) {
+    if (layout == KOKKOS_LAYOUT_RIGHT) { // transpose array to make data contiguous in memory
+      int dI=0;
+      for (int j= 0; j < jStop; j++) {
+	for(int i = 0; i < iStop; i++) {
+	  data[dI] = Uhost(i,j,iVar);
+	  dI++;
+	}
+      }
+    } else {
+      //data = Uhost.ptr_on_device() + isize*jsize*nvar;
+      int dI=0;
       for(int i = 0; i < iStop; i++) {
-	data[dI] = Uhost(i,j,iVar);
-	dI++;
+	for (int j= 0; j < jStop; j++) {
+	  data[dI] = Uhost(i,j,iVar);
+	  dI++;
+	}
       }
     }
-    
+
   } // copy_buffer
 
   template<DimensionType d_=d>
-  void copy_buffer(typename std::enable_if<d_==THREE_D, real_t>::type *data,
-		   int iStop, int jStop, int kStop, int iVar)
+  void copy_buffer(typename std::enable_if<d_==THREE_D, real_t>::type *&data,
+		   int iStop, int jStop, int kStop, int iVar, KokkosLayout layout)
   {
-    int dI=0;
-    for (int k= 0; k < kStop; k++)
-      for (int j= 0; j < jStop; j++)
-	for(int i = 0; i < iStop; i++) {
-	  data[dI] = Uhost(i,j,k,iVar);
-	  dI++;
-	}
-    
+    if (layout == KOKKOS_LAYOUT_RIGHT) { // transpose array to make data contiguous in memory
+ 
+      int dI=0;
+      for (int k= 0; k < kStop; k++)
+	for (int j= 0; j < jStop; j++)
+	  for(int i = 0; i < iStop; i++) {
+	    data[dI] = Uhost(i,j,k,iVar);
+	    dI++;
+	  }
+    } else {
+      //data = Uhost.ptr_on_device() + isize*jsize*ksize*nvar;
+      int dI=0;
+      for(int i = 0; i < iStop; i++)
+	for (int j= 0; j < jStop; j++)
+	  for (int k= 0; k < kStop; k++) {
+	    data[dI] = Uhost(i,j,k,iVar);
+	    dI++;
+	  }
+    }
+
   } // copy_buffer / 3D
   
   // =======================================================
@@ -110,7 +133,6 @@ public:
    */
   void save()
   {
-  
     using namespace hydroSimu; // for MpiComm (this namespace is tout-pourri)
     
     // sub-domain sizes
@@ -174,12 +196,11 @@ public:
     }
     // broadcast stringDate size to all other MPI tasks
     params.communicator->bcast(&stringDateSize, 1, MpiComm::INT, 0);
-
+    
     // broadcast stringDate to all other MPI task
     if (myRank != 0) stringDate.reserve(stringDateSize);
     char* cstr = const_cast<char*>(stringDate.c_str());
     params.communicator->bcast(cstr, stringDateSize, MpiComm::CHAR, 0);
-
 
     /*
      * get MPI coords corresponding to MPI rank iPiece
@@ -196,6 +217,7 @@ public:
      */
     std::string outputDir    = configMap.getString("output", "outputDir", "./");
     std::string outputPrefix = configMap.getString("output", "outputPrefix", "output");
+
     std::ostringstream outNum;
     outNum.width(7);
     outNum.fill('0');
@@ -207,6 +229,14 @@ public:
     // copy device data to host
     Kokkos::deep_copy(Uhost, Udata);
 
+    // here we need to check Uhost memory layout
+    KokkosLayout layout;
+    if (std::is_same<typename DataArray::array_layout, Kokkos::LayoutLeft>::value)
+      layout = KOKKOS_LAYOUT_LEFT;
+    else
+      layout = KOKKOS_LAYOUT_RIGHT;
+
+    
     // measure time ??
     if (pnetcdf_verbose) {
       MPI_Barrier(params.communicator->getComm());
@@ -434,7 +464,7 @@ public:
       for (int iVar=0; iVar<nbvar; iVar++) {
 	
 	// copy needed data into data !
-	copy_buffer(data,iStop,jStop,kStop,iVar);
+	copy_buffer(data,iStop,jStop,kStop,iVar,layout);
 
 	// write on disk
 	err = ncmpi_put_vara_all(ncFileId, varIds[iVar], starts, counts, data, nItems, mpiDataType);
