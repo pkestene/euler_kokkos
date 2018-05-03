@@ -1,5 +1,6 @@
 add_subdirectory(kokkos)
 
+add_subdirectory(backward-cpp)
 add_subdirectory(io)
 
 if(USE_MPI)

@@ -162,6 +162,7 @@ add_definitions( -Wall )
 #
 # sources
 #
+add_subdirectory(external/backward-cpp)
 add_subdirectory(external/kokkos)
 
 # pass Kokkos include directories to our target application
