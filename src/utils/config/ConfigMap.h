@@ -39,4 +39,12 @@ public:
 
 }; // class ConfigMap
 
+/**
+ * Builds a ConfigMap object from the input parameter file.
+ *
+ * ConfigMap is return by value here.
+ */
+ConfigMap broadcast_parameters(std::string filename);
+
+
 #endif // CONFIG_MAP_H_

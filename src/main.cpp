@@ -91,11 +91,16 @@ int main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &nRanks);
 # ifdef KOKKOS_ENABLE_CUDA
     {
+
+      // on a large cluster, the scheduler should assign ressources
+      // in a way that each MPI task is mapped to a different GPU
+      // let's cross-checked that:
       
       int cudaDeviceId;
       cudaGetDevice(&cudaDeviceId);
       std::cout << "I'm MPI task #" << rank << " (out of " << nRanks << ")"
 		<< " pinned to GPU #" << cudaDeviceId << "\n";
+      
     }
 # endif // KOKKOS_ENABLE_CUDA
 #endif // USE_MPI
@@ -109,10 +114,12 @@ int main(int argc, char *argv[])
   //   exit(EXIT_FAILURE);
   // }
 
-  // read parameter file and initialize parameter
-  // parse parameters from input file
+  /*
+   * read parameter file and initialize a ConfigMap object
+   */
+  // only MPI rank 0 actually reads input file
   std::string input_file = std::string(argv[1]);
-  ConfigMap configMap(input_file);
+  ConfigMap configMap = broadcast_parameters(input_file);
 
   // test: create a HydroParams object
   HydroParams params = HydroParams();
