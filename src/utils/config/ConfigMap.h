@@ -22,6 +22,7 @@ class ConfigMap : public INIReader
 {
 public:
   ConfigMap(std::string filename);
+  ConfigMap(char* &buffer, int buffer_size);
   ~ConfigMap();
 
   //! Get a floating point value from the map.

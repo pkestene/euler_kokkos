@@ -32,6 +32,7 @@ public:
    * about the parsing.
    */
   INIReader(std::string filename);
+  INIReader(char* &buffer, int buffer_size);
   virtual ~INIReader();
 
   /**

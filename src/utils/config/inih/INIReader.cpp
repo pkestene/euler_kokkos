@@ -21,6 +21,13 @@ INIReader::INIReader(std::string filename)
 
 // =======================================================
 // =======================================================
+INIReader::INIReader(char* &buffer, int buffer_size)
+{
+  _error = ini_parse_buffer(buffer, buffer_size, valueHandler, this);
+}
+
+// =======================================================
+// =======================================================
 INIReader::~INIReader()
 {
 }

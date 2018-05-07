@@ -21,6 +21,13 @@ ConfigMap::ConfigMap(std::string filename) :
 
 // =======================================================
 // =======================================================
+ConfigMap::ConfigMap(char* &buffer, int buffer_size) :
+  INIReader(buffer, buffer_size)
+{
+} // ConfigMap::ConfigMap
+
+// =======================================================
+// =======================================================
 ConfigMap::~ConfigMap()
 {
 } // ConfigMap::~ConfigMap
