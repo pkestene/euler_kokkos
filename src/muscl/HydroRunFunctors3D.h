@@ -10,9 +10,6 @@
 #include "HydroBaseFunctor3D.h"
 #include "shared/RiemannSolvers.h"
 
-// init conditions
-#include "shared/BlastParams.h"
-
 namespace euler_kokkos { namespace muscl {
 
 /*************************************************/

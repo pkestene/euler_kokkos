@@ -18,7 +18,7 @@
 #include "shared/HydroParams.h"
 #include "shared/kokkos_shared.h"
 #include "shared/BoundariesFunctors.h"
-#include "shared/initRiemannConfig2d.h"
+#include "shared/problems/initRiemannConfig2d.h"
 
 // the actual computational functors called in HydroRun
 #include "muscl/MHDRunFunctors2D.h"
@@ -35,8 +35,8 @@
 #include <utils/io/IO_ReadWrite.h>
 
 // for init condition
-#include "shared/BlastParams.h"
-#include "shared/RotorParams.h"
+#include "shared/problems/BlastParams.h"
+#include "shared/problems/RotorParams.h"
 
 namespace euler_kokkos { namespace muscl {
 

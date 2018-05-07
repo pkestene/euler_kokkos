@@ -10,9 +10,9 @@
 #include "HydroBaseFunctor2D.h"
 
 // init conditions
-#include "shared/BlastParams.h"
-#include "shared/IsentropicVortexParams.h"
-#include "shared/initRiemannConfig2d.h"
+#include "shared/problems/BlastParams.h"
+#include "shared/problems/IsentropicVortexParams.h"
+#include "shared/problems/initRiemannConfig2d.h"
 
 namespace euler_kokkos { namespace muscl {
 

@@ -278,7 +278,7 @@ void SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in,
 					     real_t dt)
 {
 
-    real_t dtdx;
+  real_t dtdx;
   real_t dtdy;
   
   dtdx = dt / params.dx;

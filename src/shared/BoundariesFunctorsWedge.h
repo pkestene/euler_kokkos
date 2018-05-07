@@ -3,7 +3,7 @@
 
 #include "shared/HydroParams.h"    // for HydroParams
 #include "shared/kokkos_shared.h"  // for Data arrays
-#include "shared/WedgeParams.h"    // for Wedge border condition
+#include "shared/problems/WedgeParams.h"    // for Wedge border condition
 
 /*************************************************/
 /*************************************************/

@@ -10,7 +10,7 @@
 #include "HydroBaseFunctor3D.h"
 
 // init conditions
-#include "shared/BlastParams.h"
+#include "shared/problems/BlastParams.h"
 
 namespace euler_kokkos { namespace muscl {
     

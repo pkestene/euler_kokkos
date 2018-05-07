@@ -10,9 +10,6 @@
 #include "MHDBaseFunctor2D.h"
 #include "shared/RiemannSolvers_MHD.h"
 
-// init conditions
-#include "shared/BlastParams.h"
-
 #ifndef SQR
 #define SQR(x) ((x)*(x))
 #endif

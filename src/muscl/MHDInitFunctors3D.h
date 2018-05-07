@@ -13,9 +13,9 @@
 #include "shared/utils.h"
 
 // init conditions
-#include "shared/BlastParams.h"
-#include "muscl/OrszagTangInit.h"
-#include "shared/RotorParams.h"
+#include "shared/problems/BlastParams.h"
+#include "shared/problems/OrszagTangInit.h"
+#include "shared/problems/RotorParams.h"
 
 namespace euler_kokkos { namespace muscl {
 

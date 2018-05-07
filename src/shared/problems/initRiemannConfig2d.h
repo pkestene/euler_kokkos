@@ -14,8 +14,8 @@
 #ifndef INIT_RIEMANN_CONFIG_2D_H_
 #define INIT_RIEMANN_CONFIG_2D_H_
 
-#include "real_type.h"
-#include "HydroState.h"
+#include "shared/real_type.h"
+#include "shared/HydroState.h"
 
 namespace euler_kokkos {
 
