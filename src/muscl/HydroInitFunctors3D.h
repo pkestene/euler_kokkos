@@ -236,6 +236,147 @@ public:
   
 }; // InitBlastFunctor3D
 
+/*************************************************/
+/*************************************************/
+/*************************************************/
+/**
+ * Test of the Rayleigh-Taylor instability.
+ * See
+ * http://www.astro.princeton.edu/~jstone/Athena/tests/rt/rt.html
+ * for a description of such initial conditions
+ */
+class RayleighTaylorInstabilityFunctor3D : public HydroBaseFunctor3D {
+
+public:
+  RayleighTaylorInstabilityFunctor3D(HydroParams params,
+				     RayleighTaylorInstabilityParams rtiparams,
+				     DataArray3d Udata,
+				     VectorField3d gravity) :
+    HydroBaseFunctor3D(params),
+    rtiparams(rtiparams),
+    Udata(Udata),
+    gravity(gravity)
+  {};
+
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    RayleighTaylorInstabilityParams rtiparams,
+                    DataArray3d Udata,
+		    VectorField3d gravity)
+  {
+    uint64_t nbCells = params.isize * params.jsize * params.ksize;
+    RayleighTaylorInstabilityFunctor3D functor(params, rtiparams, Udata, gravity);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int& index) const
+  {
+
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ksize = params.ksize;
+    const int ghostWidth = params.ghostWidth;
+    
+#ifdef USE_MPI
+    const int i_mpi = params.myMpiPos[IX];
+    const int j_mpi = params.myMpiPos[IY];
+    const int k_mpi = params.myMpiPos[IZ];
+#else
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+    const int k_mpi = 0;
+#endif
+
+    const int nx = params.nx;
+    const int ny = params.ny;
+    const int nz = params.nz;
+
+    const real_t xmin = params.xmin;
+    const real_t ymin = params.ymin;
+    const real_t zmin = params.zmin;
+
+    const real_t xmax = params.xmax;
+    const real_t ymax = params.ymax;
+    const real_t zmax = params.zmax;
+
+    const real_t Lx = xmax-xmin;
+    const real_t Ly = ymax-ymin;
+    const real_t Lz = zmax-zmin;
+
+    const real_t dx = params.dx;
+    const real_t dy = params.dy;
+    const real_t dz = params.dz;
+    
+    const real_t gamma0 = params.settings.gamma0;
+  
+    int i,j,k;
+    index2coord(index,i,j,k,isize,jsize,ksize);
+    
+    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
+    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
+    real_t z = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
+
+    /* initialize perturbation amplitude */
+    real_t amplitude = rtiparams.amplitude;
+    real_t        d0 = rtiparams.d0;
+    real_t        d1 = rtiparams.d1;
+    
+    //bool  randomEnabled = rti.randomEnabled;
+
+
+    /* uniform static gravity field */
+    const real_t gravity_x = rtiparams.gx;
+    const real_t gravity_y = rtiparams.gy;
+    const real_t gravity_z = rtiparams.gz;
+    
+    real_t         P0 = 1.0;
+      
+  
+    // the initial condition must ensure the condition of
+    // hydrostatic equilibrium for pressure P = P0 - 0.1*\rho*y
+	
+    // Athena initial conditions are
+    // if ( y > 0.0 ) {
+    //   h_U(i,j,ID) = 2.0;
+    // } else {
+    //   h_U(i,j,ID) = 1.0;
+    // }
+    // h_U(i,j,IP) = P0 + gravity_x*x + gravity_y*y;
+    // h_U(i,j,IU) = 0.0;
+    // h_U(i,j,IV) = amplitude*(1+cos(2*M_PI*x))*(1+cos(0.5*M_PI*y))/4;
+    
+    if ( z > (zmin+zmax)/2 ) {
+      Udata(i,j,k,ID) = d1;
+    } else {
+      Udata(i,j,k,ID) = d0;
+    }
+    Udata(i,j,k,IU) = 0.0;
+    Udata(i,j,k,IV) = 0.0;
+    // if (randomEnabled)
+    //   Udata(i,j,IV) = amplitude * ( rand() * 1.0 / RAND_MAX - 0.5);
+    // else
+    Udata(i,j,k,IW) = amplitude * 
+      (1+cos(2*M_PI*x/Lx))*
+      (1+cos(2*M_PI*y/Ly))/4;
+
+    Udata(i,j,k,IE) = (P0 + Udata(i,j,k,ID)*(gravity_x*x +
+					     gravity_y*y +
+					     gravity_z*z))/(gamma0-1);
+
+    // init gravity field
+    gravity(i,j,k,IX) = gravity_x;
+    gravity(i,j,k,IY) = gravity_y;
+    gravity(i,j,k,IZ) = gravity_z;
+    
+  } // end operator ()
+
+  RayleighTaylorInstabilityParams rtiparams;
+  DataArray3d Udata;
+  VectorField3d gravity;
+  
+}; // class RayleighTaylorInstabilityFunctor3D
+
 } // namespace  muscl
 
 } // namespace euler_kokkos

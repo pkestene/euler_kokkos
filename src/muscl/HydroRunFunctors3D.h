@@ -19,6 +19,12 @@ class ComputeDtFunctor3D : public HydroBaseFunctor3D {
 
 public:
   
+  /**
+   * Compute time step satisfying CFL constraint.
+   *
+   * \param[in] params
+   * \param[in] Udata
+   */
   ComputeDtFunctor3D(HydroParams params,
 		     DataArray3d Udata) :
     HydroBaseFunctor3D(params),
@@ -118,6 +124,13 @@ class ConvertToPrimitivesFunctor3D : public HydroBaseFunctor3D {
 
 public:
 
+  /**
+   * Convert conservative variables to primitive ones using equation of state.
+   *
+   * \param[in] params
+   * \param[in] Udata conservative variables
+   * \param[out] Qdata primitive variables
+   */
   ConvertToPrimitivesFunctor3D(HydroParams params,
 			       DataArray3d Udata,
 			       DataArray3d Qdata) :
@@ -126,9 +139,9 @@ public:
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
                     DataArray3d Udata,
-                    DataArray3d Qdata,
-		    int nbCells)
+                    DataArray3d Qdata)
   {
+    int nbCells = params.isize * params.jsize * params.ksize;
     ConvertToPrimitivesFunctor3D functor(params, Udata, Qdata);
     Kokkos::parallel_for(nbCells, functor);
   }
@@ -186,22 +199,39 @@ class ComputeAndStoreFluxesFunctor3D : public HydroBaseFunctor3D {
 
 public:
 
+  /**
+   * Compute (all-in-one) reconstructed states on faces, then compute Riemann fluxes and store them.
+   *
+   * \note All-in-one here means the stencil of this operator is larger (need to
+   * fetch data in neighbor of neighbor).
+   *
+   * \param[in] Qdata primitive variables (at cell center)
+   * \param[out] FluxData_x flux coming from the left neighbor along X
+   * \param[out] FluxData_y flux coming from the left neighbor along Y
+   * \param[out] FluxData_z flux coming from the left neighbor along Z
+   * \param[in] gravity_enabled boolean value to activate static gravity
+   * \param[in] gravity is a vector field 
+   */
   ComputeAndStoreFluxesFunctor3D(HydroParams params,
 				 DataArray3d Qdata,
 				 DataArray3d FluxData_x,
 				 DataArray3d FluxData_y,
 				 DataArray3d FluxData_z,
-				 real_t dtdx,
-				 real_t dtdy,
-				 real_t dtdz) :
+				 real_t dt,
+				 bool gravity_enabled,
+				 VectorField3d gravity) :
     HydroBaseFunctor3D(params),
     Qdata(Qdata),
     FluxData_x(FluxData_x),
     FluxData_y(FluxData_y), 
     FluxData_z(FluxData_z), 
-    dtdx(dtdx),
-    dtdy(dtdy),
-    dtdz(dtdz) {};
+    dt(dt),
+    dtdx(dt/params.dx),
+    dtdy(dt/params.dy),
+    dtdz(dt/params.dz),
+    gravity_enabled(gravity_enabled),
+    gravity(gravity)
+ {};
   
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
@@ -209,14 +239,16 @@ public:
 		    DataArray3d FluxData_x,
 		    DataArray3d FluxData_y,
 		    DataArray3d FluxData_z,
-		    real_t dtdx,
-		    real_t dtdy,
-		    real_t dtdz,
-		    int    nbCells)
+		    real_t dt,
+		    bool gravity_enabled,
+		    VectorField3d gravity)
   {
+    int nbCells = params.isize * params.jsize * params.ksize;
     ComputeAndStoreFluxesFunctor3D functor(params, Qdata,
 					   FluxData_x, FluxData_y, FluxData_z,
-					   dtdx, dtdy, dtdz);
+					   dt,
+					   gravity_enabled,
+					   gravity);
     Kokkos::parallel_for(nbCells, functor);
   }
 
@@ -378,7 +410,21 @@ public:
 				 dqX_neighbor,dqY_neighbor,dqZ_neighbor,
 				 dtdx, dtdy, dtdz,
 				 FACE_XMAX, qleft);
-      
+
+      if (gravity_enabled) {
+	// we need to modify input to flux computation with
+	// gravity predictor (half time step)
+	
+	qleft[IU]  += 0.5 * dt * gravity(i-1,j,k,IX);
+	qleft[IV]  += 0.5 * dt * gravity(i-1,j,k,IY);
+	qleft[IW]  += 0.5 * dt * gravity(i-1,j,k,IZ);
+
+	qright[IU] += 0.5 * dt * gravity(i,j,k,IX);
+	qright[IV] += 0.5 * dt * gravity(i,j,k,IY);
+	qright[IW] += 0.5 * dt * gravity(i,j,k,IZ);
+
+      }
+
       // Solve Riemann problem at X-interfaces and compute X-fluxes
       riemann_hydro(qleft,qright,qgdnv,flux_x,params);
 	
@@ -458,6 +504,20 @@ public:
 				 dtdx, dtdy, dtdz,
 				 FACE_YMAX, qleft);
 
+      if (gravity_enabled) {
+	// we need to modify input to flux computation with
+	// gravity predictor (half time step)
+	
+	qleft[IU]  += 0.5 * dt * gravity(i,j-1,k,IX);
+	qleft[IV]  += 0.5 * dt * gravity(i,j-1,k,IY);
+	qleft[IW]  += 0.5 * dt * gravity(i,j-1,k,IZ);
+
+	qright[IU] += 0.5 * dt * gravity(i,j,k,IX);
+	qright[IV] += 0.5 * dt * gravity(i,j,k,IY);
+	qright[IW] += 0.5 * dt * gravity(i,j,k,IZ);
+
+      }
+
       // Solve Riemann problem at Y-interfaces and compute Y-fluxes
       swapValues(&(qleft[IU]) ,&(qleft[IV]) );
       swapValues(&(qright[IU]),&(qright[IV]));
@@ -468,8 +528,8 @@ public:
       //
       FluxData_y(i  ,j  ,k  , ID) = flux_y[ID] * dtdy;
       FluxData_y(i  ,j  ,k  , IP) = flux_y[IP] * dtdy;
-      FluxData_y(i  ,j  ,k  , IU) = flux_y[IU] * dtdy;
-      FluxData_y(i  ,j  ,k  , IV) = flux_y[IV] * dtdy;
+      FluxData_y(i  ,j  ,k  , IU) = flux_y[IV] * dtdy; //
+      FluxData_y(i  ,j  ,k  , IV) = flux_y[IU] * dtdy; //
       FluxData_y(i  ,j  ,k  , IW) = flux_y[IW] * dtdy;
           
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -539,6 +599,20 @@ public:
 				 dtdx, dtdy, dtdz,
 				 FACE_ZMAX, qleft);
 
+      if (gravity_enabled) {
+	// we need to modify input to flux computation with
+	// gravity predictor (half time step)
+	
+	qleft[IU]  += 0.5 * dt * gravity(i,j,k-1,IX);
+	qleft[IV]  += 0.5 * dt * gravity(i,j,k-1,IY);
+	qleft[IW]  += 0.5 * dt * gravity(i,j,k-1,IZ);
+
+	qright[IU] += 0.5 * dt * gravity(i,j,k,IX);
+	qright[IV] += 0.5 * dt * gravity(i,j,k,IY);
+	qright[IW] += 0.5 * dt * gravity(i,j,k,IZ);
+
+      }
+
       // Solve Riemann problem at Z-interfaces and compute Z-fluxes
       swapValues(&(qleft[IU]) ,&(qleft[IW]) );
       swapValues(&(qright[IU]),&(qright[IW]));
@@ -549,9 +623,9 @@ public:
       //
       FluxData_z(i  ,j  ,k  , ID) = flux_z[ID] * dtdz;
       FluxData_z(i  ,j  ,k  , IP) = flux_z[IP] * dtdz;
-      FluxData_z(i  ,j  ,k  , IU) = flux_z[IU] * dtdz;
+      FluxData_z(i  ,j  ,k  , IU) = flux_z[IW] * dtdz; //
       FluxData_z(i  ,j  ,k  , IV) = flux_z[IV] * dtdz;
-      FluxData_z(i  ,j  ,k  , IW) = flux_z[IW] * dtdz;
+      FluxData_z(i  ,j  ,k  , IW) = flux_z[IU] * dtdz; //
           
     } // end if
     
@@ -561,7 +635,9 @@ public:
   DataArray3d FluxData_x;
   DataArray3d FluxData_y;
   DataArray3d FluxData_z;
-  real_t dtdx, dtdy, dtdz;
+  real_t dt, dtdx, dtdy, dtdz;
+  bool gravity_enabled;
+  VectorField3d gravity;
   
 }; // ComputeAndStoreFluxesFunctor3D
   
@@ -572,6 +648,16 @@ class UpdateFunctor3D : public HydroBaseFunctor3D {
 
 public:
 
+  /**
+   * Perform time update using the stored fluxes.
+   *
+   * \note this functor must be called after ComputeAndStoreFluxesFunctor2D
+   *
+   * \param[in,out] Udata
+   * \param[in] FluxData_x flux coming from the left neighbor along X
+   * \param[in] FluxData_y flux coming from the left neighbor along Y
+   * \param[in] FluxData_z flux coming from the left neighbor along Z
+   */
   UpdateFunctor3D(HydroParams params,
 		  DataArray3d Udata,
 		  DataArray3d FluxData_x,
@@ -588,9 +674,9 @@ public:
                     DataArray3d Udata,
 		    DataArray3d FluxData_x,
 		    DataArray3d FluxData_y,
-		    DataArray3d FluxData_z,
-		    int nbCells)
+		    DataArray3d FluxData_z)
   {
+    int nbCells = params.isize * params.jsize * params.ksize;
     UpdateFunctor3D functor(params, Udata, FluxData_x, FluxData_y, FluxData_z);
     Kokkos::parallel_for(nbCells, functor);
   }
@@ -624,27 +710,27 @@ public:
       
       Udata(i  ,j  ,k    , ID) +=  FluxData_y(i  ,j  ,k    , ID);
       Udata(i  ,j  ,k    , IP) +=  FluxData_y(i  ,j  ,k    , IP);
-      Udata(i  ,j  ,k    , IU) +=  FluxData_y(i  ,j  ,k    , IV); //
-      Udata(i  ,j  ,k    , IV) +=  FluxData_y(i  ,j  ,k    , IU); //
+      Udata(i  ,j  ,k    , IU) +=  FluxData_y(i  ,j  ,k    , IU);
+      Udata(i  ,j  ,k    , IV) +=  FluxData_y(i  ,j  ,k    , IV);
       Udata(i  ,j  ,k    , IW) +=  FluxData_y(i  ,j  ,k    , IW);
       
       Udata(i  ,j  ,k    , ID) -=  FluxData_y(i  ,j+1,k  , ID);
       Udata(i  ,j  ,k    , IP) -=  FluxData_y(i  ,j+1,k  , IP);
-      Udata(i  ,j  ,k    , IU) -=  FluxData_y(i  ,j+1,k  , IV); //
-      Udata(i  ,j  ,k    , IV) -=  FluxData_y(i  ,j+1,k  , IU); //
+      Udata(i  ,j  ,k    , IU) -=  FluxData_y(i  ,j+1,k  , IU);
+      Udata(i  ,j  ,k    , IV) -=  FluxData_y(i  ,j+1,k  , IV);
       Udata(i  ,j  ,k    , IW) -=  FluxData_y(i  ,j+1,k  , IW);
 
       Udata(i  ,j  ,k    , ID) +=  FluxData_z(i  ,j  ,k    , ID);
       Udata(i  ,j  ,k    , IP) +=  FluxData_z(i  ,j  ,k    , IP);
-      Udata(i  ,j  ,k    , IU) +=  FluxData_z(i  ,j  ,k    , IW); //
+      Udata(i  ,j  ,k    , IU) +=  FluxData_z(i  ,j  ,k    , IU);
       Udata(i  ,j  ,k    , IV) +=  FluxData_z(i  ,j  ,k    , IV);
-      Udata(i  ,j  ,k    , IW) +=  FluxData_z(i  ,j  ,k    , IU); //
-      
+      Udata(i  ,j  ,k    , IW) +=  FluxData_z(i  ,j  ,k    , IW);
+
       Udata(i  ,j  ,k    , ID) -=  FluxData_z(i  ,j  ,k+1, ID);
       Udata(i  ,j  ,k    , IP) -=  FluxData_z(i  ,j  ,k+1, IP);
-      Udata(i  ,j  ,k    , IU) -=  FluxData_z(i  ,j  ,k+1, IW); //
+      Udata(i  ,j  ,k    , IU) -=  FluxData_z(i  ,j  ,k+1, IU);
       Udata(i  ,j  ,k    , IV) -=  FluxData_z(i  ,j  ,k+1, IV);
-      Udata(i  ,j  ,k    , IW) -=  FluxData_z(i  ,j  ,k+1, IU); //
+      Udata(i  ,j  ,k    , IW) -=  FluxData_z(i  ,j  ,k+1, IW);
 
     } // end if
     
@@ -666,6 +752,13 @@ class UpdateDirFunctor3D : public HydroBaseFunctor3D {
 
 public:
 
+  /**
+   * Perform time update using the stored fluxes along direction dir.
+   *
+   * \param[in,out] Udata
+   * \param[in] FluxData flux coming from the left neighbor along direction dir
+   *
+   */
   UpdateDirFunctor3D(HydroParams params,
 		     DataArray3d Udata,
 		     DataArray3d FluxData) :
@@ -676,9 +769,9 @@ public:
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
                     DataArray3d Udata,
-		    DataArray3d FluxData,
-		    int nbCells)
+		    DataArray3d FluxData)
   {
+    int nbCells = params.isize * params.jsize * params.ksize;
     UpdateDirFunctor3D<dir> functor(params, Udata, FluxData);
     Kokkos::parallel_for(nbCells, functor);
   }
@@ -759,6 +852,14 @@ class ComputeSlopesFunctor3D : public HydroBaseFunctor3D {
   
 public:
   
+  /**
+   * Compute limited slopes.
+   *
+   * \param[in] Qdata primitive variables
+   * \param[out] Slopes_x limited slopes along direction X
+   * \param[out] Slopes_y limited slopes along direction Y
+   * \param[out] Slopes_z limited slopes along direction Z
+   */
   ComputeSlopesFunctor3D(HydroParams params,
 			 DataArray3d Qdata,
 			 DataArray3d Slopes_x,
@@ -772,9 +873,9 @@ public:
                     DataArray3d Qdata,
 		    DataArray3d Slopes_x,
 		    DataArray3d Slopes_y,
-		    DataArray3d Slopes_z,
-		    int nbCells)
+		    DataArray3d Slopes_z)
   {
+    int nbCells = params.isize * params.jsize * params.ksize;
     ComputeSlopesFunctor3D functor(params, Qdata, Slopes_x, Slopes_y, Slopes_z);
     Kokkos::parallel_for(nbCells, functor);
   }
@@ -895,19 +996,34 @@ class ComputeTraceAndFluxes_Functor3D : public HydroBaseFunctor3D {
   
 public:
   
+  /**
+   * Compute reconstructed states on faces (not stored), and fluxes (stored).
+   *
+   * \param[in] Qdata primitive variables
+   * \param[in] Slopes_x limited slopes along direction X
+   * \param[in] Slopes_y limited slopes along direction Y
+   * \param[in] Slopes_z limited slopes along direction Z
+   * \param[out] Fluxes along direction dir
+   *
+   * \tparam dir direction along which fluxes are computed.
+   */
   ComputeTraceAndFluxes_Functor3D(HydroParams params,
 				  DataArray3d Qdata,
 				  DataArray3d Slopes_x,
 				  DataArray3d Slopes_y,
 				  DataArray3d Slopes_z,
 				  DataArray3d Fluxes,
-				  real_t    dtdx,
-				  real_t    dtdy,
-				  real_t    dtdz) :
+				  real_t    dt,
+				  bool gravity_enabled,
+				  VectorField3d gravity) :
     HydroBaseFunctor3D(params), Qdata(Qdata),
     Slopes_x(Slopes_x), Slopes_y(Slopes_y), Slopes_z(Slopes_z),
     Fluxes(Fluxes),
-    dtdx(dtdx), dtdy(dtdy), dtdz(dtdz) {};
+    dt(dt),
+    dtdx(dt/params.dx), dtdy(dt/params.dy), dtdz(dt/params.dz),
+    gravity_enabled(gravity_enabled),
+    gravity(gravity)
+  {};
   
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
@@ -916,15 +1032,17 @@ public:
 		    DataArray3d Slopes_y,
 		    DataArray3d Slopes_z,
 		    DataArray3d Fluxes,
-		    real_t      dtdx,
-		    real_t      dtdy,
-		    real_t      dtdz,
-		    int nbCells)
+		    real_t        dt,
+		    bool          gravity_enabled,
+		    VectorField3d gravity)
   {
+    int nbCells = params.isize * params.jsize * params.ksize;
     ComputeTraceAndFluxes_Functor3D<dir> functor(params, Qdata,
 						 Slopes_x, Slopes_y, Slopes_z,
 						 Fluxes,
-						 dtdx, dtdy, dtdz);
+						 dt,
+						 gravity_enabled,
+						 gravity);
     Kokkos::parallel_for(nbCells, functor);
   }
   
@@ -999,6 +1117,16 @@ public:
 				     dtdx, dtdy, dtdz,
 				     FACE_XMIN, qright);
 	  
+	  if (gravity_enabled) {
+	    // we need to modify input to flux computation with
+	    // gravity predictor (half time step)
+	    
+	    qright[IU] += 0.5 * dt * gravity(i,j,k,IX);
+	    qright[IV] += 0.5 * dt * gravity(i,j,k,IY);
+	    qright[IW] += 0.5 * dt * gravity(i,j,k,IZ);
+	    
+	  }
+
 	  qLocNeighbor[ID] = Qdata   (i-1,j  ,k  , ID);
 	  dqX_neighbor[ID] = Slopes_x(i-1,j  ,k  , ID);
 	  dqY_neighbor[ID] = Slopes_y(i-1,j  ,k  , ID);
@@ -1030,6 +1158,16 @@ public:
 				     dtdx, dtdy, dtdz,
 				     FACE_XMAX, qleft);
 	  
+	  if (gravity_enabled) {
+	    // we need to modify input to flux computation with
+	    // gravity predictor (half time step)
+	    
+	    qleft[IU]  += 0.5 * dt * gravity(i-1,j,k,IX);
+	    qleft[IV]  += 0.5 * dt * gravity(i-1,j,k,IY);
+	    qleft[IW]  += 0.5 * dt * gravity(i-1,j,k,IZ);
+	    
+	  }
+
 	  // Solve Riemann problem at X-interfaces and compute X-fluxes
 	  riemann_hydro(qleft,qright,qgdnv,flux,params);
 
@@ -1050,6 +1188,16 @@ public:
 				     dtdx, dtdy, dtdz,
 				     FACE_YMIN, qright);
 	  
+	  if (gravity_enabled) {
+	    // we need to modify input to flux computation with
+	    // gravity predictor (half time step)
+	    
+	    qright[IU] += 0.5 * dt * gravity(i,j,k,IX);
+	    qright[IV] += 0.5 * dt * gravity(i,j,k,IY);
+	    qright[IW] += 0.5 * dt * gravity(i,j,k,IZ);
+	    
+	  }
+
 	  qLocNeighbor[ID] = Qdata   (i  ,j-1,k  , ID);
 	  dqX_neighbor[ID] = Slopes_x(i  ,j-1,k  , ID);
 	  dqY_neighbor[ID] = Slopes_y(i  ,j-1,k  , ID);
@@ -1081,6 +1229,16 @@ public:
 				     dtdx, dtdy, dtdz,
 				     FACE_YMAX, qleft);
 	  
+	  if (gravity_enabled) {
+	    // we need to modify input to flux computation with
+	    // gravity predictor (half time step)
+	    
+	    qleft[IU]  += 0.5 * dt * gravity(i,j-1,k,IX);
+	    qleft[IV]  += 0.5 * dt * gravity(i,j-1,k,IY);
+	    qleft[IW]  += 0.5 * dt * gravity(i,j-1,k,IZ);
+	    
+	  }
+
 	  // Solve Riemann problem at Y-interfaces and compute Y-fluxes
 	  swapValues(&(qleft[IU]) ,&(qleft[IV]) );
 	  swapValues(&(qright[IU]),&(qright[IV]));
@@ -1134,6 +1292,16 @@ public:
 				     dtdx, dtdy, dtdz,
 				     FACE_ZMAX, qleft);
 	  
+	  if (gravity_enabled) {
+	    // we need to modify input to flux computation with
+	    // gravity predictor (half time step)
+	    
+	    qleft[IU]  += 0.5 * dt * gravity(i,j,k-1,IX);
+	    qleft[IV]  += 0.5 * dt * gravity(i,j,k-1,IY);
+	    qleft[IW]  += 0.5 * dt * gravity(i,j,k-1,IZ);
+	    
+	  }
+
 	  // Solve Riemann problem at Y-interfaces and compute Y-fluxes
 	  swapValues(&(qleft[IU]) ,&(qleft[IW]) );
 	  swapValues(&(qright[IU]),&(qright[IW]));
@@ -1157,9 +1325,87 @@ public:
   DataArray3d Qdata;
   DataArray3d Slopes_x, Slopes_y, Slopes_z;
   DataArray3d Fluxes;
-  real_t dtdx, dtdy, dtdz;
+  real_t dt, dtdx, dtdy, dtdz;
+  bool gravity_enabled;
+  VectorField3d gravity;
   
 }; // ComputeTraceAndFluxes_Functor3D
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
+class GravitySourceTermFunctor3D : public HydroBaseFunctor3D {
+  
+public:
+  
+  /**
+   * Update with gravity source term.
+   *
+   * \param[in] Udata_in conservative variables at t(n)
+   * \param[in,out] Udata_out conservative variables at t(n+1)
+   * \param[in] gravity is a vector field
+   */
+  GravitySourceTermFunctor3D(HydroParams params,
+			     DataArray3d Udata_in,
+			     DataArray3d Udata_out,
+			     VectorField3d gravity,
+			     real_t dt) :
+    HydroBaseFunctor3D(params),
+    Udata_in(Udata_in),
+    Udata_out(Udata_out),
+    gravity(gravity),
+    dt(dt)
+  {};
+  
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+                    DataArray3d Udata_in,
+                    DataArray3d Udata_out,
+		    VectorField3d gravity,
+		    real_t dt)
+  {
+    int nbCells = params.isize * params.jsize * params.ksize;
+    GravitySourceTermFunctor3D functor(params, Udata_in, Udata_out, gravity, dt);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+  
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int& index) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ksize = params.ksize;
+    const int ghostWidth = params.ghostWidth;
+    
+    int i,j,k;
+    index2coord(index,i,j,k,isize,jsize,ksize);
+    
+    if(k >= ghostWidth && k < ksize-ghostWidth  &&
+       j >= ghostWidth && j < jsize-ghostWidth  &&
+       i >= ghostWidth && i < isize-ghostWidth ) {
+
+      real_t rhoOld = Udata_in(i,j,k,ID);
+      real_t rhoNew = Udata_out(i,j,k,ID);
+      
+      // update momentum
+      Udata_out(i,j,k,IU) += 0.5 * dt * gravity(i,j,k,IX) * (rhoOld + rhoNew); 
+      Udata_out(i,j,k,IV) += 0.5 * dt * gravity(i,j,k,IY) * (rhoOld + rhoNew);
+      Udata_out(i,j,k,IW) += 0.5 * dt * gravity(i,j,k,IZ) * (rhoOld + rhoNew);
+
+      Udata_out(i,j,k,IE) +=
+	0.5 * dt * gravity(i,j,k,IX) * (rhoOld + rhoNew) * Udata_in(i,j,k,IU) +
+	0.5 * dt * gravity(i,j,k,IY) * (rhoOld + rhoNew) * Udata_in(i,j,k,IV) +
+	0.5 * dt * gravity(i,j,k,IZ) * (rhoOld + rhoNew) * Udata_in(i,j,k,IW) ;
+      
+    }
+    
+  } // end operator ()
+  
+  DataArray3d Udata_in, Udata_out;
+  VectorField3d gravity;
+  real_t dt;
+  
+}; // GravitySourceTermFunctor3D
 
 } // namespace muscl
 

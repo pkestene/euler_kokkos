@@ -12,6 +12,7 @@
 // init conditions
 #include "shared/problems/BlastParams.h"
 #include "shared/problems/IsentropicVortexParams.h"
+#include "shared/problems/RayleighTaylorInstabilityParams.h"
 #include "shared/problems/initRiemannConfig2d.h"
 
 namespace euler_kokkos { namespace muscl {
@@ -368,6 +369,137 @@ public:
   DataArray2d Udata;
   
 }; // InitIsentropicVortexFunctor2D
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
+/**
+ * Test of the Rayleigh-Taylor instability.
+ * See
+ * http://www.astro.princeton.edu/~jstone/Athena/tests/rt/rt.html
+ * for a description of such initial conditions
+ */
+class RayleighTaylorInstabilityFunctor2D : public HydroBaseFunctor2D {
+
+public:
+  RayleighTaylorInstabilityFunctor2D(HydroParams params,
+				     RayleighTaylorInstabilityParams rtiparams,
+				     DataArray2d Udata,
+				     VectorField2d gravity) :
+    HydroBaseFunctor2D(params),
+    rtiparams(rtiparams),
+    Udata(Udata),
+    gravity(gravity)
+  {};
+
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    RayleighTaylorInstabilityParams rtiparams,
+                    DataArray2d Udata,
+		    VectorField2d gravity)
+  {
+    uint64_t nbCells = params.isize * params.jsize;
+    RayleighTaylorInstabilityFunctor2D functor(params, rtiparams, Udata, gravity);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int& index) const
+  {
+
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ghostWidth = params.ghostWidth;
+    
+#ifdef USE_MPI
+    const int i_mpi = params.myMpiPos[IX];
+    const int j_mpi = params.myMpiPos[IY];
+#else
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+#endif
+
+    const int nx = params.nx;
+    const int ny = params.ny;
+
+    const real_t xmin = params.xmin;
+    const real_t ymin = params.ymin;
+
+    const real_t xmax = params.xmax;
+    const real_t ymax = params.ymax;
+
+    const real_t Lx = xmax-xmin;
+    const real_t Ly = ymax-ymin;
+
+    const real_t dx = params.dx;
+    const real_t dy = params.dy;
+    
+    const real_t gamma0 = params.settings.gamma0;
+  
+    int i,j;
+    index2coord(index,i,j,isize,jsize);
+    
+    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
+    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
+
+    /* initialize perturbation amplitude */
+    real_t amplitude = rtiparams.amplitude;
+    real_t        d0 = rtiparams.d0;
+    real_t        d1 = rtiparams.d1;
+    
+    //bool  randomEnabled = rti.randomEnabled;
+
+
+    /* uniform static gravity field */
+    const real_t gravity_x = rtiparams.gx;
+    const real_t gravity_y = rtiparams.gy;
+    const real_t gravity_z = rtiparams.gz;
+    
+    real_t         P0 = 1.0;
+      
+  
+    // the initial condition must ensure the condition of
+    // hydrostatic equilibrium for pressure P = P0 - 0.1*\rho*y
+	
+    // Athena initial conditions are
+    // if ( y > 0.0 ) {
+    //   h_U(i,j,ID) = 2.0;
+    // } else {
+    //   h_U(i,j,ID) = 1.0;
+    // }
+    // h_U(i,j,IP) = P0 + gravity_x*x + gravity_y*y;
+    // h_U(i,j,IU) = 0.0;
+    // h_U(i,j,IV) = amplitude*(1+cos(2*M_PI*x))*(1+cos(0.5*M_PI*y))/4;
+    
+    if ( y > (ymin+ymax)/2 ) {
+      Udata(i,j,ID) = d1;
+    } else {
+      Udata(i,j,ID) = d0;
+    }
+    Udata(i,j,IU) = 0.0;
+    // if (randomEnabled)
+    //   Udata(i,j,IV) = amplitude * ( rand() * 1.0 / RAND_MAX - 0.5);
+    // else
+    Udata(i,j,IV) = amplitude * 
+      (1+cos(2*M_PI*x/Lx))*
+      (1+cos(2*M_PI*y/Ly))/4;
+
+    // initial hydrostatic equilibrium :
+    // -dP/dz + rho*g = 0
+    // P = P0 + rho g z
+    Udata(i,j,IE) = (P0 + Udata(i,j,ID)*(gravity_x*x + gravity_y*y))/(gamma0-1.0);
+
+    // init gravity field
+    gravity(i,j,IX) = gravity_x;
+    gravity(i,j,IY) = gravity_y;
+    
+  } // end operator ()
+
+  RayleighTaylorInstabilityParams rtiparams;
+  DataArray2d Udata;
+  VectorField2d gravity;
+  
+}; // class RayleighTaylorInstabilityFunctor2D
 
 } // namespace muscl
 

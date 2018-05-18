@@ -166,6 +166,10 @@ void SolverHydroMuscl<2>::init(DataArray Udata)
 
     init_isentropic_vortex(Udata);
 
+  } else if ( !m_problem_name.compare("rayleigh_taylor") ) {
+      
+    init_rayleigh_taylor(Udata,gravity);
+      
   } else {
 
     std::cout << "Problem : " << m_problem_name
@@ -195,8 +199,12 @@ void SolverHydroMuscl<3>::init(DataArray Udata)
 
     init_blast(Udata);
 
+  } else if ( !m_problem_name.compare("rayleigh_taylor") ) {
+    
+    init_rayleigh_taylor(Udata,gravity);
+    
   } else {
-
+    
     std::cout << "Problem : " << m_problem_name
 	      << " is not recognized / implemented."
 	      << std::endl;
@@ -241,41 +249,56 @@ void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in,
 
   if (params.implementationVersion == 0) {
     
-    // compute fluxes
+    // compute fluxes (if gravity_enabled is false, the last parameter is not used)
     ComputeAndStoreFluxesFunctor2D::apply(params, Q,
 					  Fluxes_x, Fluxes_y,
-					  dtdx, dtdy,
-					  nbCells);
+					  dt,
+					  m_gravity_enabled,
+					  gravity);
     
     // actual update
     UpdateFunctor2D::apply(params, data_out,
-			   Fluxes_x, Fluxes_y,
-			   nbCells);
+			   Fluxes_x, Fluxes_y);
+
+    // gravity source term
+    if (m_gravity_enabled) {
+      GravitySourceTermFunctor2D::apply(params, data_in, data_out, gravity, dt);
+    }
+
     
   } else if (params.implementationVersion == 1) {
 
     // call device functor to compute slopes
     ComputeSlopesFunctor2D::apply(params, Q,
-				  Slopes_x, Slopes_y, nbCells);
+				  Slopes_x, Slopes_y);
 
     // now trace along X axis
     ComputeTraceAndFluxes_Functor2D<XDIR>::apply(params, Q,
 						 Slopes_x, Slopes_y,
 						 Fluxes_x,
-						 dtdx, dtdy, nbCells);
+						 dt,
+						 m_gravity_enabled,
+						 gravity);
     
     // and update along X axis
-    UpdateDirFunctor2D<XDIR>::apply(params, data_out, Fluxes_x, nbCells);
+    UpdateDirFunctor2D<XDIR>::apply(params, data_out, Fluxes_x);
     
     // now trace along Y axis
     ComputeTraceAndFluxes_Functor2D<YDIR>::apply(params, Q,
 						 Slopes_x, Slopes_y,
 						 Fluxes_y,
-						 dtdx, dtdy, nbCells);
+						 dt,
+						 m_gravity_enabled,
+						 gravity);
     
     // and update along Y axis
-    UpdateDirFunctor2D<YDIR>::apply(params, data_out, Fluxes_y, nbCells);
+    UpdateDirFunctor2D<YDIR>::apply(params, data_out, Fluxes_y);
     
+    // gravity source term
+    if (m_gravity_enabled) {
+      GravitySourceTermFunctor2D::apply(params, data_in, data_out, gravity, dt);
+    }
+
   } // end params.implementationVersion == 1
   
   timers[TIMER_NUM_SCHEME]->stop();
@@ -320,47 +343,57 @@ void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
     // compute fluxes
     ComputeAndStoreFluxesFunctor3D::apply(params, Q,
 					  Fluxes_x, Fluxes_y, Fluxes_z,
-					  dtdx, dtdy, dtdz,
-					  nbCells);
+					  dt,
+					  m_gravity_enabled,
+					  gravity);
 
     // actual update
     UpdateFunctor3D::apply(params, data_out,
-			   Fluxes_x, Fluxes_y, Fluxes_z,
-			   nbCells);
+			   Fluxes_x, Fluxes_y, Fluxes_z);
+
+    // gravity source term
+    if (m_gravity_enabled) {
+      GravitySourceTermFunctor3D::apply(params, data_in, data_out, gravity, dt);
+    }
+
     
   } else if (params.implementationVersion == 1) {
 
     // call device functor to compute slopes
     ComputeSlopesFunctor3D::apply(params, Q,
-				  Slopes_x, Slopes_y, Slopes_z,
-				  nbCells);
+				  Slopes_x, Slopes_y, Slopes_z);
 
     // now trace along X axis
     ComputeTraceAndFluxes_Functor3D<XDIR>::apply(params, Q,
 						 Slopes_x, Slopes_y, Slopes_z,
 						 Fluxes_x,
-						 dtdx, dtdy, dtdz, nbCells);
+						 dt, m_gravity_enabled, gravity);
     
     // and update along X axis
-    UpdateDirFunctor3D<XDIR>::apply(params, data_out, Fluxes_x, nbCells);
+    UpdateDirFunctor3D<XDIR>::apply(params, data_out, Fluxes_x);
 
     // now trace along Y axis
     ComputeTraceAndFluxes_Functor3D<YDIR>::apply(params, Q,
 						 Slopes_x, Slopes_y, Slopes_z,
 						 Fluxes_y,
-						 dtdx, dtdy, dtdz, nbCells);
+						 dt, m_gravity_enabled, gravity);
     
     // and update along Y axis
-    UpdateDirFunctor3D<YDIR>::apply(params, data_out, Fluxes_y, nbCells);
+    UpdateDirFunctor3D<YDIR>::apply(params, data_out, Fluxes_y);
 
     // now trace along Z axis
     ComputeTraceAndFluxes_Functor3D<ZDIR>::apply(params, Q,
 						 Slopes_x, Slopes_y, Slopes_z,
 						 Fluxes_z,
-						 dtdx, dtdy, dtdz, nbCells);
+						 dt, m_gravity_enabled, gravity);
     
     // and update along Z axis
-    UpdateDirFunctor3D<ZDIR>::apply(params, data_out, Fluxes_z, nbCells);
+    UpdateDirFunctor3D<ZDIR>::apply(params, data_out, Fluxes_z);
+
+    // gravity source term
+    if (m_gravity_enabled) {
+      GravitySourceTermFunctor3D::apply(params, data_in, data_out, gravity, dt);
+    }
 
   } // end params.implementationVersion == 1
   

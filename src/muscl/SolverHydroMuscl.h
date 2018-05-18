@@ -55,6 +55,9 @@ public:
   //! Data array typedef for host memory space
   using DataArrayHost = typename std::conditional<dim==2,DataArray2dHost,DataArray3dHost>::type;
 
+  //! Decide at compile-time which data array to use for 2d or 3d
+  using VectorField  = typename std::conditional<dim==2,VectorField2d,VectorField3d>::type;
+
   SolverHydroMuscl(HydroParams& params, ConfigMap& configMap);
   virtual ~SolverHydroMuscl();
   
@@ -84,6 +87,9 @@ public:
   DataArray Slopes_z; /*!< implementation 1 only */
 
 
+  /* Gravity field */
+  VectorField gravity;
+  
   //riemann_solver_t riemann_solver_fn; /*!< riemann solver function pointer */
 
   /*
@@ -98,6 +104,7 @@ public:
   void init_blast(DataArray Udata); // 2d and 3d
   void init_four_quadrant(DataArray Udata); // 2d only
   void init_isentropic_vortex(DataArray Udata); // 2d only
+  void init_rayleigh_taylor(DataArray Udata, VectorField gravity); // 2d and 3d
 
   //! init wrapper (actual initialization)
   void init(DataArray Udata);
@@ -200,6 +207,11 @@ SolverHydroMuscl<dim>::SolverHydroMuscl(HydroParams& params,
 
     } 
 
+    if (m_gravity_enabled) {
+      gravity = VectorField("gravity field",isize,jsize);
+      total_mem_size += isize*jsize*2;
+    }
+
   } else {
 
     U     = DataArray("U", isize,jsize,ksize, nbvar);
@@ -231,6 +243,11 @@ SolverHydroMuscl<dim>::SolverHydroMuscl(HydroParams& params,
       total_mem_size += isize*jsize*ksize*nbvar*sizeof(real_t)*4;// 1+1+1+1=4 Slopes
     }
     
+    if (m_gravity_enabled) {
+      gravity = VectorField("gravity field",isize,jsize,ksize);
+      total_mem_size += isize*jsize*ksize*3;
+    }
+
   } // dim == 2 / 3
   
   // perform init condition
@@ -319,6 +336,32 @@ void SolverHydroMuscl<dim>::init_blast(DataArray Udata)
   InitBlastFunctor::apply(params, blastParams, Udata, nbCells);
 
 } // SolverHydroMuscl::init_blast
+
+// =======================================================
+// =======================================================
+/**
+ * Hydrodynamical Rayleigh Taylor instability Test.
+ * http://www.astro.princeton.edu/~jstone/Athena/tests/rt/rt.html
+ *
+ */
+template<int dim>
+void SolverHydroMuscl<dim>::init_rayleigh_taylor(DataArray Udata,
+						 VectorField gravity)
+{
+  
+  RayleighTaylorInstabilityParams rtiParams =
+    RayleighTaylorInstabilityParams(configMap);
+  
+  // alias to actual device functor
+  using RTIFunctor =
+    typename std::conditional<dim==2,
+  			      RayleighTaylorInstabilityFunctor2D,
+  			      RayleighTaylorInstabilityFunctor3D>::type;
+  
+  // perform init
+  RTIFunctor::apply(params, rtiParams, Udata, gravity);
+  
+} // SolverHydroMuscl::init_rayleigh_taylor
 
 // =======================================================
 // =======================================================
@@ -432,7 +475,7 @@ void SolverHydroMuscl<dim>::convertToPrimitives(DataArray Udata)
 			      ConvertToPrimitivesFunctor3D>::type;
 
   // call device functor
-  ConvertToPrimitivesFunctor::apply(params, Udata, Q, nbCells);
+  ConvertToPrimitivesFunctor::apply(params, Udata, Q);
   
 } // SolverHydroMuscl::convertToPrimitives
 

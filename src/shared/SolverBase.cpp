@@ -46,9 +46,9 @@ SolverBase::SolverBase (HydroParams& params, ConfigMap& configMap) :
   // init variables names
   m_variables_names[ID] = "rho";
   m_variables_names[IP] = "energy";
-  m_variables_names[IU] = "mx"; // momentum component X
-  m_variables_names[IV] = "my"; // momentum component Y
-  m_variables_names[IW] = "mz"; // momentum component Z
+  m_variables_names[IU] = "rho_vx"; // momentum component X
+  m_variables_names[IV] = "rho_vy"; // momentum component Y
+  m_variables_names[IW] = "rho_vz"; // momentum component Z
   m_variables_names[IA] = "bx"; // mag field X
   m_variables_names[IB] = "by"; // mag field Y
   m_variables_names[IC] = "bz"; // mag field Z
@@ -123,6 +123,14 @@ SolverBase::read_config()
   /* restart run : default is no */
   m_restart_run_enabled = configMap.getInteger("run", "restart_enabled", 0);
   m_restart_run_filename = configMap.getString ("run", "restart_filename", "");
+
+  /*
+   * Gravity enabled (either static or self).
+   * self-gravity requires a poisson solver (FFT-based): TODO
+   */
+    m_static_gravity_enabled = configMap.getBool("gravity", "static", false);
+    //selfGravityEnabled = configMap.getBool("gravity", "self", false);
+    m_gravity_enabled = m_static_gravity_enabled;// || m_self_gravity_enabled;
 
 } // SolverBase::read_config
 

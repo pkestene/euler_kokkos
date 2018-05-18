@@ -75,6 +75,10 @@ public:
   //! solver name (use in output file).
   std::string          m_solver_name;
   
+  //! gravity enabled ?
+  bool                 m_static_gravity_enabled;
+  bool                 m_gravity_enabled;
+
   /*
    *
    * Computation interface that may be overriden in a derived 

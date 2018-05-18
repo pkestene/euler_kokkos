@@ -32,10 +32,16 @@ typedef DataArray3d::HostMirror           DataArray3dHost;
 // for 2D
 typedef Kokkos::View<real_t**,        Device> DataArrayScalar;
 typedef DataArrayScalar::HostMirror           DataArrayScalarHost;
+typedef Kokkos::View<real_t**[2],      Device> DataArrayVector2;
+typedef DataArrayVector2::HostMirror           DataArrayVector2Host;
+using VectorField2d     = DataArrayVector2;
+using VectorField2dHost = DataArrayVector2::HostMirror;
 
 // for 3D
 typedef Kokkos::View<real_t***[3],     Device> DataArrayVector3;
 typedef DataArrayVector3::HostMirror           DataArrayVector3Host;
+using VectorField3d     = DataArrayVector3;
+using VectorField3dHost = DataArrayVector3::HostMirror;
 
 /**
  * Retrieve cartesian coordinate from index, using memory layout information.
