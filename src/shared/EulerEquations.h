@@ -48,12 +48,16 @@ struct EulerEquations<2>
 
   //! velocity gradient tensor number of components
   static const int nbvar_grad = 2*2;
-  
-  static constexpr int U_X = (int) gradientV_IDS_2d::U_X;
-  static constexpr int U_Y = (int) gradientV_IDS_2d::U_Y;
 
-  static constexpr int V_X = (int) gradientV_IDS_2d::V_X;
-  static constexpr int V_Y = (int) gradientV_IDS_2d::V_Y;
+  enum gradient_index_t {
+  
+    U_X = (int) gradientV_IDS_2d::U_X,
+    U_Y = (int) gradientV_IDS_2d::U_Y,
+
+    V_X = (int) gradientV_IDS_2d::V_X,
+    V_Y = (int) gradientV_IDS_2d::V_Y
+    
+  };
 
   //! alias typename to an array holding gradient velocity tensor components
   using GradTensor = Kokkos::Array<real_t,nbvar_grad>;
@@ -70,8 +74,8 @@ struct EulerEquations<2>
     
     names[ID] = "rho";
     names[IP] = "energy";
-    names[IU] = "mx"; // momentum component X
-    names[IV] = "my"; // momentum component Y
+    names[IU] = "rho_vx"; // momentum component X
+    names[IV] = "rho_vy"; // momentum component Y
 
     return names;
     
@@ -443,18 +447,22 @@ struct EulerEquations<3>
   //! velocity gradient tensor number of components
   static const int nbvar_grad = 3*3;
 
-  static constexpr int U_X = (int) gradientV_IDS_3d::U_X;
-  static constexpr int U_Y = (int) gradientV_IDS_3d::U_Y;
-  static constexpr int U_Z = (int) gradientV_IDS_3d::U_Z;
+  enum gradient_index_t {
 
-  static constexpr int V_X = (int) gradientV_IDS_3d::V_X;
-  static constexpr int V_Y = (int) gradientV_IDS_3d::V_Y;
-  static constexpr int V_Z = (int) gradientV_IDS_3d::V_Z;
-
-  static constexpr int W_X = (int) gradientV_IDS_3d::W_X;
-  static constexpr int W_Y = (int) gradientV_IDS_3d::W_Y;
-  static constexpr int W_Z = (int) gradientV_IDS_3d::W_Z;
-
+    U_X = (int) gradientV_IDS_3d::U_X,
+    U_Y = (int) gradientV_IDS_3d::U_Y,
+    U_Z = (int) gradientV_IDS_3d::U_Z,
+    
+    V_X = (int) gradientV_IDS_3d::V_X,
+    V_Y = (int) gradientV_IDS_3d::V_Y,
+    V_Z = (int) gradientV_IDS_3d::V_Z,
+    
+    W_X = (int) gradientV_IDS_3d::W_X,
+    W_Y = (int) gradientV_IDS_3d::W_Y,
+    W_Z = (int) gradientV_IDS_3d::W_Z
+    
+  };
+    
   //! alias typename to an array holding gradient velocity tensor components
   using GradTensor = Kokkos::Array<real_t,nbvar_grad>;
 
@@ -470,9 +478,9 @@ struct EulerEquations<3>
     
     names[ID] = "rho";
     names[IE] = "energy";
-    names[IU] = "mx"; // momentum component X
-    names[IV] = "my"; // momentum component Y
-    names[IW] = "mz"; // momentum component Z
+    names[IU] = "rho_vx"; // momentum component X
+    names[IV] = "rho_vy"; // momentum component Y
+    names[IW] = "rho_vz"; // momentum component Z
 
     return names;
     
