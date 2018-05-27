@@ -26,6 +26,10 @@ struct IsentropicVortexParams {
 
   // number of quadrature points (used to compute initial cell-averaged values)
   int nQuadPts;
+
+  //! useful to compute solution at final time
+  bool use_tEnd;
+  real_t tEnd;
   
   IsentropicVortexParams(ConfigMap& configMap)
   {
@@ -52,6 +56,10 @@ struct IsentropicVortexParams {
     beta = configMap.getFloat("isentropic_vortex","strength",5.0);
 
     nQuadPts = configMap.getInteger("isentropic_vortex", "num_quadrature_points",4);
+
+    // default value is false, meaning we compute the initial value (t=0)
+    use_tEnd = configMap.getBool("isentropic_vortex", "use_tEnd", false);
+    tEnd     = configMap.getFloat("run", "tEnd", 1.0);
   }
 
 }; // struct IsentropicVortexParams
