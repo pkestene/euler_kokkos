@@ -36,6 +36,7 @@
 
 // for init condition
 #include "shared/problems/BlastParams.h"
+#include "shared/problems/KHParams.h"
 #include "shared/problems/IsentropicVortexParams.h"
 
 namespace euler_kokkos { namespace muscl {
@@ -102,6 +103,7 @@ public:
   // host routines (initialization)  
   void init_implode(DataArray Udata); // 2d and 3d
   void init_blast(DataArray Udata); // 2d and 3d
+  void init_kelvin_helmholtz(DataArray Udata); // 2d and 3d
   void init_four_quadrant(DataArray Udata); // 2d only
   void init_isentropic_vortex(DataArray Udata); // 2d only
   void init_rayleigh_taylor(DataArray Udata, VectorField gravity); // 2d and 3d
@@ -336,6 +338,35 @@ void SolverHydroMuscl<dim>::init_blast(DataArray Udata)
   InitBlastFunctor::apply(params, blastParams, Udata, nbCells);
 
 } // SolverHydroMuscl::init_blast
+
+// =======================================================
+// =======================================================
+/**
+ * Hydrodynamical Kelvin-Helmholtz instability Test.
+ *
+ * see https://www.astro.princeton.edu/~jstone/Athena/tests/kh/kh.html
+ *
+ * See also article by Robertson et al:
+ * "Computational Eulerian hydrodynamics and Galilean invariance", 
+ * B.E. Robertson et al, Mon. Not. R. Astron. Soc., 401, 2463-2476, (2010).
+ *
+ */
+template<int dim>
+void SolverHydroMuscl<dim>::init_kelvin_helmholtz(DataArray Udata)
+{
+
+  KHParams khParams = KHParams(configMap);
+
+  // alias to actual device functor
+  using InitKelvinHelmholtzFunctor =
+    typename std::conditional<dim==2,
+			      InitKelvinHelmholtzFunctor2D,
+			      InitKelvinHelmholtzFunctor3D>::type;
+
+  // perform init
+  InitKelvinHelmholtzFunctor::apply(params, khParams, Udata, nbCells);
+
+} // SolverHydroMuscl::init_kelvin_helmholtz
 
 // =======================================================
 // =======================================================
