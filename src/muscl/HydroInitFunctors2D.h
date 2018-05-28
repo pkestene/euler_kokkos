@@ -251,26 +251,30 @@ public:
       
       // get random number state
       rand_type rand_gen = rand_pool.get_state();
+
+      real_t d, u, v;
       
       if ( yn < 0.25 or yn > 0.75) {
 	
-	Udata(i,j,ID) = d_out;
-	Udata(i,j,IU) = d_out * (vflow_out + ampl * (rand_gen.drand() - 0.5));
-	Udata(i,j,IV) = d_out * (0.0       + ampl * (rand_gen.drand() - 0.5));;
-	Udata(i,j,IP) = pressure/(gamma0-1.0) +
-	  0.5*(Udata(i,j,IU)*Udata(i,j,IU) +
-	       Udata(i,j,IV)*Udata(i,j,IV))/Udata(i,j,ID);
+	d = d_out;
+	u = vflow_out;
+	v = 0.0;
 	
       } else {
 	
-	Udata(i,j,ID) = d_in;
-	Udata(i,j,IU) = d_in * (vflow_in + ampl * (rand_gen.drand() - 0.5));
-	Udata(i,j,IV) = d_in * (0.0      + ampl * (rand_gen.drand() - 0.5));
-	Udata(i,j,IP) = pressure/(gamma0-1.0) +
-	  0.5*(Udata(i,j,IU)*Udata(i,j,IU) +
-	       Udata(i,j,IV)*Udata(i,j,IV))/Udata(i,j,ID);
+	d = d_in;
+	u = vflow_in;
+	v = 0.0;
 	
       }
+
+      u += ampl * (rand_gen.drand() - 0.5);
+      v += ampl * (rand_gen.drand() - 0.5);
+
+      Udata(i,j,ID) = d;
+      Udata(i,j,IU) = d * u;
+      Udata(i,j,IV) = d * v;
+      Udata(i,j,IE) = pressure/(gamma0-1.0) + 0.5*d*(u*u+v*v);
 
       // free random number
       rand_pool.free_state(rand_gen);
@@ -290,13 +294,15 @@ public:
       const double ramp = 
 	1.0 / ( 1.0 + exp( 2*(y-y1)/delta ) ) +
 	1.0 / ( 1.0 + exp( 2*(y2-y)/delta ) );
-      
-      Udata(i,j,ID) = rho1 + ramp*(rho2-rho1);
-      Udata(i,j,IU) = Udata(i,j,ID) * (v1 + ramp*(v2-v1));
-      Udata(i,j,IV) = Udata(i,j,ID) * w0 * sin(n*M_PI*x);
-      Udata(i,j,IP) = pressure / (gamma0-1.0) +
-	0.5*(Udata(i,j,IU)*Udata(i,j,IU) +
-	     Udata(i,j,IV)*Udata(i,j,IV))/Udata(i,j,ID);
+
+      const real_t d = rho1 + ramp*(rho2-rho1);
+      const real_t u = v1   + ramp*(v2-v1);
+      const real_t v = w0 * sin(n*M_PI*x);
+
+      Udata(i,j,ID) = d;
+      Udata(i,j,IU) = d * u;
+      Udata(i,j,IV) = d * v;
+      Udata(i,j,IP) = pressure / (gamma0-1.0) + 0.5*d*(u*u+v*v);
       
     }
     

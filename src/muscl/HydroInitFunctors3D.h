@@ -326,30 +326,35 @@ public:
       // get random number generator state
       rand_type rand_gen = rand_pool.get_state();
       
+      real_t d, u, v, w;
+      
       if ( zn < 0.25 or zn > 0.75 ) {
 	
-	Udata(i,j,k,ID) = d_out;
-	Udata(i,j,k,IU) = d_out * (vflow_out + ampl * (rand_gen.drand() - 0.5));
-	Udata(i,j,k,IV) = d_out * (0.0       + ampl * (rand_gen.drand() - 0.5));;
-	Udata(i,j,k,IW) = d_out * (0.0       + ampl * (rand_gen.drand() - 0.5));;
-	Udata(i,j,k,IP) = pressure/(gamma0-1.0) +
-	  0.5*(Udata(i,j,k,IU)*Udata(i,j,k,IU) +
-	       Udata(i,j,k,IV)*Udata(i,j,k,IV) +
-	       Udata(i,j,k,IW)*Udata(i,j,k,IW))/Udata(i,j,k,ID);
+	d = d_out;
+	u = vflow_out;
+	v = 0.0;
+	w = 0.0;
 	
       } else {
 	
-	Udata(i,j,k,ID) = d_in;
-	Udata(i,j,k,IU) = d_in * (vflow_in  + ampl * (rand_gen.drand() - 0.5));
-	Udata(i,j,k,IV) = d_in * (0.0       + ampl * (rand_gen.drand() - 0.5));;
-	Udata(i,j,k,IW) = d_in * (0.0       + ampl * (rand_gen.drand() - 0.5));;
-	Udata(i,j,k,IP) = pressure/(gamma0-1.0) +
-	  0.5 * (Udata(i,j,k,IU)*Udata(i,j,k,IU) +
-		 Udata(i,j,k,IV)*Udata(i,j,k,IV) +
-		 Udata(i,j,k,IW)*Udata(i,j,k,IW) ) / Udata(i,j,k,ID);
+	d = d_in;
+	u = vflow_in;
+	v = 0.0;
+	w = 0.0;
 	
       }
 
+      u += ampl * (rand_gen.drand() - 0.5);
+      v += ampl * (rand_gen.drand() - 0.5);
+      w += ampl * (rand_gen.drand() - 0.5);
+
+      Udata(i,j,k,ID) = d;
+      Udata(i,j,k,IU) = d * u;
+      Udata(i,j,k,IV) = d * v;
+      Udata(i,j,k,IW) = d * w;
+      Udata(i,j,k,IP) = pressure/(gamma0-1.0) +
+	0.5*d*(u*u + v*v + w*w);
+      
       // free random number
       rand_pool.free_state(rand_gen);
 
@@ -375,14 +380,17 @@ public:
 	1.0 / ( 1.0 + exp( 2*(z-z1)/delta ) ) +
 	1.0 / ( 1.0 + exp( 2*(z2-z)/delta ) );
       
-      Udata(i,j,k,ID) = rho1 + ramp*(rho2-rho1);
-      Udata(i,j,k,IU) = Udata(i,j,k,ID) * (v1x + ramp*(v2x-v1x));
-      Udata(i,j,k,IV) = Udata(i,j,k,ID) * (v1y + ramp*(v2y-v1y));
-      Udata(i,j,k,IW) = Udata(i,j,k,ID) * w0 * sin(n*M_PI*x) * sin(n*M_PI*y);
+      const real_t d = rho1 + ramp*(rho2-rho1);
+      const real_t u = v1x   + ramp*(v2x-v1x);
+      const real_t v = v1y   + ramp*(v2y-v1y);
+      const real_t w = w0 * sin(n*M_PI*x) * sin(n*M_PI*y);
+      
+      Udata(i,j,k,ID) = d;
+      Udata(i,j,k,IU) = d * u;
+      Udata(i,j,k,IV) = d * v;
+      Udata(i,j,k,IW) = d * w;
       Udata(i,j,k,IP) = pressure / (gamma0-1.0) +
-	0.5 * (Udata(i,j,k,IU)*Udata(i,j,k,IU) +
-	       Udata(i,j,k,IV)*Udata(i,j,k,IV) +
-	       Udata(i,j,k,IW)*Udata(i,j,k,IW) ) / Udata(i,j,k,ID);
+	0.5 * d * (u*u + v*v + w*w);
     }
 
   } // end operator ()
