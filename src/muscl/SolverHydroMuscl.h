@@ -37,6 +37,7 @@
 // for init condition
 #include "shared/problems/BlastParams.h"
 #include "shared/problems/KHParams.h"
+#include "shared/problems/GreshoParams.h"
 #include "shared/problems/IsentropicVortexParams.h"
 
 namespace euler_kokkos { namespace muscl {
@@ -104,6 +105,7 @@ public:
   void init_implode(DataArray Udata); // 2d and 3d
   void init_blast(DataArray Udata); // 2d and 3d
   void init_kelvin_helmholtz(DataArray Udata); // 2d and 3d
+  void init_gresho_vortex(DataArray Udata); // 2d and 3d
   void init_four_quadrant(DataArray Udata); // 2d only
   void init_isentropic_vortex(DataArray Udata); // 2d only
   void init_rayleigh_taylor(DataArray Udata, VectorField gravity); // 2d and 3d
@@ -367,6 +369,33 @@ void SolverHydroMuscl<dim>::init_kelvin_helmholtz(DataArray Udata)
   InitKelvinHelmholtzFunctor::apply(params, khParams, Udata, nbCells);
 
 } // SolverHydroMuscl::init_kelvin_helmholtz
+
+// =======================================================
+// =======================================================
+/**
+ * Hydrodynamical Gresho vortex Test.
+ *
+ * \sa https://www.cfd-online.com/Wiki/Gresho_vortex
+ * \sa https://arxiv.org/abs/1409.7395 - section 4.2.3
+ * \sa https://arxiv.org/abs/1612.03910
+ *
+ */
+template<int dim>
+void SolverHydroMuscl<dim>::init_gresho_vortex(DataArray Udata)
+{
+
+  GreshoParams gvParams = GreshoParams(configMap);
+
+  // alias to actual device functor
+  using InitGreshoVortexFunctor =
+    typename std::conditional<dim==2,
+			      InitGreshoVortexFunctor2D,
+			      InitGreshoVortexFunctor3D>::type;
+
+  // perform init
+  InitGreshoVortexFunctor::apply(params, gvParams, Udata, nbCells);
+
+} // SolverHydroMuscl::init_gresho_vortex
 
 // =======================================================
 // =======================================================

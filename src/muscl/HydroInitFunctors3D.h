@@ -399,6 +399,123 @@ public:
 /*************************************************/
 /*************************************************/
 /*************************************************/
+class InitGreshoVortexFunctor3D : public HydroBaseFunctor3D {
+
+public:
+  InitGreshoVortexFunctor3D(HydroParams params,
+			    GreshoParams gvParams,
+			    DataArray3d Udata) :
+    HydroBaseFunctor3D(params),
+    gvParams(gvParams),
+    Udata(Udata)
+  {};
+  
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams  params,
+		    GreshoParams gvParams,
+                    DataArray3d  Udata,
+		    int          nbCells)
+  {
+    InitGreshoVortexFunctor3D functor(params, gvParams, Udata);
+    Kokkos::parallel_for(nbCells, functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int& index) const
+  {
+
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ksize = params.ksize;
+    const int ghostWidth = params.ghostWidth;
+    
+#ifdef USE_MPI
+    const int i_mpi = params.myMpiPos[IX];
+    const int j_mpi = params.myMpiPos[IY];
+    const int k_mpi = params.myMpiPos[IZ];
+#else
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+    const int k_mpi = 0;
+#endif
+
+    const int nx = params.nx;
+    const int ny = params.ny;
+    const int nz = params.nz;
+
+    const real_t xmin = params.xmin;
+    const real_t ymin = params.ymin;
+    const real_t zmin = params.zmin;
+
+    const real_t xmax = params.xmax;
+    const real_t ymax = params.ymax;
+    const real_t zmax = params.zmax;
+
+    const real_t dx = params.dx;
+    const real_t dy = params.dy;
+    const real_t dz = params.dz;
+    
+    const real_t gamma0 = params.settings.gamma0;
+
+    const real_t rho0  = gvParams.rho0;
+    const real_t Ma    = gvParams.Ma;
+
+    const real_t p0 = rho0 / (gamma0 * Ma * Ma);
+    
+    int i,j,k;
+    index2coord(index,i,j,k,isize,jsize,ksize);
+    
+    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
+    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
+    real_t z = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
+
+    real_t r = sqrt(x*x+y*y);
+    real_t theta = atan2(y,x);
+    
+    // polar coordinate
+    real_t cosT = cos(theta);
+    real_t sinT = sin(theta);
+
+    real_t uphi, p;
+    
+    if ( r < 0.2 ) {
+
+      uphi = 5*r;
+      p    = p0 + 25/2.0*r*r;
+      
+      
+    } else if ( r < 0.4 ) {
+      
+      uphi = 2 - 5 * r;
+      p    = p0 + 25/2.0*r*r + 4*(1-5*r-log(0.2)+log(r));
+      
+    } else {
+
+      uphi = 0;
+      p    = p0-2+4*log(2);
+      
+    }
+
+    Udata(i,j,k,ID) = rho0;
+    Udata(i,j,k,IU) = rho0 * (-sinT * uphi);
+    Udata(i,j,k,IV) = rho0 * ( cosT * uphi);
+    Udata(i,j,k,IW) = rho0 * ( cosT * uphi);
+    Udata(i,j,k,IP) = p/(gamma0-1.0) +
+      0.5*(Udata(i,j,k,IU)*Udata(i,j,k,IU) +
+	   Udata(i,j,k,IV)*Udata(i,j,k,IV) +
+	   Udata(i,j,k,IW)*Udata(i,j,k,IW))/Udata(i,j,k,ID);
+
+
+  } // end operator ()
+  
+  GreshoParams gvParams;
+  DataArray3d  Udata;
+  
+}; // InitGreshoVortexFunctor3D
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
 /**
  * Test of the Rayleigh-Taylor instability.
  * See
