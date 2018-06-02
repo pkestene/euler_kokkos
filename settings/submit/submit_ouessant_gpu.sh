@@ -18,4 +18,6 @@ EXE_NAME=euler_kokkos
 SETTINGS=settings.ini
 
 # Nominal behavior: each mpi task binded to a different GPU
-mpirun --report-bindings ./$EXE_NAME $SETTINGS --ndevices=$NUMBER_OF_GPUS_PER_NODES
+# Note that option "-gpu" is necessary when using IBM Spectrum MPI
+# and not necessary when using cuda-aware regular OpenMPI
+mpirun -gpu --report-bindings ./$EXE_NAME $SETTINGS --ndevices=$NUMBER_OF_GPUS_PER_NODES
