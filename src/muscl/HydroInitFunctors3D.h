@@ -142,7 +142,7 @@ public:
     if (this->iparams.shape == 1)
       tmp = x+y+z > 0.5 && x+y+z < 2.5;
     else
-      tmp = x+y+z > (xmax-xmin)/2.;
+      tmp = x+y+z > (xmin+xmax)/2.;
     
     if (tmp) {
       Udata(i  ,j  ,k  , ID) = rho_out;

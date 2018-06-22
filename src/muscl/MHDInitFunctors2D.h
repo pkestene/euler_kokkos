@@ -98,7 +98,7 @@ public:
     if (shape == 1)
       tmp = x+y > 0.5 && x+y < 2.5;
     else
-      tmp = x+y > (xmax-xmin)/2.;
+      tmp = x+y > (xmin+xmax)/2.;
     
     if (tmp) {
       Udata(i,j , ID)  = rho_out;
