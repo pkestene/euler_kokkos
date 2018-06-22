@@ -36,6 +36,7 @@
 
 // for init condition
 #include "shared/problems/BlastParams.h"
+#include "shared/problems/ImplodeParams.h"
 #include "shared/problems/KHParams.h"
 #include "shared/problems/GreshoParams.h"
 #include "shared/problems/IsentropicVortexParams.h"
@@ -307,6 +308,8 @@ template<int dim>
 void SolverHydroMuscl<dim>::init_implode(DataArray Udata)
 {
 
+  ImplodeParams iparams = ImplodeParams(configMap);
+  
   // alias to actual device functor
   using InitImplodeFunctor =
     typename std::conditional<dim==2,
@@ -314,7 +317,7 @@ void SolverHydroMuscl<dim>::init_implode(DataArray Udata)
 			      InitImplodeFunctor3D>::type;
 
   // perform init
-  InitImplodeFunctor::apply(params, Udata, nbCells);
+  InitImplodeFunctor::apply(params, iparams, Udata, nbCells);
 
 } // SolverHydroMuscl::init_implode
 

@@ -3,6 +3,7 @@
 #######################
 set (shared_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/BlastParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/problems/ImplodeParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/KHParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/WedgeParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/JetParams.h
@@ -11,6 +12,7 @@ set (shared_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/FieldLoopParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/OrszagTangInit.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/initRiemannConfig2d.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/problems/GreshoParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BoundariesFunctors.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BoundariesFunctorsWedge.h
   ${CMAKE_CURRENT_SOURCE_DIR}/HydroParams.cpp

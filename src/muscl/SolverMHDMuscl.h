@@ -36,6 +36,7 @@
 
 // for init condition
 #include "shared/problems/BlastParams.h"
+#include "shared/problems/ImplodeParams.h"
 #include "shared/problems/RotorParams.h"
 
 namespace euler_kokkos { namespace muscl {
@@ -119,6 +120,7 @@ public:
 
   // host routines (initialization)  
   void init_blast(DataArray Udata);
+  void init_implode(DataArray Udata);
   void init_orszag_tang(DataArray Udata);
   void init_rotor(DataArray Udata);
   void init_field_loop(DataArray Udata);
@@ -394,6 +396,29 @@ void SolverMHDMuscl<dim>::init_orszag_tang(DataArray Udata)
 // =======================================================
 // =======================================================
 /**
+ * Implosion test.
+ * 
+ */
+template<int dim>
+void SolverMHDMuscl<dim>::init_implode(DataArray Udata)
+{
+
+  ImplodeParams implodeParams = ImplodeParams(configMap);
+
+  // alias to actual device functor
+  using InitImplodeFunctor =
+    typename std::conditional<dim==2,
+			      InitImplodeFunctor2D_MHD,
+			      InitImplodeFunctor3D_MHD>::type;
+
+  // perform init
+  InitImplodeFunctor::apply(params, implodeParams, Udata, nbCells);
+
+} // SolverMHDMuscl::init_implode
+
+// =======================================================
+// =======================================================
+/**
  * Rotor test.
  * 
  */
@@ -450,6 +475,10 @@ void SolverMHDMuscl<dim>::init(DataArray Udata)
 
     init_blast(Udata);
 
+  } else if ( !m_problem_name.compare("implode") ) {
+    
+    init_implode(U);
+    
   } else if ( !m_problem_name.compare("orszag_tang") ) {
     
     init_orszag_tang(U);
@@ -468,7 +497,8 @@ void SolverMHDMuscl<dim>::init(DataArray Udata)
     std::cout << "Problem : " << m_problem_name
 	      << " is not recognized / implemented."
 	      << std::endl;
-    std::cout <<  "Use default - implode" << std::endl;
+    std::cout <<  "Use default - Orszag-Tang vortex" << std::endl;
+    m_problem_name = "orszag_tang";
     init_orszag_tang(Udata);
 
   }

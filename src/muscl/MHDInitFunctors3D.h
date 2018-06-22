@@ -14,6 +14,7 @@
 
 // init conditions
 #include "shared/problems/BlastParams.h"
+#include "shared/problems/ImplodeParams.h"
 #include "shared/problems/OrszagTangInit.h"
 #include "shared/problems/RotorParams.h"
 
@@ -26,15 +27,17 @@ class InitImplodeFunctor3D_MHD : public MHDBaseFunctor3D {
 
 public:
   InitImplodeFunctor3D_MHD(HydroParams params,
-			   DataArray3d Udata) :
-    MHDBaseFunctor3D(params), Udata(Udata)  {};
+			   ImplodeParams iparams,
+               DataArray3d Udata) :
+    MHDBaseFunctor3D(params), iparams(iparams), Udata(Udata)  {};
   
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
+                    ImplodeParams iparams,
                     DataArray3d Udata,
 		    int         nbCells)
   {
-    InitImplodeFunctor3D_MHD functor(params, Udata);
+    InitImplodeFunctor3D_MHD functor(params, iparams, Udata);
     Kokkos::parallel_for(nbCells, functor);
   }
 
@@ -62,6 +65,7 @@ public:
     const int nz = params.nz;
 
     const real_t xmin = params.xmin;
+    const real_t xmax = params.xmax;
     const real_t ymin = params.ymin;
     const real_t zmin = params.zmin;
 
@@ -78,35 +82,61 @@ public:
     real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
     real_t z = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
     
-    real_t tmp = x+y+z;
-    if (tmp > 0.5 && tmp < 2.5) {
-      Udata(i,j,k , ID)  = 1.0;
-      Udata(i,j,k , IU)  = 0.0;
-      Udata(i,j,k , IV)  = 0.0;
-      Udata(i,j,k , IW)  = 0.0;
-      Udata(i,j,k , IBX) = 0.5;
-      Udata(i,j,k , IBY) = 0.0;
-      Udata(i,j,k , IBZ) = 0.0;
-      Udata(i,j,k , IP)  = 1.0/(gamma0-1.0) +
-	0.5* ( SQR(Udata(i,j,k , IBX)) +
-	       SQR(Udata(i,j,k , IBY)) +
-	       SQR(Udata(i,j,k , IBZ)) );
+    // outer parameters
+    const real_t rho_out = this->iparams.rho_out;
+    const real_t p_out = this->iparams.p_out;
+    const real_t u_out = this->iparams.u_out;
+    const real_t v_out = this->iparams.v_out;
+    const real_t w_out = this->iparams.w_out;
+    const real_t Bx_out = this->iparams.Bx_out;
+    const real_t By_out = this->iparams.By_out;
+    const real_t Bz_out = this->iparams.Bz_out;
+
+    // inner parameters
+    const real_t rho_in = this->iparams.rho_in;
+    const real_t p_in = this->iparams.p_in;
+    const real_t u_in = this->iparams.u_in;
+    const real_t v_in = this->iparams.v_in;
+    const real_t w_in = this->iparams.w_in;
+    const real_t Bx_in = this->iparams.Bx_in;
+    const real_t By_in = this->iparams.By_in;
+    const real_t Bz_in = this->iparams.Bz_in;
+
+    const int shape = this->iparams.shape;
+    
+    bool tmp;
+    if (shape == 1)
+      tmp = x+y+z > 0.5 && x+y+z < 2.5;
+    else
+      tmp = x+y+z > (xmax-xmin)/2.;
+    
+    if (tmp) {
+      Udata(i  ,j  ,k  , ID) = rho_out;
+      Udata(i  ,j  ,k  , IP) = p_out/(gamma0-1.0) + 
+        0.5 * rho_out * ( u_out*u_out + v_out*v_out + w_out*w_out) +
+        0.5 * (Bx_out*Bx_out + By_out*By_out + Bz_out * Bz_out);
+      Udata(i  ,j  ,k  , IU) = u_out;
+      Udata(i  ,j  ,k  , IV) = v_out;
+      Udata(i  ,j  ,k  , IW) = w_out;
+      Udata(i  ,j  ,k  , IBX) = Bx_out;
+      Udata(i  ,j  ,k  , IBY) = By_out;
+      Udata(i  ,j  ,k  , IBZ) = Bz_out;
     } else {
-      Udata(i,j,k , ID)  = 0.125;
-      Udata(i,j,k , IU)  = 0.0;
-      Udata(i,j,k , IV)  = 0.0;
-      Udata(i,j,k , IW)  = 0.0;
-      Udata(i,j,k , IBX) = 0.5;
-      Udata(i,j,k , IBY) = 0.0;
-      Udata(i,j,k , IBZ) = 0.0;
-      Udata(i,j,k , IP)  = 0.14/(gamma0-1.0)  +
-	0.5* ( SQR(Udata(i,j,k , IBX)) +
-	       SQR(Udata(i,j,k , IBY)) +
-	       SQR(Udata(i,j,k , IBZ)) );
+      Udata(i  ,j  ,k  , ID) = rho_in;
+      Udata(i  ,j  ,k  , IP) = p_in/(gamma0-1.0) + 
+        0.5 * rho_in * (u_in*u_in + v_in*v_in + w_in*w_in) +
+        0.5 * (Bx_in*Bx_in + By_in*By_in + Bz_in * Bz_in);
+      Udata(i  ,j  ,k  , IU) = u_in;
+      Udata(i  ,j  ,k  , IV) = v_in;
+      Udata(i  ,j  ,k  , IW) = w_in;    
+      Udata(i  ,j  ,k  , IBX) = Bx_in;
+      Udata(i  ,j  ,k  , IBY) = By_in;
+      Udata(i  ,j  ,k  , IBZ) = Bz_in;
     }
     
   } // end operator ()
 
+  ImplodeParams iparams;
   DataArray3d Udata;
 
 }; // InitImplodeFunctor3D_MHD
