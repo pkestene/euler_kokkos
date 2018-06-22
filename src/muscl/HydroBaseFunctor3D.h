@@ -509,7 +509,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
       slope_unsplit_hydro_3d_scalar( q[IP], qPlusX[IP], qMinusX[IP], qPlusY[IP], qMinusY[IP], qPlusZ[IP], qMinusZ[IP],
 				     &(dqX[IP]), &(dqY[IP]), &(dqZ[IP]));
       slope_unsplit_hydro_3d_scalar( q[IU], qPlusX[IU], qMinusX[IU], qPlusY[IU], qMinusY[IU], qPlusZ[IU], qMinusZ[IU],
-				     &(dqX[IU]), &(dqY[IU]), &(dqZ[IV]));
+				     &(dqX[IU]), &(dqY[IU]), &(dqZ[IU]));
       slope_unsplit_hydro_3d_scalar( q[IV], qPlusX[IV], qMinusX[IV], qPlusY[IV], qMinusY[IV], qPlusZ[IV], qMinusZ[IV],
 				     &(dqX[IV]), &(dqY[IV]), &(dqZ[IV]));
       slope_unsplit_hydro_3d_scalar( q[IW], qPlusX[IW], qMinusX[IW], qPlusY[IW], qMinusY[IW], qPlusZ[IW], qMinusZ[IW],

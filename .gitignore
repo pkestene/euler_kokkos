@@ -3,14 +3,4 @@
 compile_commands.json
 euler2d.omp
 euler2d.cuda
-build
-build_openmp
-build_openmp_new
-build_cuda
-build_cuda_new
-build_cuda_mpi
-build_cuda_aware_mpi
-build_cuda_debug
-build_cuda_nompi
-build_openmp_mpi
-build_openmp_debug
+build_*

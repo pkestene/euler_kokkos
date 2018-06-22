@@ -1,0 +1,3 @@
+# examples of submission scripts
+
+- ouessant : prototype machine (IBM Power8 + Pascal P100) @ idris, scheduler is LSF
