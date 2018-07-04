@@ -402,9 +402,9 @@ public:
       Qp_y(i  ,j  , ID) = qpY[ID];
       
       Qm_x(i  ,j  , IP) = qmX[IP];
-      Qp_x(i  ,j  , ID) = qpX[IP];
-      Qm_y(i  ,j  , ID) = qmY[IP];
-      Qp_y(i  ,j  , ID) = qpY[IP];
+      Qp_x(i  ,j  , IP) = qpX[IP];
+      Qm_y(i  ,j  , IP) = qmY[IP];
+      Qp_y(i  ,j  , IP) = qpY[IP];
       
       Qm_x(i  ,j  , IU) = qmX[IU];
       Qp_x(i  ,j  , IU) = qpX[IU];
@@ -552,7 +552,7 @@ public:
 			     qNeighbors_0, qNeighbors_1, 
 			     qNeighbors_2, qNeighbors_3,
 			     dqX, dqY);
-	
+      
       // slopes at left neighbor along X      
       qLocNeighbor[ID] = Qdata(i-1,j  , ID);
       qNeighbors_0[ID] = Qdata(i  ,j  , ID);
@@ -596,7 +596,7 @@ public:
       trace_unsplit_2d_along_dir(qLocNeighbor,
 				 dqX_neighbor,dqY_neighbor,
 				 dtdx, dtdy, FACE_XMAX, qleft);
-
+      
       if (gravity_enabled) {
 	// we need to modify input to flux computation with
 	// gravity predictor (half time step)
@@ -1269,15 +1269,25 @@ public:
        i >= ghostWidth && i < isize-ghostWidth ) {
 
       real_t rhoOld = Udata_in(i,j,ID);
-      real_t rhoNew = Udata_out(i,j,ID);
+      real_t rhoNew = fmax(params.settings.smallr,Udata_out(i,j,ID));
+
+      real_t rhou   = Udata_out(i,j,IU);
+      real_t rhov   = Udata_out(i,j,IV);
+      
+      // compute kinetic energy before updating momentum
+      real_t ekin_old = 0.5 * (rhou*rhou + rhov*rhov) / rhoNew;
       
       // update momentum
-      Udata_out(i,j,IU) += 0.5 * dt * gravity(i,j,IX) * (rhoOld + rhoNew); 
-      Udata_out(i,j,IV) += 0.5 * dt * gravity(i,j,IY) * (rhoOld + rhoNew);
+      rhou += 0.5 * dt * gravity(i,j,IX) * (rhoOld + rhoNew); 
+      rhov += 0.5 * dt * gravity(i,j,IY) * (rhoOld + rhoNew);
+      Udata_out(i,j,IU) = rhou;
+      Udata_out(i,j,IV) = rhov;
+      
+      // compute kinetic energy after updating momentum
+      real_t ekin_new = 0.5 * (rhou*rhou + rhov*rhov) / rhoNew;
 
-      Udata_out(i,j,IE) +=
-	0.5 * dt * gravity(i,j,IX) * (rhoOld + rhoNew) * Udata_in(i,j,IU) +
-	0.5 * dt * gravity(i,j,IY) * (rhoOld + rhoNew) * Udata_in(i,j,IV) ;
+      // update total energy
+      Udata_out(i,j,IE) += (ekin_new - ekin_old);
       
     }
     
