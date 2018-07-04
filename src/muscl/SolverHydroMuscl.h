@@ -447,17 +447,39 @@ double SolverHydroMuscl<dim>::compute_dt_local()
   else
     Udata = U2;
 
-  // alias to actual device functor
-  using ComputeDtFunctor =
-    typename std::conditional<dim==2,
-			      ComputeDtFunctor2D,
-			      ComputeDtFunctor3D>::type;
+  if (m_gravity_enabled) {
 
-  // call device functor
-  ComputeDtFunctor::apply(params, Udata, nbCells, invDt);
+    // alias to actual device functor
+    using ComputeDtFunctor = 
+      typename std::conditional<dim==2,
+      				ComputeDtGravityFunctor2D,
+      				ComputeDtGravityFunctor3D>::type;
     
-  dt = params.settings.cfl/invDt;
+    // call device functor
+    ComputeDtFunctor::apply(params,
+			    params.settings.cfl,
+			    gravity,
+			    Udata,
+			    nbCells,
+			    invDt);
+    
+  } else {
 
+    // regular cfl
+
+    // alias to actual device functor
+    using ComputeDtFunctor =
+      typename std::conditional<dim==2,
+				ComputeDtFunctor2D,
+				ComputeDtFunctor3D>::type;
+    
+    // call device functor
+    ComputeDtFunctor::apply(params, Udata, nbCells, invDt);
+    
+  }
+  
+  dt = params.settings.cfl/invDt;
+  
   return dt;
 
 } // SolverHydroMuscl::compute_dt_local

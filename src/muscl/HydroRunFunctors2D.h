@@ -116,6 +116,137 @@ public:
 /*************************************************/
 /*************************************************/
 /*************************************************/
+/**
+ * A specialized functor to compute CFL dt constraint when gravity source
+ * term is activated.
+ */
+class ComputeDtGravityFunctor2D : public HydroBaseFunctor2D {
+
+public:
+
+  /**
+   * Compute time step satisfying CFL constraint.
+   *
+   * \param[in] params
+   * \param[in] Udata
+   */
+  ComputeDtGravityFunctor2D(HydroParams   params,
+			    real_t        cfl,
+			    VectorField2d gravity,
+			    DataArray2d   Udata) :
+    HydroBaseFunctor2D(params),
+    cfl(cfl),
+    gravity(gravity),
+    Udata(Udata)
+  {};
+
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams   params,
+		    real_t        cfl,
+		    VectorField2d gravity,
+                    DataArray2d   Udata,
+		    int           nbCells,
+                    real_t&       invDt)
+  {
+    ComputeDtGravityFunctor2D functor(params, cfl, gravity, Udata);
+    Kokkos::parallel_reduce(nbCells, functor, invDt);
+  }
+
+  // Tell each thread how to initialize its reduction result.
+  KOKKOS_INLINE_FUNCTION
+  void init (real_t& dst) const
+  {
+    // The identity under max is -Inf.
+    // Kokkos does not come with a portable way to access
+    // floating-point Inf and NaN. 
+#ifdef __CUDA_ARCH__
+    dst = -CUDART_INF;
+#else
+    dst = std::numeric_limits<real_t>::min();
+#endif // __CUDA_ARCH__
+  } // init
+
+  /* this is a reduce (max) functor */
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int &index, real_t &invDt) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ghostWidth = params.ghostWidth;
+    //const int nbvar = params.nbvar;
+    const real_t dx = params.dx;
+    const real_t dy = params.dy;
+    
+    int i,j;
+    index2coord(index,i,j,isize,jsize);
+
+    if(j >= ghostWidth && j < jsize - ghostWidth &&
+       i >= ghostWidth && i < isize - ghostWidth) {
+      
+      HydroState uLoc; // conservative    variables in current cell
+      HydroState qLoc; // primitive    variables in current cell
+      real_t c=0.0;
+      real_t vx, vy;
+      
+      // get local conservative variable
+      uLoc[ID] = Udata(i,j,ID);
+      uLoc[IP] = Udata(i,j,IP);
+      uLoc[IU] = Udata(i,j,IU);
+      uLoc[IV] = Udata(i,j,IV);
+
+      // get primitive variables in current cell
+      computePrimitives(uLoc, &c, qLoc);
+      real_t velocity = 0.0;
+      velocity += c+FABS(qLoc[IU]);
+      velocity += c+FABS(qLoc[IV]);
+
+      /* Due to the gravitational acceleration, the CFL condition 
+       * can be written as
+       * g dt^2 / (2 dx) + u dt / dx <= cfl 
+       * where u = sum(|v_i| + c_s) and g = sum(|g_i|)
+       *
+       * u / dx has to be corrected by a factor k / (sqrt(1 + 2k) - 1) 
+       * in order to satisfy the new CFL, where k = g dx cfl / u^2
+       */
+      double k = fabs(gravity(i,j,IX)) + fabs(gravity(i,j,IY));
+					     
+      k *= cfl * dx / (velocity * velocity);
+
+       /* prevent numerical errors due to very low gravity */
+      k = fmax(k, 1e-4);
+
+      velocity *= k / (sqrt(1.0 + 2.0 * k) - 1.0);
+
+      invDt = fmax(invDt, velocity/dx);
+      
+    }
+	    
+  } // operator ()
+
+
+  // "Join" intermediate results from different threads.
+  // This should normally implement the same reduction
+  // operation as operator() above. Note that both input
+  // arguments MUST be declared volatile.
+  KOKKOS_INLINE_FUNCTION
+  void join (volatile real_t& dst,
+	     const volatile real_t& src) const
+  {
+    // max reduce
+    if (dst < src) {
+      dst = src;
+    }
+  } // join
+
+  real_t cfl;
+  VectorField2d gravity;
+  DataArray2d Udata;
+  
+}; // ComputeDtGravityFunctor2D
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
 class ConvertToPrimitivesFunctor2D : public HydroBaseFunctor2D {
 
 public:
