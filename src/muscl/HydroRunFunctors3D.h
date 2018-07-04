@@ -180,9 +180,8 @@ public:
     const int ghostWidth = params.ghostWidth;
 
     //const int nbvar = params.nbvar;
-    const real_t dx = params.dx;
-    const real_t dy = params.dy;
-    const real_t dz = params.dz;
+    real_t dx = fmin(params.dx, params.dy);
+    dx = fmin(dx,params.dz);
 
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
@@ -194,7 +193,6 @@ public:
       HydroState uLoc; // conservative    variables in current cell
       HydroState qLoc; // primitive    variables in current cell
       real_t c=0.0;
-      real_t vx, vy, vz;
       
       // get local conservative variable
       uLoc[ID] = Udata(i,j,k,ID);
