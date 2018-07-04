@@ -226,7 +226,7 @@ void SolverHydroMuscl<3>::init(DataArray Udata)
 	      << std::endl;
     std::cout <<  "Use default - implode" << std::endl;
     init_implode(Udata);
-
+    
   }
 
 } // SolverHydroMuscl<3>::init
@@ -241,13 +241,7 @@ void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in,
 					       DataArray data_out, 
 					       real_t dt)
 {
-
-  real_t dtdx;
-  real_t dtdy;
   
-  dtdx = dt / params.dx;
-  dtdy = dt / params.dy;
-
   // fill ghost cell in data_in
   timers[TIMER_BOUNDARIES]->start();
   make_boundaries(data_in);
@@ -331,13 +325,6 @@ void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
 					       DataArray data_out, 
 					       real_t dt)
 {
-  real_t dtdx;
-  real_t dtdy;
-  real_t dtdz;
-  
-  dtdx = dt / params.dx;
-  dtdy = dt / params.dy;
-  dtdz = dt / params.dz;
 
   // fill ghost cell in data_in
   timers[TIMER_BOUNDARIES]->start();
