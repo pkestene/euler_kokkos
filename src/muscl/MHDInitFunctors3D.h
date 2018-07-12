@@ -15,7 +15,6 @@
 // init conditions
 #include "shared/problems/BlastParams.h"
 #include "shared/problems/ImplodeParams.h"
-#include "shared/problems/OrszagTangInit.h"
 #include "shared/problems/RotorParams.h"
 
 namespace euler_kokkos { namespace muscl {
@@ -256,8 +255,13 @@ public:
 /*************************************************/
 /*************************************************/
 /*************************************************/
-template<OrszagTang_init_type ot_type>
 class InitOrszagTangFunctor3D : public MHDBaseFunctor3D {
+
+private:
+  enum PhaseType {
+    INIT_ALL_VAR_BUT_ENERGY = 0,
+    INIT_ENERGY = 1
+  };
 
 public:
   InitOrszagTangFunctor3D(HydroParams params,
@@ -269,7 +273,12 @@ public:
                     DataArray3d Udata,
 		    int         nbCells)
   {
-    InitOrszagTangFunctor3D<ot_type> functor(params, Udata);
+    InitOrszagTangFunctor3D functor(params, Udata);
+
+    functor.phase = INIT_ALL_VAR_BUT_ENERGY;
+    Kokkos::parallel_for(nbCells, functor);
+
+    functor.phase = INIT_ENERGY;
     Kokkos::parallel_for(nbCells, functor);
   }
 
@@ -277,9 +286,9 @@ public:
   void operator()(const int& index) const
   {
 
-    if (ot_type == INIT_ALL_VAR_BUT_ENERGY)
+    if (phase == INIT_ALL_VAR_BUT_ENERGY)
       init_all_var_but_energy(index);
-    else if(ot_type == INIT_ENERGY)
+    else if(phase == INIT_ENERGY)
       init_energy(index);
 
   } // end operator ()
@@ -360,15 +369,7 @@ public:
     const int isize = params.isize;
     const int jsize = params.jsize;
     const int ksize = params.ksize;
-    const int ghostWidth = params.ghostWidth;
-    
-    //const double xmin = params.xmin;
-    //const double ymin = params.ymin;
-    //const double zmin = params.zmin;
-    
-    //const double dx = params.dx;
-    //const double dy = params.dy;
-    //const double dz = params.dz;
+    //const int ghostWidth = params.ghostWidth;
     
     const real_t gamma0 = params.settings.gamma0;
     
@@ -393,35 +394,12 @@ public:
 		0.25*SQR(Udata(i,j,k,IBX) + Udata(i+1,j  ,k  ,IBX)) + 
 		0.25*SQR(Udata(i,j,k,IBY) + Udata(i  ,j+1,k  ,IBY)) );
 
-    } else if ( (i <isize-1) and (j==jsize-1)) {
-
-      Udata(i,j,k,IP)  = p0 / (gamma0-1.0) +
-	0.5 * ( SQR(Udata(i,j,k,IU)) / Udata(i,j,k,ID) +
-		SQR(Udata(i,j,k,IV)) / Udata(i,j,k,ID) +
-		0.25*SQR(Udata(i,j,k,IBX) + Udata(i+1,j           ,k,IBX)) + 
-		0.25*SQR(Udata(i,j,k,IBY) + Udata(i  ,2*ghostWidth,k,IBY)) );
-
-    } else if ( (i==isize-1) and (j <jsize-1)) {
-
-      Udata(i,j,k,IP)  = p0 / (gamma0-1.0) +
-	0.5 * ( SQR(Udata(i,j,k,IU)) / Udata(i,j,k,ID) +
-		SQR(Udata(i,j,k,IV)) / Udata(i,j,k,ID) +
-		0.25*SQR(Udata(i,j,k,IBX) + Udata(2*ghostWidth,j  ,k  ,IBX)) + 
-		0.25*SQR(Udata(i,j,k,IBY) + Udata(i           ,j+1,k  ,IBY)) );
-
-    } else if ( (i==isize-1) and (j==jsize-1) ) {
-
-      Udata(i,j,k,IP)  = p0 / (gamma0-1.0) +
-	0.5 * ( SQR(Udata(i,j,k,IU)) / Udata(i,j,k,ID) +
-		SQR(Udata(i,j,k,IV)) / Udata(i,j,k,ID) +
-		0.25*SQR(Udata(i,j,k,IBX) + Udata(2*ghostWidth,j,k ,IBX)) + 
-		0.25*SQR(Udata(i,j,k,IBY) + Udata(i,2*ghostWidth,k ,IBY)) );
-
     }
     
   } // init_energy
   
   DataArray3d Udata;
+  PhaseType   phase ;
   
 }; // InitOrszagTangFunctor3D
 
@@ -572,13 +550,15 @@ class InitFieldLoopFunctor3D_MHD : public MHDBaseFunctor3D {
 private:
   enum PhaseType {
     COMPUTE_VECTOR_POTENTIAL,
-    DO_INIT_CONDITION
+    DO_INIT_CONDITION,
+    DO_INIT_ENERGY
   };
 
 public:
 
   struct TagComputeVectorPotential {};
   struct TagInitCond {};
+  struct TagInitEnergy {};
 
   InitFieldLoopFunctor3D_MHD(HydroParams     params,
 			     FieldLoopParams flParams,
@@ -588,14 +568,7 @@ public:
     flParams(flParams),
     Udata(Udata)
   {
-    A = DataArrayVector3("A", params.isize, params.jsize);
-
-    phase = COMPUTE_VECTOR_POTENTIAL;
-    Kokkos::parallel_for(nbCells, *this);
-
-    phase = DO_INIT_CONDITION;
-    Kokkos::parallel_for(nbCells, *this);
-
+    A = DataArrayVector3("A", params.isize, params.jsize, params.ksize);
   };
   
   // static method which does it all: create and execute functor
@@ -605,6 +578,16 @@ public:
 		    int         nbCells)
   {
     InitFieldLoopFunctor3D_MHD functor(params, flParams, Udata, nbCells);
+
+    functor.phase = COMPUTE_VECTOR_POTENTIAL;
+    Kokkos::parallel_for(nbCells, functor);
+
+    functor.phase = DO_INIT_CONDITION;
+    Kokkos::parallel_for(nbCells, functor);
+
+    functor.phase = DO_INIT_ENERGY;
+    Kokkos::parallel_for(nbCells, functor);
+
   } // apply
   
   KOKKOS_INLINE_FUNCTION
@@ -614,6 +597,8 @@ public:
       compute_vector_potential(index);
     } else if (phase == DO_INIT_CONDITION) {
       do_init_condition(index);
+    } else if (phase == DO_INIT_ENERGY) {
+      do_init_energy(index);
     }
   }
 
@@ -705,7 +690,7 @@ public:
     const real_t dy = params.dy;
     const real_t dz = params.dz;
     
-    const real_t gamma0 = params.settings.gamma0;
+    //const real_t gamma0 = params.settings.gamma0;
 
     // field loop problem parameters
     const real_t radius    = flParams.radius;
@@ -765,22 +750,45 @@ public:
 	( A(i+1,j  ,k,1) - A(i,j,k,1) ) / dx -
 	( A(i  ,j+1,k,0) - A(i,j,k,0) ) / dy ; //+ amp*(drand48()-0.5);
       
-      // total energy
-      if (params.settings.cIso>0) {
-	Udata(i,j,k,IP) = ZERO_F;
-      } else {
-	Udata(i,j,k,IP) = 1.0f/(gamma0-1.0) + 
-	  0.5 * (Udata(i,j,k,IA) * Udata(i,j,k,IA)  + 
-		 Udata(i,j,k,IB) * Udata(i,j,k,IB)  +
-		 Udata(i,j,k,IC) * Udata(i,j,k,IC)) +
-	  0.5 * (Udata(i,j,k,IU) * Udata(i,j,k,IU) + 
-		 Udata(i,j,k,IV) * Udata(i,j,k,IV) +
-		 Udata(i,j,k,IW) * Udata(i,j,k,IW))/Udata(i,j,k,ID);
-      }
-
     }
     
-  } // end operator ()
+  } // end do_init_condition
+  
+  KOKKOS_INLINE_FUNCTION
+  void do_init_energy(const int& index) const
+  {
+    
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ksize = params.ksize;
+    const int ghostWidth = params.ghostWidth;
+    
+    const real_t gamma0 = params.settings.gamma0;
+    
+    int i,j,k;
+    index2coord(index,i,j,k,isize,jsize,ksize);
+    
+    if (i>=ghostWidth and i<isize-ghostWidth and
+	j>=ghostWidth and j<jsize-ghostWidth and
+	k>=ghostWidth and k<ksize-ghostWidth)
+      {
+	
+	// total energy
+	if (params.settings.cIso>0) {
+	  Udata(i,j,k,IP) = ZERO_F;
+	} else {
+	  Udata(i,j,k,IP) = 1.0f/(gamma0-1.0) + 
+	    0.5 * (0.25*SQR(Udata(i,j,k,IA) + Udata(i+1,j,k,IA)) + 
+		   0.25*SQR(Udata(i,j,k,IB) + Udata(i,j+1,k,IB)) +
+		   0.25*SQR(Udata(i,j,k,IC) + Udata(i,j,k+1,IC))) +
+	    0.5 * (Udata(i,j,k,IU) * Udata(i,j,k,IU) + 
+		   Udata(i,j,k,IV) * Udata(i,j,k,IV) +
+		   Udata(i,j,k,IW) * Udata(i,j,k,IW))/Udata(i,j,k,ID);
+	}
+      
+      }
+    
+  } // end do_init_energy
   
   FieldLoopParams flParams;
   DataArray3d Udata;
