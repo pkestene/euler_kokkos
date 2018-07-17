@@ -369,27 +369,13 @@ template<int dim>
 void SolverMHDMuscl<dim>::init_orszag_tang(DataArray Udata)
 {
   
-  // init all vars but energy
-  {
-    // alias to actual device functor
-    using InitOrszagTangFunctor =
-      typename std::conditional<dim==2,
-				InitOrszagTangFunctor2D<INIT_ALL_VAR_BUT_ENERGY>,
-				InitOrszagTangFunctor3D<INIT_ALL_VAR_BUT_ENERGY>>::type;
-    
-    InitOrszagTangFunctor::apply(params, Udata, nbCells);
-  }
-
-  // init energy
-  {
-    // alias to actual device functor
-    using InitOrszagTangFunctor =
-      typename std::conditional<dim==2,
-				InitOrszagTangFunctor2D<INIT_ENERGY>,
-				InitOrszagTangFunctor3D<INIT_ENERGY>>::type;
-    
-    InitOrszagTangFunctor::apply(params, Udata, nbCells);
-  }  
+  // alias to actual device functor
+  using InitOrszagTangFunctor =
+    typename std::conditional<dim==2,
+			      InitOrszagTangFunctor2D,
+			      InitOrszagTangFunctor3D>::type;
+  
+  InitOrszagTangFunctor::apply(params, Udata, nbCells);
   
 } // init_orszag_tang
 

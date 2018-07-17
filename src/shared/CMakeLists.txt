@@ -10,7 +10,6 @@ set (shared_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/IsentropicVortexParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/RotorParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/FieldLoopParams.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/problems/OrszagTangInit.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/initRiemannConfig2d.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/GreshoParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BoundariesFunctors.h
