@@ -51,12 +51,19 @@ struct KHParams {
     vflow_out = configMap.getFloat("KH", "vflow_out",  0.5);
 
     if (p_rand) {
-      // to do get MPI rank
-      //int mpiRank = 0;
-
       // choose a different random seed per mpi rank
       seed = configMap.getInteger("KH", "rand_seed", 12);
+
+#ifdef USE_MPI
       //srand( seed * (mpiRank+1) );
+
+      // get MPI rank in MPI_COMM_WORLD
+      // TODO : pass communicator to the constructor (?)
+      int mpiRank = 1;
+      MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
+      seed *= (mpiRank+1);
+#endif // USE_MPI
+      
     }
 
     amplitude = configMap.getFloat("KH", "amplitude", 0.1);
