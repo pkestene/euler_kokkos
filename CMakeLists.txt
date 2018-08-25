@@ -19,13 +19,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #
 # default local cmake macro repository
 #
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+list(INSERT CMAKE_MODULE_PATH 0 "${PROJECT_SOURCE_DIR}/cmake")
 
 
 #
 # Prevent from build in source tree
 #
-include(${PROJECT_SOURCE_DIR}/cmake/preventBuildInSource.cmake)
+include(preventBuildInSource)
 
 #
 # Create project version (using git info ?)
@@ -35,12 +35,12 @@ include(${PROJECT_SOURCE_DIR}/cmake/preventBuildInSource.cmake)
 #
 # Init build type: Release, Debug, ...
 #
-include(${PROJECT_SOURCE_DIR}/cmake/initBuildType.cmake)
+include(initBuildType)
 
 #
 # Write a small header with build data, git version, etc...
 #
-include(${PROJECT_SOURCE_DIR}/cmake/write_version.cmake)
+include(write_version)
 
 #####################################################################
 # External packages: MPI, ...
