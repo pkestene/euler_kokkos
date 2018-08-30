@@ -95,3 +95,16 @@ semantic autocompletion in a C++ project.
 Make sure to have CMake variable CMAKE_EXPORT_COMPILE_COMMANDS set to ON, and symlink the generated file to the top level
 source directory.
 
+## Build Documentation
+
+A Sphinx/html documentation will (hopefully) soon be populated.
+
+To build it:
+
+``` shell
+mkdir build
+cd build
+cmake .. -DBUILD_CODE:BOOL=OFF -DBUILD_DOC:BOOL=ON -DDOC:STRING=html
+```
+
+Building documentation requires to have python3 with up-to-date breathe extension.
