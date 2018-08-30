@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.3)
 #
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+
 #
 # Prevent from build in source tree
 #
