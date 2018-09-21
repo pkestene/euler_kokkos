@@ -97,6 +97,8 @@ int main( int argc , char ** argv )
 
   std::cout << msg.str();
 
+  Kokkos::finalize();
+  
 #if defined( KOKKOS_ENABLE_MPI )
 
   MPI_Finalize();
