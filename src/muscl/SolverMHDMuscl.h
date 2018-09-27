@@ -122,6 +122,7 @@ public:
   void init_blast(DataArray Udata);
   void init_implode(DataArray Udata);
   void init_orszag_tang(DataArray Udata);
+  void init_kelvin_helmholtz(DataArray Udata); // 2d and 3d
   void init_rotor(DataArray Udata);
   void init_field_loop(DataArray Udata);
   
@@ -382,6 +383,35 @@ void SolverMHDMuscl<dim>::init_orszag_tang(DataArray Udata)
 // =======================================================
 // =======================================================
 /**
+ * Hydrodynamical Kelvin-Helmholtz instability Test.
+ *
+ * see https://www.astro.princeton.edu/~jstone/Athena/tests/kh/kh.html
+ *
+ * See also article by Robertson et al:
+ * "Computational Eulerian hydrodynamics and Galilean invariance", 
+ * B.E. Robertson et al, Mon. Not. R. Astron. Soc., 401, 2463-2476, (2010).
+ *
+ */
+template<int dim>
+void SolverMHDMuscl<dim>::init_kelvin_helmholtz(DataArray Udata)
+{
+
+  KHParams khParams = KHParams(configMap);
+
+  // alias to actual device functor
+  using InitKelvinHelmholtzFunctor =
+    typename std::conditional<dim==2,
+			      InitKelvinHelmholtzFunctor2D_MHD,
+			      InitKelvinHelmholtzFunctor3D_MHD>::type;
+
+  // perform init
+  InitKelvinHelmholtzFunctor::apply(params, khParams, Udata, nbCells);
+  
+} // init_kelvin_helmholtz
+
+// =======================================================
+// =======================================================
+/**
  * Implosion test.
  * 
  */
@@ -468,6 +498,10 @@ void SolverMHDMuscl<dim>::init(DataArray Udata)
   } else if ( !m_problem_name.compare("orszag_tang") ) {
     
     init_orszag_tang(U);
+    
+  } else if ( !m_problem_name.compare("kelvin_helmholtz") ) {
+    
+    init_kelvin_helmholtz(U);
     
   } else if ( !m_problem_name.compare("rotor") ) {
     

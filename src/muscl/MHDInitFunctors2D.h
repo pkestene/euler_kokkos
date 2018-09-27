@@ -12,8 +12,12 @@
 // init conditions
 #include "shared/problems/BlastParams.h"
 #include "shared/problems/ImplodeParams.h"
+#include "shared/problems/KHParams.h"
 #include "shared/problems/RotorParams.h"
 #include "shared/problems/FieldLoopParams.h"
+
+// kokkos random numbers
+#include <Kokkos_Random.hpp>
 
 #ifndef SQR
 #define SQR(x) ((x)*(x))
@@ -380,6 +384,157 @@ public:
   PhaseType   phase ;
   
 }; // InitOrszagTangFunctor2D
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
+class InitKelvinHelmholtzFunctor2D_MHD : public MHDBaseFunctor2D {
+  
+private:
+  
+public:
+  InitKelvinHelmholtzFunctor2D_MHD(HydroParams params,
+				   KHParams    khParams,
+				   DataArray2d Udata) :
+    MHDBaseFunctor2D(params),
+    khParams(khParams),
+    Udata(Udata),
+    rand_pool(khParams.seed) {};
+  
+  // static method which does it all: create and execute functor
+  static void apply(HydroParams params,
+		    KHParams    khParams,
+                    DataArray2d Udata,
+		    int         nbCells)
+  {
+    InitKelvinHelmholtzFunctor2D_MHD functor(params, khParams, Udata);
+    Kokkos::parallel_for(nbCells, functor);    
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int& index) const
+  {
+    
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ghostWidth = params.ghostWidth;
+    
+#ifdef USE_MPI
+    const int i_mpi = params.myMpiPos[IX];
+    const int j_mpi = params.myMpiPos[IY];
+#else
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+#endif
+
+    const int nx = params.nx;
+    const int ny = params.ny;
+
+    const real_t xmin = params.xmin;
+    const real_t ymin = params.ymin;
+    //const real_t xmax = params.xmax;
+    const real_t ymax = params.ymax;
+    const real_t dx = params.dx;
+    const real_t dy = params.dy;
+    
+    const real_t gamma0 = params.settings.gamma0;
+
+    const real_t d_in  = khParams.d_in;
+    const real_t d_out = khParams.d_out;
+    const real_t vflow_in  = khParams.vflow_in;
+    const real_t vflow_out = khParams.vflow_out;
+    const real_t ampl      = khParams.amplitude;
+    const real_t pressure  = khParams.pressure;
+    
+    int i,j;
+    index2coord(index,i,j,isize,jsize);
+    
+    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
+    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
+
+    // normalized coordinates in [0,1]
+    //real_t xn = (x-xmin)/(xmax-xmin);
+    real_t yn = (y-ymin)/(ymax-ymin);
+    
+    if (khParams.p_rand) {
+      
+      // get random number state
+      rand_type rand_gen = rand_pool.get_state();
+
+      real_t d, u, v;
+      
+      if ( yn < 0.25 or yn > 0.75) {
+	
+	d = d_out;
+	u = vflow_out;
+	v = 0.0;
+	
+      } else {
+	
+	d = d_in;
+	u = vflow_in;
+	v = 0.0;
+	
+      }
+
+      u += ampl * (rand_gen.drand() - 0.5);
+      v += ampl * (rand_gen.drand() - 0.5);
+
+      Udata(i,j,ID) = d;
+      Udata(i,j,IU) = d * u;
+      Udata(i,j,IV) = d * v;
+      Udata(i,j,IE) = pressure/(gamma0-1.0) + 0.5*d*(u*u+v*v);
+
+      // free random number
+      rand_pool.free_state(rand_gen);
+      
+    } else if (khParams.p_sine_rob) {
+
+      const int    n     = khParams.mode;
+      const real_t w0    = khParams.w0;
+      const real_t delta = khParams.delta;
+      const double y1 = 0.25;
+      const double y2 = 0.75;
+      const double rho1 = d_in;
+      const double rho2 = d_out;
+      const double v1 = vflow_in;
+      const double v2 = vflow_out;
+
+      const double ramp = 
+	1.0 / ( 1.0 + exp( 2*(y-y1)/delta ) ) +
+	1.0 / ( 1.0 + exp( 2*(y2-y)/delta ) );
+
+      const real_t d = rho1 + ramp*(rho2-rho1);
+      const real_t u = v1   + ramp*(v2-v1);
+      const real_t v = w0 * sin(n*M_PI*x);
+
+      const real_t bx = 0.5;
+      const real_t by = 0.0;
+      
+      Udata(i,j,ID) = d;
+      Udata(i,j,IU) = d * u;
+      Udata(i,j,IV) = d * v;
+
+      Udata(i,j,IBX) = bx;
+      Udata(i,j,IBY) = by;
+
+      Udata(i,j,IP) =
+	pressure / (gamma0-1.0) +
+	0.5*d*(u*u+v*v) +
+	0.5*(bx*bx+by*by);
+      
+    }
+
+  } // end operator ()
+
+  KHParams khParams;
+  DataArray2d Udata;
+
+  // random number generator
+  Kokkos::Random_XorShift64_Pool<Device> rand_pool;
+  typedef typename Kokkos::Random_XorShift64_Pool<Device>::generator_type rand_type;
+
+}; // InitKelvinHelmholtzFunctor2D_MHD
 
 /*************************************************/
 /*************************************************/
