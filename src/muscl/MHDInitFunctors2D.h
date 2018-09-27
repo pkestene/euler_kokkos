@@ -523,6 +523,33 @@ public:
 	0.5*d*(u*u+v*v) +
 	0.5*(bx*bx+by*by);
       
+    } else if (khParams.p_sine) {
+      
+      const int    n     = khParams.mode;
+      const real_t w0    = khParams.w0;
+      const real_t delta = khParams.delta;
+      const double y1 = 0.25;
+      const double y2 = 0.75;
+
+      const real_t d = (y>=y1 and y<=y2) ? d_in : d_out;
+      const real_t u = (y>=y1 and y<=y2) ? vflow_in : vflow_out;
+      const real_t v = w0 * sin(n*M_PI*x);
+
+      const real_t bx = 0.5;
+      const real_t by = 0.0;
+      
+      Udata(i,j,ID) = d;
+      Udata(i,j,IU) = d * u;
+      Udata(i,j,IV) = d * v;
+
+      Udata(i,j,IBX) = bx;
+      Udata(i,j,IBY) = by;
+
+      Udata(i,j,IP) =
+	pressure / (gamma0-1.0) +
+	0.5*d*(u*u+v*v) +
+	0.5*(bx*bx+by*by);
+      
     }
 
   } // end operator ()

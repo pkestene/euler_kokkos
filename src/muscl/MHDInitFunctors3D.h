@@ -568,6 +568,38 @@ public:
       Udata(i,j,k,IP) = pressure / (gamma0-1.0) +
 	0.5 * d * (u*u + v*v + w*w) +
 	0.5 * (bx*bx + by*by + bz*bz);
+
+    } else if (khParams.p_sine) {
+      
+      const int    n     = khParams.mode;
+      const real_t w0    = khParams.w0;
+      const real_t delta = khParams.delta;
+      const double z1 = 0.25;
+      const double z2 = 0.75;
+
+      const real_t d = (z>=z1 and z<=z2) ? d_in : d_out;
+      const real_t u = (z>=z1 and z<=z2) ? vflow_in : vflow_out;
+      const real_t v = 0;
+      const real_t w = w0 * sin(n*M_PI*x);
+
+      const real_t bx = 0.5;
+      const real_t by = 0.0;
+      const real_t bz = 0.0;
+      
+      Udata(i,j,k,ID) = d;
+      Udata(i,j,k,IU) = d * u;
+      Udata(i,j,k,IV) = d * v;
+      Udata(i,j,k,IW) = d * w;
+
+      Udata(i,j,k,IBX) = bx;
+      Udata(i,j,k,IBY) = by;
+      Udata(i,j,k,IBZ) = bz;
+
+      Udata(i,j,k,IP) =
+	pressure / (gamma0-1.0) +
+	0.5*d*(u*u+v*v+w*w) +
+	0.5*(bx*bx+by*by+bz*bz);
+      
     }
 
   } // end operator ()
