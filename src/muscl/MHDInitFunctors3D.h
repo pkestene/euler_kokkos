@@ -573,7 +573,7 @@ public:
       
       const int    n     = khParams.mode;
       const real_t w0    = khParams.w0;
-      const real_t delta = khParams.delta;
+      //const real_t delta = khParams.delta;
       const double z1 = 0.25;
       const double z2 = 0.75;
 

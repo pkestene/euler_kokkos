@@ -480,10 +480,22 @@ public:
       u += ampl * (rand_gen.drand() - 0.5);
       v += ampl * (rand_gen.drand() - 0.5);
 
+      const real_t bx = 0.5;
+      const real_t by = 0.0;
+      const real_t bz = 0.0;
+
       Udata(i,j,ID) = d;
       Udata(i,j,IU) = d * u;
       Udata(i,j,IV) = d * v;
-      Udata(i,j,IE) = pressure/(gamma0-1.0) + 0.5*d*(u*u+v*v);
+
+      Udata(i,j,IBX) = bx;
+      Udata(i,j,IBY) = by;
+      Udata(i,j,IBZ) = bz;
+
+      Udata(i,j,IE) =
+	pressure/(gamma0-1.0) +
+	0.5*d*(u*u + v*v) +
+	0.5*(bx*bx + by*by + bz*bz);
 
       // free random number
       rand_pool.free_state(rand_gen);
@@ -510,6 +522,7 @@ public:
 
       const real_t bx = 0.5;
       const real_t by = 0.0;
+      const real_t bz = 0.0;
       
       Udata(i,j,ID) = d;
       Udata(i,j,IU) = d * u;
@@ -517,17 +530,18 @@ public:
 
       Udata(i,j,IBX) = bx;
       Udata(i,j,IBY) = by;
+      Udata(i,j,IBZ) = bz;
 
       Udata(i,j,IP) =
 	pressure / (gamma0-1.0) +
-	0.5*d*(u*u+v*v) +
-	0.5*(bx*bx+by*by);
+	0.5*d*(u*u + v*v) +
+	0.5*(bx*bx + by*by + bz*bz);
       
     } else if (khParams.p_sine) {
       
       const int    n     = khParams.mode;
       const real_t w0    = khParams.w0;
-      const real_t delta = khParams.delta;
+      //const real_t delta = khParams.delta;
       const double y1 = 0.25;
       const double y2 = 0.75;
 
@@ -537,6 +551,7 @@ public:
 
       const real_t bx = 0.5;
       const real_t by = 0.0;
+      const real_t bz = 0.0;
       
       Udata(i,j,ID) = d;
       Udata(i,j,IU) = d * u;
@@ -544,11 +559,12 @@ public:
 
       Udata(i,j,IBX) = bx;
       Udata(i,j,IBY) = by;
+      Udata(i,j,IBZ) = bz;
 
       Udata(i,j,IP) =
 	pressure / (gamma0-1.0) +
-	0.5*d*(u*u+v*v) +
-	0.5*(bx*bx+by*by);
+	0.5*d*(u*u + v*v) +
+	0.5*(bx*bx + by*by + bz*bz);
       
     }
 
