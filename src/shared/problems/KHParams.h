@@ -69,7 +69,7 @@ struct KHParams {
     amplitude = configMap.getFloat("KH", "amplitude", 0.1);
 
 
-    if (p_sine_rob) {
+    if (p_sine_rob or p_sine) {
       
       // perturbation mode number
       inner_size = configMap.getFloat("KH","inner_size", 0.2);
