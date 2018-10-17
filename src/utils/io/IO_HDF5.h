@@ -87,6 +87,9 @@ public:
   {};
   ~Save_HDF5() {};
 
+  /**
+   * Copy Uhost to buffer data (then transfered to HDF5 write route) - 2d.
+   */
   template<DimensionType d_ = d>
   void copy_buffer(typename std::enable_if<d_==TWO_D, real_t>::type *& data,
 		   int isize, int jsize, int ksize, int nvar, KokkosLayout layout)
@@ -104,6 +107,9 @@ public:
 
   } // copy_buffer
 
+  /**
+   * Copy Uhost to buffer data (then transfered to HDF5 write route) - 3d.
+   */
   template<DimensionType d_=d>
   void copy_buffer(typename std::enable_if<d_==THREE_D, real_t>::type *& data,
 		   int isize, int jsize, int ksize, int nvar, KokkosLayout layout)
@@ -506,6 +512,9 @@ public:
   {};
   ~Save_HDF5_mpi() {};
 
+  /**
+   * Copy Uhost to buffer data (then transfered to HDF5 write route) - 2d mpi.
+   */
   template<DimensionType d_ = d>
   void copy_buffer(typename std::enable_if<d_==TWO_D, real_t>::type *& data,
 		   int isize, int jsize, int ksize, int nvar, KokkosLayout layout)
@@ -523,6 +532,9 @@ public:
 
   } // copy_buffer
 
+  /**
+   * Copy Uhost to buffer data (then transfered to HDF5 write route) - 3d mpi.
+   */
   template<DimensionType d_ = d>
   void copy_buffer(typename std::enable_if<d_==THREE_D, real_t>::type *& data,
 		   int isize, int jsize, int ksize, int nvar, KokkosLayout layout)
@@ -1324,6 +1336,8 @@ public:
  * Uhost is allocated here; if halfResolution is activated, an addition 
  * upscale is done on host before uploading to device memory.
  *
+ * When upscale is enabled, input data is assumed to have ghostIncluded.
+ *
  * If library HDF5 is not available, do nothing, just print a warning message.
  *
  */
@@ -1370,7 +1384,7 @@ public:
   real_t get_totalTime() {return totalTime;}
 
   /**
-   * copy buffered data (red from file) to host buffer.
+   * copy buffered data (read from file with HDF5 API) to host array - 2d.
    */
   template<DimensionType d_ = d>
   void copy_buffer(typename std::enable_if<d_==TWO_D, real_t>::type *& data,
@@ -1408,6 +1422,7 @@ public:
 	    }
 	    
 	  } else if (nvar == IB) {
+
 	    if (j+ghostWidth-2*jLow == 0) {
 	      Uhost(i,j,IB) = data[iLow + iL* jLow];
 	    } else {
@@ -1441,7 +1456,7 @@ public:
   } // copy_buffer
 
   /**
-   * copy buffered data (red from file) to host buffer.
+   * copy buffered data (read from file with HDF5 API) to host array - 3d.
    */
   template<DimensionType d_=d>
   void copy_buffer(typename std::enable_if<d_==THREE_D, real_t>::type *& data,
@@ -1533,6 +1548,22 @@ public:
 
   // =======================================================
   // =======================================================
+  /**
+   * Perform HDF5 low level HDF5 datastes operations (open, read, close)
+   * into ad buffer called "data" and then copy this buffer to Uhost.
+   *
+   * These operations are only done one field at a time (density, velocity,...)
+   * so that we can later only read one field at a time.
+   *
+   * The calling routine must have opened the hdf5 file.
+   *
+   * \param[in] varId integer to identify which field to read
+   * \param[in,out] data intermediate buffer to read to
+   * \param[in] file_id HDF5 file handler
+   * \param[in] dataspace_memory hdf5 dataspace memory
+   * \param[in] dataspace_file hdf5 dataspace file
+   * \param[in] layout Kokkos layout parameter passed to copy_buffer
+   */
   herr_t read_field(int varId, real_t* &data, hid_t& file_id,
 		    hid_t& dataspace_memory,
 		    hid_t& dataspace_file, 
@@ -1755,6 +1786,9 @@ public:
     // must be allocated (TODO)
     real_t* data;
     
+    // here for simplicity, we don't care if the restart is done
+    // with upscaling; actually the sizes used here are necessary
+    // for a regular restart (and thus sufficient for an upscaled restart)
     if (dimType == TWO_D)
       data = new real_t[isize*jsize];
     else
@@ -1903,6 +1937,23 @@ public:
   
   // =======================================================
   // =======================================================
+  /**
+   * Perform HDF5 low level HDF5 datastes operations (open, read, close)
+   * into ad buffer called "data" and then copy this buffer to Uhost.
+   *
+   * These operations are only done one field at a time (density, velocity,...)
+   * so that we can later only read one field at a time.
+   *
+   * The calling routine must have opened the hdf5 file.
+   *
+   * \param[in] varId integer to identify which field to read
+   * \param[in,out] data intermediate buffer to read to
+   * \param[in] file_id HDF5 file handler
+   * \param[in] dataspace_memory hdf5 dataspace memory
+   * \param[in] dataspace_file hdf5 dataspace file
+   * \param[in] propList_xfer_id hdf5 related parameter
+   * \param[in] layout Kokkos layout parameter passed to copy_buffer
+   */
   herr_t read_field(int varId, real_t* &data, hid_t& file_id,
 		    hid_t& dataspace_memory,
 		    hid_t& dataspace_file,
@@ -1923,6 +1974,8 @@ public:
     HDF5_CHECK(status, "Problem reading field");
 
     H5Dclose(dataset_id);
+
+    // copy data to Uhost array with the correct memory layout
     this->copy_buffer(data, isize, jsize, ksize, varId, layout);
 
     return status;
@@ -1979,6 +2032,7 @@ public:
     int nx_rg, ny_rg, nz_rg; // sizes with ghost zones included / per sub-domain
 
     if (halfResolution) {
+
       nx_r  = nx/2;
       ny_r  = ny/2;
       nz_r  = nz/2;
@@ -1988,6 +2042,7 @@ public:
       nz_rg = nz/2+2*ghostWidth;
 
     } else { // use current resolution
+
       nx_r  = nx;
       ny_r  = ny;
       nz_r  = nz;
@@ -1995,6 +2050,7 @@ public:
       nx_rg = nx+2*ghostWidth;
       ny_rg = ny+2*ghostWidth;
       nz_rg = nz+2*ghostWidth;
+      
     }
 
     read_size = dimType == TWO_D ? nx_rg*ny_rg : nx_rg*ny_rg*nz_rg;
@@ -2276,7 +2332,10 @@ public:
     // pointer to data in memory buffer
     // must be allocated (TODO)
     real_t* data;
-    
+
+    // here for simplicity, we don't care if the restart is done
+    // with upscaling; actually the sizes used here are necessary
+    // for a regular restart (and thus sufficient for an upscaled restart)
     if (dimType == TWO_D)
       data = new real_t[isize*jsize];
     else
@@ -2344,7 +2403,7 @@ public:
     attr_id         = H5Aopen(group_id, "time step", H5P_DEFAULT);
     status          = H5Aread(attr_id, H5T_NATIVE_INT, &timeStep);
     status          = H5Aclose(attr_id);
-    this->iStep           = timeStep;
+    this->iStep     = timeStep;
 
     // read global time
     double timeValue;
