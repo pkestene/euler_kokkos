@@ -179,7 +179,41 @@ void IO_ReadWrite::load_data_impl(DataArray2d             Udata,
 				  real_t& time)
 {
 
-  // TODO
+  // get input filename from configMap
+  std::string inputFilename = configMap.getString("run", "restart_filename", "");
+
+  // check filename extension
+  std::string h5Suffix(".h5");
+  std::string ncSuffix(".nc"); // pnetcdf file only available when MPI is activated
+  
+  bool isHdf5=false, isNcdf=false;
+  if (inputFilename.length() >= 3) {
+    isHdf5 = (0 == inputFilename.compare (inputFilename.length() -
+					  h5Suffix.length(),
+					  h5Suffix.length(),
+					  h5Suffix) );
+    isNcdf = (0 == inputFilename.compare (inputFilename.length() -
+					  ncSuffix.length(),
+					  ncSuffix.length(),
+					  ncSuffix) );
+  }
+
+#ifdef USE_HDF5
+  if (hdf5_enabled and isHdf5) {
+    
+#ifdef USE_MPI
+    euler_kokkos::io::Load_HDF5_mpi<TWO_D> reader(Udata, params, configMap, HYDRO_2D_NBVAR, variables_names);
+    reader.load(inputFilename);
+#else
+    euler_kokkos::io::Load_HDF5<TWO_D> reader(Udata, params, configMap, HYDRO_2D_NBVAR, variables_names);
+    reader.load(inputFilename);
+#endif // USE_MPI
+
+    iStep = reader.iStep;
+    time = reader.totalTime;
+    
+  }
+#endif // USE_HDF5
   
 } // IO_ReadWrite::load_data_impl - 2d
 
@@ -191,8 +225,42 @@ void IO_ReadWrite::load_data_impl(DataArray3d             Udata,
 				  real_t& time)
 {
   
-  // TODO
+  // get input filename from configMap
+  std::string inputFilename = configMap.getString("run", "restart_filename", "");
+
+  // check filename extension
+  std::string h5Suffix(".h5");
+  std::string ncSuffix(".nc"); // pnetcdf file only available when MPI is activated
   
+  bool isHdf5=false, isNcdf=false;
+  if (inputFilename.length() >= 3) {
+    isHdf5 = (0 == inputFilename.compare (inputFilename.length() -
+					  h5Suffix.length(),
+					  h5Suffix.length(),
+					  h5Suffix) );
+    isNcdf = (0 == inputFilename.compare (inputFilename.length() -
+					  ncSuffix.length(),
+					  ncSuffix.length(),
+					  ncSuffix) );
+  }
+
+#ifdef USE_HDF5
+  if (hdf5_enabled and isHdf5) {
+    
+#ifdef USE_MPI
+    euler_kokkos::io::Load_HDF5_mpi<THREE_D> reader(Udata, params, configMap, HYDRO_3D_NBVAR, variables_names);
+    reader.load(inputFilename);
+#else
+    euler_kokkos::io::Load_HDF5<THREE_D> reader(Udata, params, configMap, HYDRO_3D_NBVAR, variables_names);
+    reader.load(inputFilename);
+#endif // USE_MPI
+
+    iStep = reader.iStep;
+    time = reader.totalTime;
+    
+  }
+#endif // USE_HDF5
+
 } // IO_ReadWrite::load_data_impl - 3d
 
 

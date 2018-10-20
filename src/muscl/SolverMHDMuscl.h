@@ -126,6 +126,9 @@ public:
   void init_rotor(DataArray Udata);
   void init_field_loop(DataArray Udata);
   
+  //! init restart (load data from file)
+  void init_restart(DataArray Udata);
+
   //! init wrapper (actual initialization)
   void init(DataArray Udata);
 
@@ -339,6 +342,22 @@ SolverMHDMuscl<dim>::~SolverMHDMuscl()
 
 // =======================================================
 // =======================================================
+template<int dim>
+void SolverMHDMuscl<dim>::make_boundaries(DataArray Udata)
+{
+
+  // this routine is specialized for 2d / 3d
+  
+} // SolverMHDMuscl<dim>::make_boundaries
+
+template<>
+void SolverMHDMuscl<2>::make_boundaries(DataArray Udata);
+
+template<>
+void SolverMHDMuscl<3>::make_boundaries(DataArray Udata);
+
+// =======================================================
+// =======================================================
 /**
  * Hydrodynamical blast Test.
  * http://www.astro.princeton.edu/~jstone/Athena/tests/blast/blast.html
@@ -481,48 +500,91 @@ void SolverMHDMuscl<dim>::init_field_loop(DataArray Udata)
 // =======================================================
 // =======================================================
 template<int dim>
+void SolverMHDMuscl<dim>::init_restart(DataArray Udata)
+{
+
+  int myRank=0;
+#ifdef USE_MPI
+  myRank = params.myRank;
+#endif // USE_MPI
+  
+  // load data
+  auto reader = std::make_shared<io::IO_ReadWrite>(params, configMap, m_variables_names);
+
+  // whether or not we are upscaling input data is handled inside "load_data"
+  // m_times_saved are read from file
+  reader->load_data(Udata, Uhost, m_times_saved, m_t);
+
+  // increment to avoid overriding last output (?)
+  //m_times_saved++;
+  
+  // do we force total time to be zero ?
+  bool resetTotalTime = configMap.getBool("run","restart_reset_totaltime",false);
+  if (resetTotalTime)
+    m_t=0;
+
+  if (myRank == 0) {
+    std::cout << "### This is a restarted run ! Current time is " << m_t << " ###\n";
+  }
+  
+} // SolverMHDMuscl<dim>::init_restart
+
+// =======================================================
+// =======================================================
+template<int dim>
 void SolverMHDMuscl<dim>::init(DataArray Udata)
 {
 
-  /*
-   * initialize hydro array at t=0
-   */
-  if ( !m_problem_name.compare("blast") ) {
+  // test if we are performing a re-start run (default : false)
+  bool restartEnabled = configMap.getBool("run","restart_enabled",false);
 
-    init_blast(Udata);
+  if (restartEnabled) { // load data from input data file
 
-  } else if ( !m_problem_name.compare("implode") ) {
+    init_restart(Udata);
     
-    init_implode(U);
-    
-  } else if ( !m_problem_name.compare("orszag_tang") ) {
-    
-    init_orszag_tang(U);
-    
-  } else if ( !m_problem_name.compare("kelvin_helmholtz") ) {
-    
-    init_kelvin_helmholtz(U);
-    
-  } else if ( !m_problem_name.compare("rotor") ) {
-    
-    init_rotor(U);
-    
-  } else if ( !m_problem_name.compare("field_loop") ||
-	      !m_problem_name.compare("field loop")) {
-    
-    init_field_loop(U);
-    
-  } else {
+  } else { // regular initialization
 
-    std::cout << "Problem : " << m_problem_name
-	      << " is not recognized / implemented."
-	      << std::endl;
-    std::cout <<  "Use default - Orszag-Tang vortex" << std::endl;
-    m_problem_name = "orszag_tang";
-    init_orszag_tang(Udata);
+    /*
+     * initialize hydro array at t=0
+     */
+    if ( !m_problem_name.compare("blast") ) {
+      
+      init_blast(Udata);
+      
+    } else if ( !m_problem_name.compare("implode") ) {
+      
+      init_implode(U);
+      
+    } else if ( !m_problem_name.compare("orszag_tang") ) {
+      
+      init_orszag_tang(U);
+      
+    } else if ( !m_problem_name.compare("kelvin_helmholtz") ) {
+      
+      init_kelvin_helmholtz(U);
+      
+    } else if ( !m_problem_name.compare("rotor") ) {
+      
+      init_rotor(U);
+      
+    } else if ( !m_problem_name.compare("field_loop") ||
+		!m_problem_name.compare("field loop")) {
+      
+      init_field_loop(U);
+      
+    } else {
+      
+      std::cout << "Problem : " << m_problem_name
+		<< " is not recognized / implemented."
+		<< std::endl;
+      std::cout <<  "Use default - Orszag-Tang vortex" << std::endl;
+      m_problem_name = "orszag_tang";
+      init_orszag_tang(Udata);
 
-  }
-
+    }
+    
+  } // end regular initialization
+  
 } // SolverMHDMuscl::init / 2d / 3D
 
 // =======================================================

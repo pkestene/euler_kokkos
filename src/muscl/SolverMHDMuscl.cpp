@@ -60,16 +60,6 @@ void SolverMHDMuscl<3>::make_boundaries(DataArray Udata)
 
 // =======================================================
 // =======================================================
-template<int dim>
-void SolverMHDMuscl<dim>::make_boundaries(DataArray Udata)
-{
-
-  // this routine is specialized for 2d / 3d
-  
-} // SolverMHDMuscl<dim>::make_boundaries
-
-// =======================================================
-// =======================================================
 // ///////////////////////////////////////////////////////////////////
 // Compute electric field
 // ///////////////////////////////////////////////////////////////////

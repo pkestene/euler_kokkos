@@ -111,6 +111,9 @@ public:
   void init_isentropic_vortex(DataArray Udata); // 2d only
   void init_rayleigh_taylor(DataArray Udata, VectorField gravity); // 2d and 3d
 
+  //! init restart (load data from file)
+  void init_restart(DataArray Udata);
+  
   //! init wrapper (actual initialization)
   void init(DataArray Udata);
 
@@ -300,6 +303,22 @@ SolverHydroMuscl<dim>::~SolverHydroMuscl()
 
 // =======================================================
 // =======================================================
+template<int dim>
+void SolverHydroMuscl<dim>::make_boundaries(DataArray Udata)
+{
+
+  // this routine is specialized for 2d / 3d
+  
+} // SolverHydroMuscl<dim>::make_boundaries
+
+template<>
+void SolverHydroMuscl<2>::make_boundaries(DataArray Udata);
+
+template<>
+void SolverHydroMuscl<3>::make_boundaries(DataArray Udata);
+
+// =======================================================
+// =======================================================
 /**
  * Hydrodynamical Implosion Test.
  * http://www.astro.princeton.edu/~jstone/Athena/tests/implode/Implode.html
@@ -425,6 +444,77 @@ void SolverHydroMuscl<dim>::init_rayleigh_taylor(DataArray Udata,
   RTIFunctor::apply(params, rtiParams, Udata, gravity);
   
 } // SolverHydroMuscl::init_rayleigh_taylor
+
+// =======================================================
+// =======================================================
+template<int dim>
+void SolverHydroMuscl<dim>::init_restart(DataArray Udata)
+{
+
+  int myRank=0;
+#ifdef USE_MPI
+  myRank = params.myRank;
+#endif // USE_MPI
+  
+  // load data
+  auto reader = std::make_shared<io::IO_ReadWrite>(params, configMap, m_variables_names);
+
+  // whether or not we are upscaling input data is handled inside "load_data"
+  // m_times_saved are read from file
+  reader->load_data(Udata, Uhost, m_times_saved, m_t);
+
+  // increment to avoid overriding last output (?)
+  //m_times_saved++;
+  
+  // do we force total time to be zero ?
+  bool resetTotalTime = configMap.getBool("run","restart_reset_totaltime",false);
+  if (resetTotalTime)
+    m_t=0;
+
+  // in case of turbulence problem, we also need to re-initialize the
+  // random forcing field
+  // if (!problemName.compare("turbulence")) {
+  //   this->init_randomForcing();
+  // } 
+  
+  // in case of Ornstein-Uhlenbeck turbulence problem, 
+  // we also need to re-initialize the random forcing field
+  // if (!problemName.compare("turbulence-Ornstein-Uhlenbeck")) {
+    
+  //   bool restartEnabled = true;
+    
+  //   std::string forcing_filename = configMap.getString("turbulence-Ornstein-Uhlenbeck", "forcing_input_file",  "");
+    
+  //   if (restartUpscaleEnabled) {
+      
+  //     // use default parameter when restarting and upscaling
+  //     pForcingOrnsteinUhlenbeck -> init_forcing(false);
+      
+  //   } else if ( forcing_filename.size() != 0) {
+      
+  //     // if forcing filename is provided, we use it
+  //     pForcingOrnsteinUhlenbeck -> init_forcing(false); // call to allocate
+  //     pForcingOrnsteinUhlenbeck -> input_forcing(forcing_filename);
+      
+  //   } else {
+      
+  //     // the forcing parameter filename is build upon configMap information
+  //     pForcingOrnsteinUhlenbeck -> init_forcing(restartEnabled, timeStep);
+      
+  //   }
+    
+  // } // end restart problem turbulence-Ornstein-Uhlenbeck
+
+  
+  if (myRank == 0) {
+    std::cout << "### This is a restarted run ! Current time is " << m_t << " ###\n";
+  }
+
+  // some extra stuff that need to be done here (usefull when MRI is activated)
+  //restart_run_extra_work();
+
+  
+} // SolverHydroMuscl<dim>::init_restart
 
 // =======================================================
 // =======================================================

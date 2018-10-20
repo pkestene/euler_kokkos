@@ -318,7 +318,7 @@ SolverBase::load_data(DataArray2d             U,
 		      int& iStep,
 		      real_t& time)
 {
-  //m_io_reader->load_data(U, Uh, iStep, time, "");
+  m_io_reader_writer->load_data(U, Uh, iStep, time);
 }
 
 // =======================================================
@@ -329,7 +329,7 @@ SolverBase::load_data(DataArray3d             U,
 		      int& iStep,
 		      real_t& time)
 {
-  //m_io_reader->load_data(U, Uh, iStep, time, "");
+  m_io_reader_writer->load_data(U, Uh, iStep, time);
 }
 
 // =======================================================

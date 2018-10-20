@@ -62,17 +62,6 @@ void SolverHydroMuscl<3>::make_boundaries(DataArray Udata)
 
 // =======================================================
 // =======================================================
-template<int dim>
-void SolverHydroMuscl<dim>::make_boundaries(DataArray Udata)
-{
-
-  // this routine is specialized for 2d / 3d
-  
-} // SolverHydroMuscl<dim>::make_boundaries
-
-
-// =======================================================
-// =======================================================
 /**
  * Four quadrant 2D riemann problem.
  *
@@ -111,7 +100,7 @@ void SolverHydroMuscl<dim>::init_four_quadrant(DataArray Udata)
   // specialized only for 2d
   std::cerr << "You shouldn't be here: four quadrant problem is not implemented in 3D !\n";
   
-} // SolverHydroMuscl::init_four_quadrant
+} // SolverHydroMuscl<dim>::init_four_quadrant
 
 // =======================================================
 // =======================================================
@@ -147,46 +136,57 @@ template<>
 void SolverHydroMuscl<2>::init(DataArray Udata)
 {
 
-  /*
-   * initialize hydro array at t=0
-   */
-  if ( !m_problem_name.compare("implode") ) {
+  // test if we are performing a re-start run (default : false)
+  bool restartEnabled = configMap.getBool("run","restart_enabled",false);
 
-    init_implode(Udata);
+  if (restartEnabled) { // load data from input data file
 
-  } else if ( !m_problem_name.compare("blast") ) {
+    init_restart(Udata);
+    
+  } else { // regular initialization
 
-    init_blast(Udata);
-
-  } else if ( !m_problem_name.compare("kelvin_helmholtz") ) {
-
-    init_kelvin_helmholtz(Udata);
-
-  } else if ( !m_problem_name.compare("gresho_vortex") ) {
+    /*
+     * initialize hydro array at t=0
+     */
+    if ( !m_problem_name.compare("implode") ) {
       
-    init_gresho_vortex(Udata);
+      init_implode(Udata);
       
-  } else if ( !m_problem_name.compare("four_quadrant") ) {
-
-    init_four_quadrant(Udata);
-
-  } else if ( !m_problem_name.compare("isentropic_vortex") ) {
-
-    init_isentropic_vortex(Udata);
-
-  } else if ( !m_problem_name.compare("rayleigh_taylor") ) {
+    } else if ( !m_problem_name.compare("blast") ) {
       
-    init_rayleigh_taylor(Udata,gravity);
+      init_blast(Udata);
       
-  } else {
+    } else if ( !m_problem_name.compare("kelvin_helmholtz") ) {
+      
+      init_kelvin_helmholtz(Udata);
+      
+    } else if ( !m_problem_name.compare("gresho_vortex") ) {
+      
+      init_gresho_vortex(Udata);
+      
+    } else if ( !m_problem_name.compare("four_quadrant") ) {
+      
+      init_four_quadrant(Udata);
+      
+    } else if ( !m_problem_name.compare("isentropic_vortex") ) {
+      
+      init_isentropic_vortex(Udata);
+      
+    } else if ( !m_problem_name.compare("rayleigh_taylor") ) {
+      
+      init_rayleigh_taylor(Udata,gravity);
+      
+    } else {
+      
+      std::cout << "Problem : " << m_problem_name
+		<< " is not recognized / implemented."
+		<< std::endl;
+      std::cout <<  "Use default - implode" << std::endl;
+      init_implode(Udata);
+      
+    }
 
-    std::cout << "Problem : " << m_problem_name
-	      << " is not recognized / implemented."
-	      << std::endl;
-    std::cout <<  "Use default - implode" << std::endl;
-    init_implode(Udata);
-
-  }
+  } // end regular initialization
 
 } // SolverHydroMuscl::init / 2d
 
@@ -196,38 +196,49 @@ template<>
 void SolverHydroMuscl<3>::init(DataArray Udata)
 {
 
-  /*
-   * initialize hydro array at t=0
-   */
-  if ( !m_problem_name.compare("implode") ) {
+  // test if we are performing a re-start run (default : false)
+  bool restartEnabled = configMap.getBool("run","restart_enabled",false);
 
-    init_implode(Udata);
+  if (restartEnabled) { // load data from input data file
 
-  } else if ( !m_problem_name.compare("blast") ) {
+    init_restart(Udata);
+    
+  } else { // regular initialization
 
-    init_blast(Udata);
-
-  } else if ( !m_problem_name.compare("kelvin_helmholtz") ) {
+    /*
+     * initialize hydro array at t=0
+     */
+    if ( !m_problem_name.compare("implode") ) {
       
-    init_kelvin_helmholtz(Udata);
-    
-  } else if ( !m_problem_name.compare("gresho_vortex") ) {
+      init_implode(Udata);
       
-    init_gresho_vortex(Udata);
-    
-  } else if ( !m_problem_name.compare("rayleigh_taylor") ) {
-    
-    init_rayleigh_taylor(Udata,gravity);
-    
-  } else {
-    
-    std::cout << "Problem : " << m_problem_name
-	      << " is not recognized / implemented."
-	      << std::endl;
-    std::cout <<  "Use default - implode" << std::endl;
-    init_implode(Udata);
-    
-  }
+    } else if ( !m_problem_name.compare("blast") ) {
+      
+      init_blast(Udata);
+      
+    } else if ( !m_problem_name.compare("kelvin_helmholtz") ) {
+      
+      init_kelvin_helmholtz(Udata);
+      
+    } else if ( !m_problem_name.compare("gresho_vortex") ) {
+      
+      init_gresho_vortex(Udata);
+      
+    } else if ( !m_problem_name.compare("rayleigh_taylor") ) {
+      
+      init_rayleigh_taylor(Udata,gravity);
+      
+    } else {
+      
+      std::cout << "Problem : " << m_problem_name
+		<< " is not recognized / implemented."
+		<< std::endl;
+      std::cout <<  "Use default - implode" << std::endl;
+      init_implode(Udata);
+      
+    }
+
+  } // end regular initialization
 
 } // SolverHydroMuscl<3>::init
 
