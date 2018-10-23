@@ -46,9 +46,9 @@
 
 #include <Kokkos_Macros.hpp>
 
-#if defined( KOKKOS_ENABLE_MPI )
+#if defined( USE_MPI )
 #include <mpi.h>
-#endif
+#endif // USE_MPI
 
 #include <Kokkos_Core.hpp>
 
@@ -67,19 +67,43 @@ int main( int argc , char ** argv )
   
   std::ostringstream msg ;
 
-#if defined( KOKKOS_ENABLE_MPI )
+  int mpi_rank = 0 ;
+  int nRanks = 1;
+
+#if defined( USE_MPI )
 
   MPI_Init( & argc , & argv );
 
-  int mpi_rank = 0 ;
-
   MPI_Comm_rank( MPI_COMM_WORLD , & mpi_rank );
+  MPI_Comm_size( MPI_COMM_WORLD , & nRanks );
 
   msg << "MPI rank(" << mpi_rank << ") " ;
 
-#endif
+#endif // USE_MPI
 
   Kokkos::initialize(argc, argv);
+
+#ifdef KOKKOS_ENABLE_CUDA
+  {
+    
+    // // get device count
+    // int devCount;
+    // cudaGetDeviceCount(&devCount);
+    
+    // int devId = mpi_rank % devCount;
+    // cudaSetDevice(devId);
+
+    // on a large cluster, the scheduler should assign ressources
+    // in a way that each MPI task is mapped to a different GPU
+    // let's cross-checked that:
+      
+    int cudaDeviceId;
+    cudaGetDevice(&cudaDeviceId);
+    std::cout << "I'm MPI task #" << mpi_rank << " (out of " << nRanks << ")"
+	      << " pinned to GPU #" << cudaDeviceId << "\n";
+      
+  }
+#endif // KOKKOS_ENABLE_CUDA
 
   msg << "{" << std::endl ;
 
@@ -92,14 +116,14 @@ int main( int argc , char ** argv )
   }
 
   Kokkos::print_configuration( msg );
-
+  
   msg << "}" << std::endl ;
-
+  
   std::cout << msg.str();
-
+  
   Kokkos::finalize();
   
-#if defined( KOKKOS_ENABLE_MPI )
+#if defined( USE_MPI )
 
   MPI_Finalize();
 
