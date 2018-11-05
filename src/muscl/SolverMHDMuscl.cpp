@@ -72,15 +72,6 @@ void SolverMHDMuscl<3>::computeElectricField(DataArray Udata)
   
 } // SolverMHDMuscl<3>::computeElectricField
 
-// =======================================================
-// =======================================================
-template<int dim>
-void SolverMHDMuscl<dim>::computeElectricField(DataArray Udata)
-{
-
-  // NA, 3D only
-  
-} // SolverMHDMuscl<dim>::computeElectricField
 
 // =======================================================
 // =======================================================
@@ -95,19 +86,6 @@ void SolverMHDMuscl<3>::computeMagSlopes(DataArray Udata)
   ComputeMagSlopesFunctor3D::apply(params, Udata, DeltaA, DeltaB, DeltaC, nbCells);
   
 } // SolverMHDMuscl3D::computeMagSlopes
-
-// =======================================================
-// =======================================================
-// ///////////////////////////////////////////////////////////////////
-// Compute magnetic slopes
-// ///////////////////////////////////////////////////////////////////
-template<int dim>
-void SolverMHDMuscl<dim>::computeMagSlopes(DataArray Udata)
-{
-
-  // NA, 3D only
-  
-} // SolverMHDMuscl<dim>::computeMagSlopes
 
 // =======================================================
 // =======================================================
@@ -382,21 +360,6 @@ void SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in,
   timers[TIMER_NUM_SCHEME]->stop();
 
 } // SolverMHDMuscl<3>::godunov_unsplit_impl
-
-// =======================================================
-// =======================================================
-// ///////////////////////////////////////////
-// Actual CPU computation of Godunov scheme
-// ///////////////////////////////////////////
-template<int dim>
-void SolverMHDMuscl<dim>::godunov_unsplit_impl(DataArray data_in, 
-						 DataArray data_out, 
-						 real_t dt)
-{
-
-  // 2d / 3d implementation are specialized 
-  
-} // SolverMHDMuscl3D::godunov_unsplit_impl
 
 } // namespace muscl
 

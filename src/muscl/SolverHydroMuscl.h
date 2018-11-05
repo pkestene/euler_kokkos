@@ -311,9 +311,11 @@ void SolverHydroMuscl<dim>::make_boundaries(DataArray Udata)
   
 } // SolverHydroMuscl<dim>::make_boundaries
 
+// 2d specialization
 template<>
 void SolverHydroMuscl<2>::make_boundaries(DataArray Udata);
 
+// 3d specialization
 template<>
 void SolverHydroMuscl<3>::make_boundaries(DataArray Udata);
 
@@ -417,7 +419,51 @@ void SolverHydroMuscl<dim>::init_gresho_vortex(DataArray Udata)
   // perform init
   InitGreshoVortexFunctor::apply(params, gvParams, Udata, nbCells);
 
-} // SolverHydroMuscl::init_gresho_vortex
+} // SolverHydroMuscl<dim>::init_gresho_vortex
+
+// =======================================================
+// =======================================================
+/**
+ * Init four quadrant (piecewise constant).
+ *
+ * Four quadrant 2D riemann problem.
+ *
+ * See article: Lax and Liu, "Solution of two-dimensional riemann
+ * problems of gas dynamics by positive schemes",SIAM journal on
+ * scientific computing, 1998, vol. 19, no2, pp. 319-340
+ */
+template<int dim>
+void SolverHydroMuscl<dim>::init_four_quadrant(DataArray Udata)
+{
+
+  // specialized only for 2d
+  std::cerr << "You shouldn't be here: four quadrant problem is not implemented in 3D !\n";
+  
+} // SolverHydroMuscl<dim>::init_four_quadrant
+
+// 2d specialization
+template<>
+void SolverHydroMuscl<2>::init_four_quadrant(DataArray Udata);
+
+// =======================================================
+// =======================================================
+/**
+ * Isentropic vortex advection test.
+ * https://www.cfd-online.com/Wiki/2-D_vortex_in_isentropic_flow
+ * https://hal.archives-ouvertes.fr/hal-01485587/document
+ */
+template<int dim>
+void SolverHydroMuscl<dim>::init_isentropic_vortex(DataArray Udata)
+{
+
+  // specialized only for 2d
+  std::cerr << "You shouldn't be here: isentropic vortex is not implemented in 3D !\n";
+  
+} // SolverHydroMuscl::init_isentropic_vortex
+
+// 2d specialization
+template<>
+void SolverHydroMuscl<2>::init_isentropic_vortex(DataArray Udata);
 
 // =======================================================
 // =======================================================
@@ -633,6 +679,33 @@ void SolverHydroMuscl<dim>::godunov_unsplit(real_t dt)
   }
   
 } // SolverHydroMuscl::godunov_unsplit
+
+// =======================================================
+// =======================================================
+// ///////////////////////////////////////////
+// Actual CPU computation of Godunov scheme
+// ///////////////////////////////////////////
+template<int dim>
+void SolverHydroMuscl<dim>::godunov_unsplit_impl(DataArray data_in, 
+						 DataArray data_out, 
+						 real_t dt)
+{
+
+  // 2d / 3d implementation are specialized in implementation file
+  
+} // SolverHydroMuscl<dim>::godunov_unsplit_impl
+
+// 2d version
+template<>
+void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in, 
+					       DataArray data_out, 
+					       real_t dt);
+
+// 3d version
+template<>
+void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in, 
+					       DataArray data_out, 
+					       real_t dt);
 
 // =======================================================
 // =======================================================
