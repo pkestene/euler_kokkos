@@ -26,6 +26,9 @@
 #include "utils/io/IO_HDF5.h"
 #endif // USE_HDF5
 
+// banner
+#include "euler_kokkos_version.h"
+
 #ifdef USE_FPE_DEBUG
 // for catching floating point errors
 #include <fenv.h>
@@ -111,6 +114,9 @@ int main(int argc, char *argv[])
 
     
   }
+  
+  // banner
+  if (rank==0) print_version_info();
 
   // if (argc != 2) {
   //   if (rank==0)

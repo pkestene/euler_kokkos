@@ -12,9 +12,24 @@
 #ifndef EULER_KOKKOS_VERSION_H_
 #define EULER_KOKKOS_VERSION_H_
 
-#define GIT_BUILD_STRING "@GIT_BUILD_STRING@"
+#define GIT_REMOTE_URL "@GIT_REMOTE_URL@"
 #define GIT_BRANCH "@GIT_BRANCH@"
+#define GIT_BUILD_STRING "@GIT_BUILD_STRING@"
 #define COMPILE_DATE "@DATE_STRING@"
 #define COMPILE_TIME "@TIME_STRING@"
+
+inline
+void print_version_info()
+{
+  std::cout << "#############################################\n";
+  std::cout << "@PROJECT_NAME@ - git information" <<"\n";
+  std::cout << "git remote url : " << GIT_REMOTE_URL << "\n";
+  std::cout << "git branch     : " << GIT_BRANCH << "\n";
+  std::cout << "git revision   : " << GIT_BUILD_STRING << "\n";
+  std::cout << "compile date   : " << COMPILE_DATE << "\n";
+  std::cout << "compile time   : " << COMPILE_TIME << "\n";
+  std::cout << "#############################################\n";
+
+} // print_version_info
 
 #endif  // EULER_KOKKOS_VERSION_H_
