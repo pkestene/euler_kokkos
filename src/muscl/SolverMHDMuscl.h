@@ -685,6 +685,34 @@ void SolverMHDMuscl<dim>::godunov_unsplit(real_t dt)
 
 // =======================================================
 // =======================================================
+// ///////////////////////////////////////////
+// Actual CPU computation of Godunov scheme
+// ///////////////////////////////////////////
+template<int dim>
+void SolverMHDMuscl<dim>::godunov_unsplit_impl(DataArray data_in, 
+						 DataArray data_out, 
+						 real_t dt)
+{
+
+  // 2d / 3d implementation are specialized 
+  
+} // SolverMHDMuscl<dim>::godunov_unsplit_impl
+
+// 2d
+template<>
+void SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, 
+					     DataArray data_out, 
+					     real_t dt);
+
+// 3d
+template<>
+void SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, 
+					     DataArray data_out, 
+					     real_t dt);
+
+
+// =======================================================
+// =======================================================
 // ///////////////////////////////////////////////////////////////////
 // Convert conservative variables array U into primitive var array Q
 // ///////////////////////////////////////////////////////////////////
@@ -702,6 +730,38 @@ void SolverMHDMuscl<dim>::convertToPrimitives(DataArray Udata)
   ConvertToPrimitivesFunctor::apply(params, Udata, Q, nbCells);
   
 } // SolverMHDMuscl::convertToPrimitives
+
+// =======================================================
+// =======================================================
+template<int dim>
+void SolverMHDMuscl<dim>::computeElectricField(DataArray Udata)
+{
+
+  // NA, 3D only
+  
+} // SolverMHDMuscl<dim>::computeElectricField
+
+// 3d
+template<>
+void SolverMHDMuscl<3>::computeElectricField(DataArray Udata);
+
+// =======================================================
+// =======================================================
+// ///////////////////////////////////////////////////////////////////
+// Compute magnetic slopes
+// ///////////////////////////////////////////////////////////////////
+template<int dim>
+void SolverMHDMuscl<dim>::computeMagSlopes(DataArray Udata)
+{
+
+  // NA, 3D only
+  
+} // SolverMHDMuscl<dim>::computeMagSlopes
+
+// 3d
+template<>
+void SolverMHDMuscl<3>::computeMagSlopes(DataArray Udata);
+
 
 // =======================================================
 // =======================================================
