@@ -842,7 +842,7 @@ public:
     const real_t dx = params.dx;
     const real_t dy = params.dy;
     
-    const real_t gamma0 = params.settings.gamma0;
+    //const real_t gamma0 = params.settings.gamma0;
 
     // field loop problem parameters
     const real_t radius    = flParams.radius;
