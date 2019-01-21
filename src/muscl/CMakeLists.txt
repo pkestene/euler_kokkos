@@ -24,10 +24,6 @@ add_library(muscl
 target_include_directories(muscl
   PUBLIC
   ${CMAKE_SOURCE_DIR}/src
-  ${CMAKE_SOURCE_DIR}/kokkos/core/src
-  ${CMAKE_SOURCE_DIR}/kokkos/containers/src
-  ${CMAKE_SOURCE_DIR}/kokkos/algorithms/src
-  ${CMAKE_BINARY_DIR}/kokkos
   ) 
 target_link_libraries(muscl
   kokkos
