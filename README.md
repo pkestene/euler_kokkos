@@ -2,7 +2,7 @@
 
 ## What is it ?
 
-Provide performance portable Kokkos implementation for compressible hydrodynamics.
+Provide performance portable (multi-architecture) Kokkos implementation for compressible hydrodynamics (second order, Godunov, MUSCL-Hancock) on cartesian grids.
 
 ## Dependencies
 
