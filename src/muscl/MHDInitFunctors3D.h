@@ -17,6 +17,7 @@
 #include "shared/problems/ImplodeParams.h"
 #include "shared/problems/KHParams.h"
 #include "shared/problems/RotorParams.h"
+#include "shared/problems/OrszagTangParams.h"
 
 // kokkos random numbers
 #include <Kokkos_Random.hpp>
@@ -269,15 +270,17 @@ private:
 
 public:
   InitOrszagTangFunctor3D(HydroParams params,
-			  DataArray3d Udata) :
-    MHDBaseFunctor3D(params), Udata(Udata)  {};
+			  OrszagTangParams otParams,
+                          DataArray3d Udata) :
+    MHDBaseFunctor3D(params), otParams(otParams), Udata(Udata)  {};
   
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
+                    OrszagTangParams otParams,
                     DataArray3d Udata,
 		    int         nbCells)
   {
-    InitOrszagTangFunctor3D functor(params, Udata);
+    InitOrszagTangFunctor3D functor(params, otParams, Udata);
 
     functor.phase = INIT_ALL_VAR_BUT_ENERGY;
     Kokkos::parallel_for(nbCells, functor);
@@ -325,6 +328,7 @@ public:
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
     const real_t zmin = params.zmin;
+    const real_t zmax = params.zmax;
     UNUSED(zmin);
         
     const double dx = params.dx;
@@ -339,13 +343,14 @@ public:
     const double p0    = gamma0/(2.0*TwoPi);
     const double d0    = gamma0*p0;
     const double v0    = 1.0;
+    const double kt    = otParams.kt;
 
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
     
     double xPos = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
     double yPos = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
-    //double zPos = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
+    double zPos = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
         
     // density
     Udata(i,j,k,ID) = d0;
@@ -360,8 +365,8 @@ public:
     Udata(i,j,k,IW) =  ZERO_F;
 
     // bx, by, bz
-    Udata(i,j,k, IBX) = -B0*sin(    yPos*TwoPi);
-    Udata(i,j,k, IBY) =  B0*sin(2.0*xPos*TwoPi);
+    Udata(i,j,k, IBX) = -B0*cos(2*TwoPi*kt*(zPos-zmin)/(zmax-zmin))*sin(    yPos*TwoPi);
+    Udata(i,j,k, IBY) =  B0*cos(2*TwoPi*kt*(zPos-zmin)/(zmax-zmin))*sin(2.0*xPos*TwoPi);
     Udata(i,j,k, IBZ) =  0.0;
 
   } // init_all_var_but_energy
@@ -402,8 +407,9 @@ public:
     
   } // init_energy
   
+  OrszagTangParams otParams;
   DataArray3d Udata;
-  PhaseType   phase ;
+  PhaseType   phase;
   
 }; // InitOrszagTangFunctor3D
 
