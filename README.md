@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/168991445.svg)](https://zenodo.org/badge/latestdoi/168991445)
+
 # Euler_kokkos
 
 ## What is it ?
