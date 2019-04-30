@@ -19,10 +19,12 @@ target_include_directories(test_io_vtk
   ${CMAKE_SOURCE_DIR}/src/utils/mpiUtils
   )
 target_link_libraries(test_io_vtk
+  PUBLIC
   kokkos shared config monitoring io)
 
 if(USE_MPI)
   target_link_libraries(test_io_vtk
+    PUBLIC
     mpiUtils)
 endif(USE_MPI)
 
@@ -76,6 +78,7 @@ if(USE_MPI)
       ${CMAKE_SOURCE_DIR}/src/utils/mpiUtils
       )
     target_link_libraries(test_io_pnetcdf
+      PUBLIC
       kokkos shared config monitoring io mpiUtils ${HDF5_PNETCDF})
     
     add_backward(test_io_pnetcdf)

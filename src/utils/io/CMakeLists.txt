@@ -1,4 +1,7 @@
-set (io_SRCS
+add_library(io "")
+
+target_sources (io
+  PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/IO_common.h
   ${CMAKE_CURRENT_SOURCE_DIR}/IO_common.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/IO_ReadWriteBase.h
@@ -9,8 +12,8 @@ set (io_SRCS
   )
 
 if(USE_HDF5)
-  set (io_SRCS
-    ${io_SRCS}
+  target_sources (io
+    PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/IO_HDF5.h
     ${CMAKE_CURRENT_SOURCE_DIR}/IO_HDF5.cpp
     )
@@ -18,38 +21,39 @@ endif(USE_HDF5)
 
 if(USE_MPI)
   if(USE_PNETCDF)
-  set (io_SRCS
-    ${io_SRCS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/IO_PNETCDF.h
-    )    
+    target_sources (io
+      PUBLIC
+      ${CMAKE_CURRENT_SOURCE_DIR}/IO_PNETCDF.h
+      )    
   endif(USE_PNETCDF)
 endif(USE_MPI)
-
-add_library(io
-  ${io_SRCS}
-  )
 
 target_include_directories(io
   PUBLIC
   ${CMAKE_SOURCE_DIR}/src
   )
+
 target_link_libraries(io
+  PUBLIC
   kokkos
   )
+
 if (USE_HDF5)
   target_link_libraries(io
+    PUBLIC
     ${HDF5_LIBRARIES}
     )
-endif()
+endif(USE_HDF5)
 
 if (USE_PNETCDF)
   target_link_libraries(io
+    PUBLIC
     ${PNETCDF_LIBRARIES}
     )
-endif()
-  
-# if (USE_MPI)
-#   target_link_libraries(io
-#     ${MPI_CXX_LIBRARIES}
-#     )
-# endif()
+endif(USE_PNETCDF)
+
+if (USE_MPI)
+  target_compile_options    (io PUBLIC ${MPI_CXX_COMPILE_FLAGS})
+  target_include_directories(io PUBLIC ${MPI_CXX_INCLUDE_PATH})
+  target_link_libraries     (io PUBLIC ${MPI_CXX_LIBRARIES})
+endif(USE_MPI)
