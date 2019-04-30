@@ -12,6 +12,7 @@ macro(MPI_TEST_ADD_EXEC test_name)
     ${CMAKE_SOURCE_DIR}/src/utils/mpiUtils
     )
   target_link_libraries(${EXE_NAME}
+    PRIVATE
     monitoring mpiUtils)
 endmacro(MPI_TEST_ADD_EXEC)
 

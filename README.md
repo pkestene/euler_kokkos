@@ -67,18 +67,15 @@ make -j 4
 
 Please make sure to use a CUDA-aware MPI implementation (OpenMPI or MVAPICH2) built with the proper flags for activating CUDA support.
 
+It may happen that eventhough your MPI implementation is actually cuda-aware, cmake find_package macro for MPI does not detect it to be cuda aware. In that case, you can enforce cuda awareness by turning option USE_MPI_CUDA_AWARE_ENFORCED to ON.
 
-* Make sure MPI compiler wrapper will use `nvcc_wrapper` from Kokkos
-
-```shell
-export CXX=mpicxx 
-export OMPI_CXX=/path/to/nvcc_wrapper
-```
+You don't need to use mpi compiler wrapper mpicxx, cmake *should* be able to correctly populate MPI_CXX_INCLUDE_PATH, MPI_CXX_LIBRARIES which are passed to all final targets.
 
 * Create a build directory, configure and make
 
 ```shell
 mkdir build; cd build
+export CXX=/path/to/nvcc_wrapper
 cmake -DUSE_MPI=ON -DKOKKOS_ENABLE_CUDA=ON -DKOKKOS_ARCH=Maxwell50 ..
 make -j 4
 ```

@@ -1,7 +1,9 @@
 #######################
 ### SHARED ############
 #######################
-set (shared_SRCS
+add_library(shared "")
+target_sources (shared
+  PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/BlastParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/ImplodeParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/KHParams.h
@@ -30,16 +32,6 @@ set (shared_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/solver_utils.h
   )
 
-# if (USE_MPI)
-#   set (shared_SRCS
-#     ${shared_SRCS}
-#     ${CMAKE_CURRENT_SOURCE_DIR}/shared/mpiBorderUtils.h
-#     )
-# endif()
-
-add_library(shared
-  ${shared_SRCS}
-  )
 target_include_directories(shared
   PUBLIC
   ${CMAKE_SOURCE_DIR}/src
@@ -47,19 +39,31 @@ target_include_directories(shared
   ${CMAKE_SOURCE_DIR}/src/utils/time
   ${CMAKE_SOURCE_DIR}/src/utils/io
   ) 
+if (USE_MPI)
+  target_include_directories(shared
+    PUBLIC
+    ${CMAKE_SOURCE_DIR}/src/utils/mpiUtils
+    )
+endif(USE_MPI)
+
 target_link_libraries(shared
+  PUBLIC
   kokkos
   )
+if(USE_MPI)
+  target_link_libraries(shared
+  PUBLIC
+  mpiUtils)
+endif(USE_MPI)
 
 #######################
 ### SOLVER FACTORY ####
 #######################
-set (solver_factory_SRCS
+add_library(solver_factory "")
+target_sources (solver_factory
+  PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/SolverFactory.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SolverFactory.h
-  )
-add_library(solver_factory
-  ${solver_factory_SRCS}
   )
 target_include_directories(solver_factory
   PUBLIC
@@ -67,5 +71,11 @@ target_include_directories(solver_factory
   ${CMAKE_SOURCE_DIR}/src/muscl
 )
 target_link_libraries(solver_factory
+  PUBLIC
   kokkos
   )
+if(USE_MPI)
+  target_link_libraries(solver_factory
+  PUBLIC
+  mpiUtils)
+endif(USE_MPI)

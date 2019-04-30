@@ -9,7 +9,9 @@ target_include_directories(ConfigMapTest
   PUBLIC
   ${CMAKE_SOURCE_DIR}/src/utils/config
   )
-target_link_libraries(ConfigMapTest config)
+target_link_libraries(ConfigMapTest
+  PRIVATE
+  config)
 
 ##############################################
 if(USE_MPI)
@@ -25,6 +27,8 @@ if(USE_MPI)
     ${CMAKE_SOURCE_DIR}/src/utils/io
     ${CMAKE_SOURCE_DIR}/src/utils/mpiUtils
   )
-  target_link_libraries(ConfigMapTest_mpi config mpiUtils)
+  target_link_libraries(ConfigMapTest_mpi
+    PRIVATE
+    config mpiUtils)
   
 endif(USE_MPI)

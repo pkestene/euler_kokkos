@@ -79,7 +79,6 @@ if(${BUILD_CODE})
       message(STATUS "MPI include path: " ${MPI_CXX_INCLUDE_PATH})
       message(STATUS "MPI LINK flags path: " ${MPI_CXX_LINK_FLAGS})
       message(STATUS "MPI libraries: " ${MPI_CXX_LIBRARIES})
-      #include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
       
       #set(CMAKE_EXE_LINKER_FLAGS ${MPI_CXX_LINK_FLAGS})
       find_program(OMPI_INFO
@@ -95,7 +94,7 @@ if(${BUILD_CODE})
           message(STATUS "Found OpenMPI with CUDA support built.")
 	else()
           message(WARNING "OpenMPI found, but it is not built with CUDA support.")
-	  set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DMPI_CUDA_AWARE_OFF" )
+	  add_compile_options(-DMPI_CUDA_AWARE_OFF)
 	endif()
       endif()
     else()
@@ -139,9 +138,9 @@ if(${BUILD_CODE})
     if(HDF5_FOUND)
       include_directories(${HDF5_INCLUDE_DIRS})
       set(my_hdf5_libs hdf5 hdf5_cpp)
-      set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DUSE_HDF5")
+      add_compile_options(-DUSE_HDF5)
       if (HDF5_IS_PARALLEL)
-	set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DUSE_HDF5_PARALLEL")
+	add_compile_options(-DUSE_HDF5_PARALLEL)
       endif()
     endif(HDF5_FOUND)
   endif(USE_HDF5)
@@ -153,7 +152,7 @@ if(${BUILD_CODE})
     if (USE_PNETCDF)
       find_package(PNETCDF)
       if (PNETCDF_FOUND)
-	set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DUSE_PNETCDF")
+	add_compile_options(-DUSE_PNETCDF)
 	include_directories(${PNETCDF_INCLUDE_DIRS})
       endif(PNETCDF_FOUND)
     endif(USE_PNETCDF)
@@ -164,15 +163,15 @@ if(${BUILD_CODE})
   #
 
   if (USE_DOUBLE)
-    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_DOUBLE" )
+    add_compile_options(-DUSE_DOUBLE)
   endif()
 
   if (USE_MPI)
-    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MPI" )
+    add_compile_options(-DUSE_MPI)
   endif()
   
   if (USE_FPE_DEBUG)
-    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_FPE_DEBUG" )
+    add_compile_options(-DUSE_FPE_DEBUG)
   endif()
   
   ##
@@ -186,7 +185,8 @@ if(${BUILD_CODE})
   #
   # sources
   #
-  add_subdirectory(external/backward-cpp)
+  # backtrace does not build anymore with cuda 10.1
+  #add_subdirectory(external/backward-cpp)
   add_subdirectory(external/kokkos)
   
   # pass Kokkos include directories to our target application
