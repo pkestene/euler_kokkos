@@ -186,7 +186,8 @@ if(${BUILD_CODE})
   #
   # sources
   #
-  add_subdirectory(external/backward-cpp)
+  # backtrace does not build anymore with cuda 10.1
+  #add_subdirectory(external/backward-cpp)
   add_subdirectory(external/kokkos)
   
   # pass Kokkos include directories to our target application
