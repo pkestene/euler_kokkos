@@ -1,8 +1,10 @@
+[![DOI](https://zenodo.org/badge/168991445.svg)](https://zenodo.org/badge/latestdoi/168991445)
+
 # Euler_kokkos
 
 ## What is it ?
 
-Provide performance portable Kokkos implementation for compressible hydrodynamics.
+Provide performance portable (multi-architecture) Kokkos implementation for compressible hydrodynamics (second order, Godunov, MUSCL-Hancock) on cartesian grids.
 
 ## Dependencies
 
