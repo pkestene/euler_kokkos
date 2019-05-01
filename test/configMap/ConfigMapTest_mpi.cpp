@@ -9,7 +9,7 @@
 #include "utils/mpiUtils/GlobalMpiSession.h"
 #include <mpi.h>
 
-#include "ConfigMap.h"
+#include "config/ConfigMap.h"
 
 // =====================================================================
 // =====================================================================

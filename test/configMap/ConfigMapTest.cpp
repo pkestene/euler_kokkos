@@ -6,7 +6,7 @@
 #include <cstring>
 #include <sstream> // string stream
 
-#include "ConfigMap.h"
+#include "config/ConfigMap.h"
 
 // =====================================================================
 // =====================================================================

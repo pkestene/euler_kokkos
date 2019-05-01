@@ -32,6 +32,8 @@ target_link_libraries(muscl
   )
 
 if(USE_MPI)
-  target_include_directories(muscl PUBLIC ${CMAKE_SOURCE_DIR}/src/utils/mpiUtils)
-  target_link_libraries     (muscl PUBLIC mpiUtils)
+  target_link_libraries(muscl PUBLIC EulerKokkos::mpiUtils)
 endif(USE_MPI)
+
+#Add an alias so that library can be used inside the build tree
+add_library(EulerKokkos::muscl ALIAS muscl)
