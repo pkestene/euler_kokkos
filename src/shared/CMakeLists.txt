@@ -32,29 +32,20 @@ target_sources (shared
   ${CMAKE_CURRENT_SOURCE_DIR}/solver_utils.h
   )
 
-target_include_directories(shared
-  PUBLIC
-  ${CMAKE_SOURCE_DIR}/src
-  ${CMAKE_SOURCE_DIR}/src/utils
-  ${CMAKE_SOURCE_DIR}/src/utils/time
-  ${CMAKE_SOURCE_DIR}/src/utils/io
-  ) 
-if (USE_MPI)
-  target_include_directories(shared
-    PUBLIC
-    ${CMAKE_SOURCE_DIR}/src/utils/mpiUtils
-    )
-endif(USE_MPI)
-
 target_link_libraries(shared
   PUBLIC
   kokkos
+  EulerKokkos::config
+  EulerKokkos::io
   )
 if(USE_MPI)
   target_link_libraries(shared
   PUBLIC
-  mpiUtils)
+  EulerKokkos::mpiUtils)
 endif(USE_MPI)
+
+#Add an alias so that library can be used inside the build tree
+add_library(EulerKokkos::shared ALIAS shared)
 
 #######################
 ### SOLVER FACTORY ####
@@ -77,5 +68,8 @@ target_link_libraries(solver_factory
 if(USE_MPI)
   target_link_libraries(solver_factory
   PUBLIC
-  mpiUtils)
+  EulerKokkos::mpiUtils)
 endif(USE_MPI)
+
+#Add an alias so that library can be used inside the build tree
+add_library(EulerKokkos::solver_factory ALIAS solver_factory)

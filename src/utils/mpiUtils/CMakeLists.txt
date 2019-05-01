@@ -15,6 +15,15 @@ target_sources (mpiUtils
   ${CMAKE_CURRENT_SOURCE_DIR}/MpiComm.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MpiCommCart.h
   )
-target_compile_options    (mpiUtils PUBLIC ${MPI_CXX_COMPILE_FLAGS})
-target_include_directories(mpiUtils PUBLIC ${MPI_CXX_INCLUDE_PATH})
-target_link_libraries     (mpiUtils PUBLIC ${MPI_CXX_LIBRARIES})
+#Set target properties
+target_include_directories(mpiUtils
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/
+)
+target_link_libraries (mpiUtils PUBLIC MPI::MPI_CXX)
+
+#Add an alias so that library can be used inside the build tree
+add_library(EulerKokkos::mpiUtils ALIAS mpiUtils)

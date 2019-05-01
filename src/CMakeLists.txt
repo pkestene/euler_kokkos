@@ -14,19 +14,30 @@ add_subdirectory(muscl)
 #
 # euler_kokkos executable
 #
-set(EXE_NAME "${PROJECT_NAME}")
-add_executable(${EXE_NAME}
-  main.cpp
-  )
+add_executable(${PROJECT_NAME} "")
 
-target_include_directories(${EXE_NAME}
+target_sources(${PROJECT_NAME}
+  PRIVATE
+  main.cpp)
+
+target_include_directories(${PROJECT_NAME}
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_BINARY_DIR}/src
   )
 
-target_link_libraries(${EXE_NAME} solver_factory config kokkos dl muscl shared io monitoring)
+target_link_libraries(${PROJECT_NAME} 
+  PUBLIC
+  EulerKokkos::solver_factory
+  EulerKokkos::config kokkos
+  dl 
+  EulerKokkos::muscl
+  EulerKokkos::shared 
+  EulerKokkos::io
+  EulerKokkos::monitoring)
 
 if (USE_MPI)
-  target_link_libraries(${EXE_NAME} mpiUtils)
+  target_link_libraries(${PROJECT_NAME}
+    PUBLIC
+    EulerKokkos::mpiUtils)
 endif()

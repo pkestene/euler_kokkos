@@ -53,7 +53,8 @@ if (USE_PNETCDF)
 endif(USE_PNETCDF)
 
 if (USE_MPI)
-  target_compile_options    (io PUBLIC ${MPI_CXX_COMPILE_FLAGS})
-  target_include_directories(io PUBLIC ${MPI_CXX_INCLUDE_PATH})
-  target_link_libraries     (io PUBLIC ${MPI_CXX_LIBRARIES})
+  target_link_libraries(io PUBLIC MPI::MPI_CXX)
 endif(USE_MPI)
+
+#Add an alias so that library can be used inside the build tree
+add_library(EulerKokkos::io ALIAS io)
