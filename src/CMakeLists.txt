@@ -40,4 +40,4 @@ if (USE_MPI)
   target_link_libraries(${PROJECT_NAME}
     PUBLIC
     EulerKokkos::mpiUtils)
-endif()
+endif(USE_MPI)
