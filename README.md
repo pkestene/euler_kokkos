@@ -91,13 +91,15 @@ Example command line to run the application (1 GPU used per MPI task)
 mpirun -np 4 ./euler_kokkos ./test_implode_2D_mpi.ini
 ```
 
-### Developping with vim or emacs and semantic completion/navigation
+### Developping with vim or emacs and semantic completion/navigation from ccls
 
 Make sure to have CMake variable CMAKE_EXPORT_COMPILE_COMMANDS set to ON, it will generate a file named _compile_commands.json_.
 Then you can symlink the generated file in the top level source directory.
 
-Please visit [ccls](https://github.com/MaskRay/ccls)) [editor configuration wiki page](https://github.com/MaskRay/ccls/wiki/Editor-Configuration) to know more how to configure your editor and then the
-[project setup](https://github.com/MaskRay/ccls/wiki/Project-Setup) page.
+Please visit :
+* [ccls](https://github.com/MaskRay/ccls)
+* [editor configuration for using ccls](https://github.com/MaskRay/ccls/wiki/Editor-Configuration)
+* [project setup for using ccls](https://github.com/MaskRay/ccls/wiki/Project-Setup)
 
 ## Build Documentation
 
