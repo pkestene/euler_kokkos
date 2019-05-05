@@ -20,7 +20,7 @@ target_include_directories(monitoring
 
 if(OpenMP_CXX_FOUND)
   target_link_libraries(monitoring PUBLIC OpenMP::OpenMP_CXX)
-endif()
+endif(OpenMP_CXX_FOUND)
 
 #Add an alias so that library can be used inside the build tree
 add_library(EulerKokkos::monitoring ALIAS monitoring)
