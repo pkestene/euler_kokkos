@@ -8,10 +8,10 @@ Provide performance portable (multi-architecture) Kokkos implementation for comp
 
 ## Dependencies
 
-* [Kokkos](https://github.com/kokkos/kokkos)
+* [Kokkos](https://github.com/kokkos/kokkos) library will be built by euler_kokkos using the same flags (architecture, optimization, ...).
 * [cmake](https://cmake.org/) with version >= 3.X (3.X is chosen to meet Kokkos own requirement for CMake; i.e. it might increase in the futur)
-   
-Current application is configured with kokkos library as a git submodule.
+
+Current application is configured with kokkos library as a git submodule. So you'll need to run the following git commands right after cloning euler_kokkos:
 
 ```shell
 git submodule init
@@ -22,7 +22,7 @@ Kokkos is built with the same flags as the main application.
 
 ## Build
 
-A few example builds
+A few example builds, with minimal configuration options.
 
 ### Build without MPI / With Kokkos-openmp
 
@@ -34,7 +34,7 @@ cmake -DUSE_MPI=OFF -DKOKKOS_ENABLE_OPENMP=ON -DKOKKOS_ENABLE_HWLOC=ON ..
 make -j 4
 ```
 
-Add variable CXX on the cmake command line to change the compiler (clang++, icpc, pgcc, ....)
+Add variable CXX on the cmake command line to change the compiler (clang++, icpc, pgcc, ....).
 
 ### Build without MPI / With Kokkos-openmp for Intel KNL
 
@@ -62,6 +62,11 @@ cmake -DUSE_MPI=OFF -DKOKKOS_ENABLE_CUDA=ON -DKOKKOS_ARCH=Maxwell50 ..
 make -j 4
 ```
 
+`nvcc_wrapper` is a compiler wrapper arroud NVIDIA `nvcc`. It is available from Kokkos sources: `external/kokkos/bin/nvcc_wrapper`. Any Kokkos application target NVIDIA GPUs must be built with `nvcc_wrapper`.
+
+Please set `KOKKOS_ARCH` to a value corresponding to your actual NVIDIA GPU hardware. You can browse available values using `ccmake` interface, and search for `KOKKOS_ARCH`.
+
+
 ### Build with MPI / With Kokkos-cuda
 
 
@@ -86,13 +91,13 @@ Example command line to run the application (1 GPU used per MPI task)
 mpirun -np 4 ./euler_kokkos ./test_implode_2D_mpi.ini
 ```
 
-### Developping with vim and youcomplete plugin
+### Developping with vim or emacs and semantic completion/navigation
 
-Assuming you are using vim (or neovim) text editor and have installed the youcomplete plugin, you can have
-semantic autocompletion in a C++ project.
+Make sure to have CMake variable CMAKE_EXPORT_COMPILE_COMMANDS set to ON, it will generate a file named _compile_commands.json_.
+Then you can symlink the generated file in the top level source directory.
 
-Make sure to have CMake variable CMAKE_EXPORT_COMPILE_COMMANDS set to ON, and symlink the generated file to the top level
-source directory.
+Please visit [ccls](https://github.com/MaskRay/ccls)) [editor configuration wiki page](https://github.com/MaskRay/ccls/wiki/Editor-Configuration) to know more how to configure your editor and then the
+[project setup](https://github.com/MaskRay/ccls/wiki/Project-Setup) page.
 
 ## Build Documentation
 
