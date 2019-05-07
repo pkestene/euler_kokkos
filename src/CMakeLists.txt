@@ -1,7 +1,3 @@
-#
-# Kokkos test example : query device information
-#
-
 # config file reader / ConfigMap / monitoring timer
 add_subdirectory(utils)
 
@@ -40,4 +36,4 @@ if (USE_MPI)
   target_link_libraries(${PROJECT_NAME}
     PUBLIC
     EulerKokkos::mpiUtils)
-endif()
+endif(USE_MPI)

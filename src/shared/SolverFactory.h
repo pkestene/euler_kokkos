@@ -32,7 +32,7 @@ private:
    * typedef to the solver creation function pointer.
    * This function pointer will actually be populated with a concrete solver
    * method named "create" which takes in input a HydroParams pointer
-   * (necessary to call the concerete solver constructor).
+   * (necessary to call the concrete solver constructor).
    */
   using SolverCreateFn = SolverBase* (*)(HydroParams& params,
 					 ConfigMap& configMap);
