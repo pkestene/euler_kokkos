@@ -3,7 +3,7 @@
 #######################
 add_library(shared "")
 target_sources (shared
-  PUBLIC
+  PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/BlastParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/ImplodeParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/KHParams.h
@@ -52,7 +52,7 @@ add_library(EulerKokkos::shared ALIAS shared)
 #######################
 add_library(solver_factory "")
 target_sources (solver_factory
-  PUBLIC
+  PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/SolverFactory.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SolverFactory.h
   )

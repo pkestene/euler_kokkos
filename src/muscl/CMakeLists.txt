@@ -1,7 +1,7 @@
 add_library(muscl "")
 
 target_sources (muscl
-  PUBLIC
+  PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/hydro_shared.h
   ${CMAKE_CURRENT_SOURCE_DIR}/HydroBaseFunctor2D.h
   ${CMAKE_CURRENT_SOURCE_DIR}/HydroBaseFunctor3D.h

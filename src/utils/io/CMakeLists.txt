@@ -1,20 +1,15 @@
 add_library(io "")
 
 target_sources (io
-  PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/IO_common.h
+  PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/IO_common.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/IO_ReadWriteBase.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/IO_ReadWrite.h
   ${CMAKE_CURRENT_SOURCE_DIR}/IO_ReadWrite.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/IO_VTK.h
   ${CMAKE_CURRENT_SOURCE_DIR}/IO_VTK.cpp
   )
 
 if(USE_HDF5)
   target_sources (io
-    PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/IO_HDF5.h
+    PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/IO_HDF5.cpp
     )
 endif(USE_HDF5)
@@ -35,7 +30,7 @@ target_include_directories(io
 
 target_link_libraries(io
   PUBLIC
-  kokkos
+  kokkos shared
   )
 
 if (USE_HDF5)
