@@ -30,7 +30,7 @@ A few example builds, with minimal configuration options.
 
 ```shell
 mkdir build; cd build
-cmake -DUSE_MPI=OFF -DKOKKOS_ENABLE_OPENMP=ON -DKOKKOS_ENABLE_HWLOC=ON ..
+cmake -DUSE_MPI=OFF -DKokkos_ENABLE_OPENMP=ON -DKokkos_ENABLE_HWLOC=ON ..
 make -j 4
 ```
 
@@ -43,13 +43,12 @@ Add variable CXX on the cmake command line to change the compiler (clang++, icpc
 ```shell
 export CXX=icpc
 mkdir build; cd build
-cmake -DUSE_MPI=OFF -DKOKKOS_ARCH=KNL -DKOKKOS_ENABLE_OPENMP=ON ..
+cmake -DUSE_MPI=OFF -DKokkos_ARCH_KNL=ON -DKokkos_ENABLE_OPENMP=ON ..
 make -j 4
 ```
 
 ### Build without MPI / With Kokkos-cuda
 
-Check for a valid KOKKOS_ARCH by looking into external/kokkos/Makefile.kokkos.
 To be able to build with CUDA backend, you need to use nvcc_wrapper located in
 kokkos source (external/kokkos/bin/nvcc_wrapper).
 
@@ -58,17 +57,13 @@ kokkos source (external/kokkos/bin/nvcc_wrapper).
 ```shell
 mkdir build; cd build
 export CXX=/path/to/nvcc_wrapper
-cmake -DUSE_MPI=OFF -DKOKKOS_ENABLE_CUDA=ON -DKOKKOS_ARCH=Maxwell50 ..
+cmake -DUSE_MPI=OFF -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
 
 `nvcc_wrapper` is a compiler wrapper arroud NVIDIA `nvcc`. It is available from Kokkos sources: `external/kokkos/bin/nvcc_wrapper`. Any Kokkos application target NVIDIA GPUs must be built with `nvcc_wrapper`.
 
-Please set `KOKKOS_ARCH` to a value corresponding to your actual NVIDIA GPU hardware. You can browse available values using `ccmake` interface, and search for `KOKKOS_ARCH`.
-
-
 ### Build with MPI / With Kokkos-cuda
-
 
 Please make sure to use a CUDA-aware MPI implementation (OpenMPI or MVAPICH2) built with the proper flags for activating CUDA support.
 
@@ -81,7 +76,7 @@ You don't need to use mpi compiler wrapper mpicxx, cmake *should* be able to cor
 ```shell
 mkdir build; cd build
 export CXX=/path/to/nvcc_wrapper
-cmake -DUSE_MPI=ON -DKOKKOS_ENABLE_CUDA=ON -DKOKKOS_ARCH=Maxwell50 ..
+cmake -DUSE_MPI=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
 
