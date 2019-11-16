@@ -813,9 +813,9 @@ public:
     
     real_t r = sqrt(x*x+y*y);
     if ( r < radius ) {
-      Az(i,j,0) = amplitude * ( radius - r );
+      Az(i,j) = amplitude * ( radius - r );
     } else {
-      Az(i,j,0) = 0.0;
+      Az(i,j) = 0.0;
     }
     
   } // compute_vector_potential
@@ -888,10 +888,10 @@ public:
       Udata(i,j,IW) = Udata(i,j,ID)*vflow*nz/diag; //ZERO_F;
       
       // bx
-      Udata(i,j,IA) =   (Az(i  ,j+1,0) - Az(i,j,0))/dy; // + amp*(drand48()-0.5);
+      Udata(i,j,IA) =   (Az(i  ,j+1) - Az(i,j))/dy; // + amp*(drand48()-0.5);
       
       // by
-      Udata(i,j,IB) = - (Az(i+1,j  ,0) - Az(i,j,0))/dx; // + amp*(drand48()-0.5);
+      Udata(i,j,IB) = - (Az(i+1,j  ) - Az(i,j))/dx; // + amp*(drand48()-0.5);
       
       // bz
       Udata(i,j,IC) = ZERO_F;
