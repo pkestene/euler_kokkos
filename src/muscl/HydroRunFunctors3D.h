@@ -224,7 +224,7 @@ public:
       kk *= cfl * dx / (velocity * velocity);
 
        /* prevent numerical errors due to very low gravity */
-      kk = fmax(k, 1e-4);
+      kk = fmax(kk, 1e-4);
 
       velocity *= kk / (sqrt(1.0 + 2.0 * kk) - 1.0);
 
