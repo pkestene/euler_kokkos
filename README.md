@@ -9,7 +9,7 @@ Provide performance portable (multi-architecture) Kokkos implementation for comp
 ## Dependencies
 
 * [Kokkos](https://github.com/kokkos/kokkos) library will be built by euler_kokkos using the same flags (architecture, optimization, ...).
-* [cmake](https://cmake.org/) with version >= 3.X (3.X is chosen to meet Kokkos own requirement for CMake; i.e. it might increase in the futur)
+* [cmake](https://cmake.org/) with version >= 3.X (3.X is chosen to meet Kokkos own requirement for CMake; i.e. it might increase in the future)
 
 Current application is configured with kokkos library as a git submodule. So you'll need to run the following git commands right after cloning euler_kokkos:
 
