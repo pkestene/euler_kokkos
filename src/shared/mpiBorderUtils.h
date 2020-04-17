@@ -60,7 +60,7 @@ public:
   
   template<DimensionType dimType_ = dimType>
   KOKKOS_INLINE_FUNCTION
-  void operator()(const typename Kokkos::Impl::enable_if<dimType_==TWO_D, int>::type&  index) const
+  void operator()(const typename std::enable_if<dimType_==TWO_D, int>::type&  index) const
   {
     
     const int isize = U.dimension_0();
@@ -101,7 +101,7 @@ public:
   
   template<DimensionType dimType_ = dimType>
   KOKKOS_INLINE_FUNCTION
-  void operator()(const typename Kokkos::Impl::enable_if<dimType_==THREE_D, int>::type&  index) const
+  void operator()(const typename std::enable_if<dimType_==THREE_D, int>::type&  index) const
   {
 
     const int isize = U.dimension_0();
@@ -201,7 +201,7 @@ public:
 
   template<DimensionType dimType_ = dimType>
   KOKKOS_INLINE_FUNCTION
-  void operator()(const typename Kokkos::Impl::enable_if<dimType_==TWO_D, int>::type&  index) const
+  void operator()(const typename std::enable_if<dimType_==TWO_D, int>::type&  index) const
   {
     
     const int isize = U.dimension_0();
@@ -247,7 +247,7 @@ public:
 
   template<DimensionType dimType_ = dimType>
   KOKKOS_INLINE_FUNCTION
-  void operator()(const typename Kokkos::Impl::enable_if<dimType_==THREE_D, int>::type&  index) const
+  void operator()(const typename std::enable_if<dimType_==THREE_D, int>::type&  index) const
   {
 
     const int isize = U.dimension_0();
