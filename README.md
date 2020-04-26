@@ -1,4 +1,4 @@
-[![DOI](https://zenodo.org/badge/168991445.svg)](https://zenodo.org/badge/latestdoi/168991445)
+[![DOI](https://zenodo.org/badge/168991445.svg)](https://zenodo.org/badge/latestdoi/168991445) ![C/C++ CI](https://github.com/pkestene/euler_kokkos/workflows/C/C++%20CI/badge.svg)
 
 # Euler_kokkos
 
