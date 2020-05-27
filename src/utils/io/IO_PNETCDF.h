@@ -71,7 +71,7 @@ public:
 	}
       }
     } else {
-      //data = Uhost.ptr_on_device() + isize*jsize*nvar;
+      //data = Uhost.data() + isize*jsize*nvar;
       int dI=0;
       for(int i = 0; i < iStop; i++) {
 	for (int j= 0; j < jStop; j++) {
@@ -97,7 +97,7 @@ public:
 	    dI++;
 	  }
     } else {
-      //data = Uhost.ptr_on_device() + isize*jsize*ksize*nvar;
+      //data = Uhost.data() + isize*jsize*ksize*nvar;
       int dI=0;
       for(int i = 0; i < iStop; i++)
 	for (int j= 0; j < jStop; j++)

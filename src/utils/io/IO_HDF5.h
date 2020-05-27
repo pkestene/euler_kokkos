@@ -102,7 +102,7 @@ public:
 	}
       }
     } else {
-      data = Uhost.ptr_on_device() + isize*jsize*nvar;
+      data = Uhost.data() + isize*jsize*nvar;
     }
 
   } // copy_buffer
@@ -125,7 +125,7 @@ public:
       }
       
     } else {
-      data = Uhost.ptr_on_device() + isize*jsize*ksize*nvar;
+      data = Uhost.data() + isize*jsize*ksize*nvar;
     }
 
   } // copy_buffer / 3D
@@ -527,7 +527,7 @@ public:
 	}
       }
     } else {
-      data = Uhost.ptr_on_device() + isize*jsize*nvar;
+      data = Uhost.data() + isize*jsize*nvar;
     }
 
   } // copy_buffer
@@ -550,7 +550,7 @@ public:
       }
       
     } else {
-      data = Uhost.ptr_on_device() + isize*jsize*ksize*nvar;
+      data = Uhost.data() + isize*jsize*ksize*nvar;
     }
 
   } // copy_buffer / 3D
@@ -1448,7 +1448,7 @@ public:
 	}
       } else {
 	// simple copy
-	real_t* tmp = Uhost.ptr_on_device() + isize*jsize*nvar;
+	real_t* tmp = Uhost.data() + isize*jsize*nvar;
 	memcpy(tmp,data,isize*jsize*sizeof(real_t));
       }
     }
@@ -1538,7 +1538,7 @@ public:
 	
       } else {
 	// simple copy
-	real_t* tmp = Uhost.ptr_on_device() + isize*jsize*ksize*nvar;
+	real_t* tmp = Uhost.data() + isize*jsize*ksize*nvar;
 	memcpy(tmp,data,isize*jsize*ksize*sizeof(real_t));
       }
 
