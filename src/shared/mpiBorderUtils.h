@@ -63,9 +63,9 @@ public:
   void operator()(const typename std::enable_if<dimType_==TWO_D, int>::type&  index) const
   {
     
-    const int isize = U.dimension_0();
-    const int jsize = U.dimension_1();
-    const int nbvar = U.dimension_2();
+    const int isize = U.extent(0);
+    const int jsize = U.extent(1);
+    const int nbvar = U.extent(2);
     int i,j;
 
     /*
@@ -73,9 +73,9 @@ public:
      */
     int offset = 0;
     if (boundaryLoc == XMAX)
-      offset = U.dimension_0()-ghostWidth;
+      offset = U.extent(0)-ghostWidth;
     if (boundaryLoc == YMAX)
-      offset = U.dimension_1()-ghostWidth;
+      offset = U.extent(1)-ghostWidth;
     
     if (boundaryLoc == XMIN or boundaryLoc == XMAX) {
       
@@ -104,10 +104,10 @@ public:
   void operator()(const typename std::enable_if<dimType_==THREE_D, int>::type&  index) const
   {
 
-    const int isize = U.dimension_0();
-    const int jsize = U.dimension_1();
-    const int ksize = U.dimension_2();
-    const int nbvar = U.dimension_3();
+    const int isize = U.extent(0);
+    const int jsize = U.extent(1);
+    const int ksize = U.extent(2);
+    const int nbvar = U.extent(3);
     int i,j,k;
     
     /*
@@ -115,11 +115,11 @@ public:
      */
     int offset = 0;
     if (boundaryLoc == XMAX)
-      offset = U.dimension_0()-ghostWidth;
+      offset = U.extent(0)-ghostWidth;
     if (boundaryLoc == YMAX)
-      offset = U.dimension_1()-ghostWidth;
+      offset = U.extent(1)-ghostWidth;
     if (boundaryLoc == ZMAX)
-      offset = U.dimension_2()-ghostWidth;
+      offset = U.extent(2)-ghostWidth;
     
     
     if (boundaryLoc == XMIN or boundaryLoc == XMAX) {
@@ -204,9 +204,9 @@ public:
   void operator()(const typename std::enable_if<dimType_==TWO_D, int>::type&  index) const
   {
     
-    const int isize = U.dimension_0();
-    const int jsize = U.dimension_1();
-    const int nbvar = U.dimension_2();
+    const int isize = U.extent(0);
+    const int jsize = U.extent(1);
+    const int nbvar = U.extent(2);
     int i,j;
 
     /*
@@ -214,9 +214,9 @@ public:
      */
     int offset = ghostWidth;
     if (boundaryLoc == XMAX)
-      offset = U.dimension_0()-2*ghostWidth;
+      offset = U.extent(0)-2*ghostWidth;
     if (boundaryLoc == YMAX)
-      offset = U.dimension_1()-2*ghostWidth;
+      offset = U.extent(1)-2*ghostWidth;
 
     /*
      * simple copy when PERIODIC or COPY
@@ -250,10 +250,10 @@ public:
   void operator()(const typename std::enable_if<dimType_==THREE_D, int>::type&  index) const
   {
 
-    const int isize = U.dimension_0();
-    const int jsize = U.dimension_1();
-    const int ksize = U.dimension_2();
-    const int nbvar = U.dimension_3();
+    const int isize = U.extent(0);
+    const int jsize = U.extent(1);
+    const int ksize = U.extent(2);
+    const int nbvar = U.extent(3);
     const int    gw = ghostWidth;
 
     int i,j,k;
@@ -272,11 +272,11 @@ public:
      */
     int offset = ghostWidth;
     if (boundaryLoc == XMAX)
-      offset = U.dimension_0()-2*ghostWidth;
+      offset = U.extent(0)-2*ghostWidth;
     if (boundaryLoc == YMAX)
-      offset = U.dimension_1()-2*ghostWidth;
+      offset = U.extent(1)-2*ghostWidth;
     if (boundaryLoc == ZMAX)
-      offset = U.dimension_2()-2*ghostWidth;
+      offset = U.extent(2)-2*ghostWidth;
     
 
     /*
