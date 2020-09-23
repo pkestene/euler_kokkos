@@ -199,13 +199,13 @@ endif()
 if(NOT DOC STREQUAL "OFF")
   add_subdirectory(doc)
 endif()
-  
+
 ##################### PRINT CONFIGURE STATUS ######################
 message("//===================================================")
 message("  ${PROJECT_NAME} build configuration:")
 message("//===================================================")
-message("  C++ Compiler : ${CMAKE_CXX_COMPILER_ID} " 
-                         "${CMAKE_CXX_COMPILER_VERSION} " 
+message("  C++ Compiler : ${CMAKE_CXX_COMPILER_ID} "
+                         "${CMAKE_CXX_COMPILER_VERSION} "
                          "${CMAKE_CXX_COMPILER_WRAPPER}")
 message("    ${CMAKE_CXX_COMPILER}")
 if (USE_MPI)
