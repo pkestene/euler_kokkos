@@ -474,7 +474,7 @@ void riemann_hllc(const HydroState& qleft,
   real_t ecinr = HALF_F*rr*ur*ur;
   ecinr += HALF_F*rr*qright[IV]*qright[IV];
   if (std::is_same<HydroState,HydroState3d>::value)
-    ecinl += HALF_F*rl*qright[IW]*qright[IW];
+    ecinl += HALF_F*rr*qright[IW]*qright[IW];
   
   real_t etotr = pr*entho+ecinr;
   real_t ptotr = pr;
