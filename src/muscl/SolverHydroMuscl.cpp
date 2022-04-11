@@ -31,9 +31,9 @@ void SolverHydroMuscl<2>::make_boundaries(DataArray Udata)
 #else
 
   make_boundaries_serial(Udata, mhd_enabled);
-  
+
 #endif // USE_MPI
-  
+
 } // SolverHydroMuscl<2>::make_boundaries
 
 // =======================================================
@@ -55,7 +55,7 @@ void SolverHydroMuscl<3>::make_boundaries(DataArray Udata)
 #else
 
   make_boundaries_serial(Udata, mhd_enabled);
-  
+
 #endif // USE_MPI
 
 } // SolverHydroMuscl<3>::make_boundaries
@@ -74,7 +74,7 @@ void SolverHydroMuscl<2>::init_four_quadrant(DataArray Udata)
 
   HydroState2d U0, U1, U2, U3;
   getRiemannConfig2d(configNumber, U0, U1, U2, U3);
-  
+
   primToCons_2D(U0, params.settings.gamma0);
   primToCons_2D(U1, params.settings.gamma0);
   primToCons_2D(U2, params.settings.gamma0);
@@ -83,7 +83,7 @@ void SolverHydroMuscl<2>::init_four_quadrant(DataArray Udata)
   InitFourQuadrantFunctor2D::apply(params, Udata, configNumber,
 				   U0, U1, U2, U3,
 				   xt, yt, nbCells);
-  
+
 } // SolverHydroMuscl<2>::init_four_quadrant
 
 // =======================================================
@@ -91,11 +91,11 @@ void SolverHydroMuscl<2>::init_four_quadrant(DataArray Udata)
 template<>
 void SolverHydroMuscl<2>::init_isentropic_vortex(DataArray Udata)
 {
-  
+
   IsentropicVortexParams iparams(configMap);
-  
+
   InitIsentropicVortexFunctor2D::apply(params, iparams, Udata, nbCells);
-  
+
 } // SolverHydroMuscl<2>::init_isentropic_vortex
 
 // =======================================================
@@ -110,48 +110,48 @@ void SolverHydroMuscl<2>::init(DataArray Udata)
   if (restartEnabled) { // load data from input data file
 
     init_restart(Udata);
-    
+
   } else { // regular initialization
 
     /*
      * initialize hydro array at t=0
      */
     if ( !m_problem_name.compare("implode") ) {
-      
+
       init_implode(Udata);
-      
+
     } else if ( !m_problem_name.compare("blast") ) {
-      
+
       init_blast(Udata);
-      
+
     } else if ( !m_problem_name.compare("kelvin_helmholtz") ) {
-      
+
       init_kelvin_helmholtz(Udata);
-      
+
     } else if ( !m_problem_name.compare("gresho_vortex") ) {
-      
+
       init_gresho_vortex(Udata);
-      
+
     } else if ( !m_problem_name.compare("four_quadrant") ) {
-      
+
       init_four_quadrant(Udata);
-      
+
     } else if ( !m_problem_name.compare("isentropic_vortex") ) {
-      
+
       init_isentropic_vortex(Udata);
-      
+
     } else if ( !m_problem_name.compare("rayleigh_taylor") ) {
-      
+
       init_rayleigh_taylor(Udata,gravity);
-      
+
     } else {
-      
+
       std::cout << "Problem : " << m_problem_name
 		<< " is not recognized / implemented."
 		<< std::endl;
       std::cout <<  "Use default - implode" << std::endl;
       init_implode(Udata);
-      
+
     }
 
   } // end regular initialization
@@ -170,40 +170,40 @@ void SolverHydroMuscl<3>::init(DataArray Udata)
   if (restartEnabled) { // load data from input data file
 
     init_restart(Udata);
-    
+
   } else { // regular initialization
 
     /*
      * initialize hydro array at t=0
      */
     if ( !m_problem_name.compare("implode") ) {
-      
+
       init_implode(Udata);
-      
+
     } else if ( !m_problem_name.compare("blast") ) {
-      
+
       init_blast(Udata);
-      
+
     } else if ( !m_problem_name.compare("kelvin_helmholtz") ) {
-      
+
       init_kelvin_helmholtz(Udata);
-      
+
     } else if ( !m_problem_name.compare("gresho_vortex") ) {
-      
+
       init_gresho_vortex(Udata);
-      
+
     } else if ( !m_problem_name.compare("rayleigh_taylor") ) {
-      
+
       init_rayleigh_taylor(Udata,gravity);
-      
+
     } else {
-      
+
       std::cout << "Problem : " << m_problem_name
 		<< " is not recognized / implemented."
 		<< std::endl;
       std::cout <<  "Use default - implode" << std::endl;
       init_implode(Udata);
-      
+
     }
 
   } // end regular initialization
@@ -216,20 +216,20 @@ void SolverHydroMuscl<3>::init(DataArray Udata)
 // Actual computation of Godunov scheme - 2d
 // ///////////////////////////////////////////
 template<>
-void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in, 
-					       DataArray data_out, 
+void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in,
+					       DataArray data_out,
 					       real_t dt)
 {
-  
+
   // fill ghost cell in data_in
   timers[TIMER_BOUNDARIES]->start();
   make_boundaries(data_in);
   timers[TIMER_BOUNDARIES]->stop();
-    
+
   // copy data_in into data_out (not necessary)
   // data_out = data_in;
   Kokkos::deep_copy(data_out, data_in);
-  
+
   // start main computation
   timers[TIMER_NUM_SCHEME]->start();
 
@@ -237,14 +237,14 @@ void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in,
   convertToPrimitives(data_in);
 
   if (params.implementationVersion == 0) {
-    
+
     // compute fluxes (if gravity_enabled is false, the last parameter is not used)
     ComputeAndStoreFluxesFunctor2D::apply(params, Q,
 					  Fluxes_x, Fluxes_y,
 					  dt,
 					  m_gravity_enabled,
 					  gravity);
-    
+
     // actual update
     UpdateFunctor2D::apply(params, data_out,
 			   Fluxes_x, Fluxes_y);
@@ -254,7 +254,7 @@ void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in,
       GravitySourceTermFunctor2D::apply(params, data_in, data_out, gravity, dt);
     }
 
-    
+
   } else if (params.implementationVersion == 1) {
 
     // call device functor to compute slopes
@@ -268,10 +268,10 @@ void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in,
 						 dt,
 						 m_gravity_enabled,
 						 gravity);
-    
+
     // and update along X axis
     UpdateDirFunctor2D<XDIR>::apply(params, data_out, Fluxes_x);
-    
+
     // now trace along Y axis
     ComputeTraceAndFluxes_Functor2D<YDIR>::apply(params, Q,
 						 Slopes_x, Slopes_y,
@@ -279,19 +279,19 @@ void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in,
 						 dt,
 						 m_gravity_enabled,
 						 gravity);
-    
+
     // and update along Y axis
     UpdateDirFunctor2D<YDIR>::apply(params, data_out, Fluxes_y);
-    
+
     // gravity source term
     if (m_gravity_enabled) {
       GravitySourceTermFunctor2D::apply(params, data_in, data_out, gravity, dt);
     }
 
   } // end params.implementationVersion == 1
-  
+
   timers[TIMER_NUM_SCHEME]->stop();
-  
+
 } // SolverHydroMuscl2D::godunov_unsplit_impl
 
 // =======================================================
@@ -300,8 +300,8 @@ void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in,
 // Actual computation of Godunov scheme - 3d
 // ///////////////////////////////////////////
 template<>
-void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in, 
-					       DataArray data_out, 
+void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
+					       DataArray data_out,
 					       real_t dt)
 {
 
@@ -309,11 +309,11 @@ void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
   timers[TIMER_BOUNDARIES]->start();
   make_boundaries(data_in);
   timers[TIMER_BOUNDARIES]->stop();
-    
+
   // copy data_in into data_out (not necessary)
   // data_out = data_in;
   Kokkos::deep_copy(data_out, data_in);
-  
+
   // start main computation
   timers[TIMER_NUM_SCHEME]->start();
 
@@ -321,7 +321,7 @@ void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
   convertToPrimitives(data_in);
 
   if (params.implementationVersion == 0) {
-    
+
     // compute fluxes
     ComputeAndStoreFluxesFunctor3D::apply(params, Q,
 					  Fluxes_x, Fluxes_y, Fluxes_z,
@@ -338,7 +338,7 @@ void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
       GravitySourceTermFunctor3D::apply(params, data_in, data_out, gravity, dt);
     }
 
-    
+
   } else if (params.implementationVersion == 1) {
 
     // call device functor to compute slopes
@@ -350,7 +350,7 @@ void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
 						 Slopes_x, Slopes_y, Slopes_z,
 						 Fluxes_x,
 						 dt, m_gravity_enabled, gravity);
-    
+
     // and update along X axis
     UpdateDirFunctor3D<XDIR>::apply(params, data_out, Fluxes_x);
 
@@ -359,7 +359,7 @@ void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
 						 Slopes_x, Slopes_y, Slopes_z,
 						 Fluxes_y,
 						 dt, m_gravity_enabled, gravity);
-    
+
     // and update along Y axis
     UpdateDirFunctor3D<YDIR>::apply(params, data_out, Fluxes_y);
 
@@ -368,7 +368,7 @@ void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
 						 Slopes_x, Slopes_y, Slopes_z,
 						 Fluxes_z,
 						 dt, m_gravity_enabled, gravity);
-    
+
     // and update along Z axis
     UpdateDirFunctor3D<ZDIR>::apply(params, data_out, Fluxes_z);
 
@@ -378,7 +378,7 @@ void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
     }
 
   } // end params.implementationVersion == 1
-  
+
   timers[TIMER_NUM_SCHEME]->stop();
 
 } // SolverHydroMuscl<3>::godunov_unsplit_impl

@@ -58,7 +58,7 @@ public:
 
   SolverMHDMuscl(HydroParams& params, ConfigMap& configMap);
   virtual ~SolverMHDMuscl();
-  
+
   /**
    * Static creation method called by the solver factory.
    */
@@ -81,7 +81,7 @@ public:
   DataArray Qp_x; /*!< hydrodynamics Riemann states array */
   DataArray Qp_y; /*!< hydrodynamics Riemann states array */
   DataArray Qp_z; /*!< hydrodynamics Riemann states array */
-  
+
   DataArray QEdge_RT;
   DataArray QEdge_RB;
   DataArray QEdge_LT;
@@ -104,7 +104,7 @@ public:
   /* electromotive forces */
   DataArrayScalar  Emf1; // 2d
   DataArrayVector3 Emf;  // 3d
-  
+
   DataArrayVector3 ElecField;
 
   DataArrayVector3 DeltaA;
@@ -118,14 +118,14 @@ public:
   // fill boundaries / ghost 2d / 3d
   void make_boundaries(DataArray Udata);
 
-  // host routines (initialization)  
+  // host routines (initialization)
   void init_blast(DataArray Udata);
   void init_implode(DataArray Udata);
   void init_orszag_tang(DataArray Udata);
   void init_kelvin_helmholtz(DataArray Udata); // 2d and 3d
   void init_rotor(DataArray Udata);
   void init_field_loop(DataArray Udata);
-  
+
   //! init restart (load data from file)
   void init_restart(DataArray Udata);
 
@@ -140,27 +140,27 @@ public:
 
   //! numerical scheme
   void godunov_unsplit(real_t dt);
-  
-  void godunov_unsplit_impl(DataArray data_in, 
-			    DataArray data_out, 
+
+  void godunov_unsplit_impl(DataArray data_in,
+			    DataArray data_out,
 			    real_t dt);
-  
+
   void convertToPrimitives(DataArray Udata);
-  
+
   void computeElectricField(DataArray Udata);
   void computeMagSlopes(DataArray Udata);
-  
+
   void computeTrace(DataArray Udata, real_t dt);
-  
+
   void computeFluxesAndStore(real_t dt);
   void computeEmfAndStore(real_t dt);
 
   // output
   void save_solution_impl();
-  
+
   int isize, jsize, ksize;
   int nbCells;
-  
+
 }; // class SolverMHDMuscl
 
 // =======================================================
@@ -196,12 +196,12 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams& params,
 
   if (dim==3)
     nbCells = params.isize*params.jsize*params.ksize;
-  
+
   m_nCells = nbCells;
   m_nDofsPerCell = 1;
-  
+
   int nbvar = params.nbvar;
- 
+
   long long int total_mem_size = 0;
 
   /*
@@ -219,28 +219,28 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams& params,
     Q     = DataArray("Q", isize, jsize, nbvar);
 
     total_mem_size += isize*jsize*nbvar * sizeof(real_t) * 3;// 1+1+1 for U+U2+Q
-    
+
     if (params.implementationVersion == 0) {
-      
+
       Qm_x = DataArray("Qm_x", isize,jsize, nbvar);
       Qm_y = DataArray("Qm_y", isize,jsize, nbvar);
       Qp_x = DataArray("Qp_x", isize,jsize, nbvar);
       Qp_y = DataArray("Qp_y", isize,jsize, nbvar);
-      
+
       QEdge_RT = DataArray("QEdge_RT", isize,jsize, nbvar);
       QEdge_RB = DataArray("QEdge_RB", isize,jsize, nbvar);
       QEdge_LT = DataArray("QEdge_LT", isize,jsize, nbvar);
       QEdge_LB = DataArray("QEdge_LB", isize,jsize, nbvar);
-      
+
       Fluxes_x = DataArray("Fluxes_x", isize,jsize, nbvar);
       Fluxes_y = DataArray("Fluxes_y", isize,jsize, nbvar);
-      
+
       Emf1 = DataArrayScalar("Emf", isize,jsize);
-      
+
       total_mem_size +=
 	isize*jsize* nbvar * sizeof(real_t) * 10 +
 	isize*jsize*     1 * sizeof(real_t);
-      
+
     }
 
   } else {
@@ -249,63 +249,63 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams& params,
     Uhost = Kokkos::create_mirror(U);
     U2    = DataArray("U2",isize,jsize,ksize, nbvar);
     Q     = DataArray("Q", isize,jsize,ksize, nbvar);
-    
+
     total_mem_size += isize*jsize*ksize*nbvar*sizeof(real_t)*3;// 1+1+1=3 for U+U2+Q
 
     if (params.implementationVersion == 0) {
-      
+
       Qm_x = DataArray("Qm_x", isize,jsize,ksize, nbvar);
       Qm_y = DataArray("Qm_y", isize,jsize,ksize, nbvar);
       Qm_z = DataArray("Qm_z", isize,jsize,ksize, nbvar);
-      
+
       Qp_x = DataArray("Qp_x", isize,jsize,ksize, nbvar);
       Qp_y = DataArray("Qp_y", isize,jsize,ksize, nbvar);
       Qp_z = DataArray("Qp_z", isize,jsize,ksize, nbvar);
-      
+
       QEdge_RT  = DataArray("QEdge_RT", isize,jsize,ksize, nbvar);
       QEdge_RB  = DataArray("QEdge_RB", isize,jsize,ksize, nbvar);
       QEdge_LT  = DataArray("QEdge_LT", isize,jsize,ksize, nbvar);
       QEdge_LB  = DataArray("QEdge_LB", isize,jsize,ksize, nbvar);
-      
+
       QEdge_RT2 = DataArray("QEdge_RT2", isize,jsize,ksize, nbvar);
       QEdge_RB2 = DataArray("QEdge_RB2", isize,jsize,ksize, nbvar);
       QEdge_LT2 = DataArray("QEdge_LT2", isize,jsize,ksize, nbvar);
       QEdge_LB2 = DataArray("QEdge_LB2", isize,jsize,ksize, nbvar);
-      
+
       QEdge_RT3 = DataArray("QEdge_RT3", isize,jsize,ksize, nbvar);
       QEdge_RB3 = DataArray("QEdge_RB3", isize,jsize,ksize, nbvar);
       QEdge_LT3 = DataArray("QEdge_LT3", isize,jsize,ksize, nbvar);
       QEdge_LB3 = DataArray("QEdge_LB3", isize,jsize,ksize, nbvar);
-      
+
       Fluxes_x  = DataArray("Fluxes_x", isize,jsize,ksize, nbvar);
       Fluxes_y  = DataArray("Fluxes_y", isize,jsize,ksize, nbvar);
       Fluxes_z  = DataArray("Fluxes_z", isize,jsize,ksize, nbvar);
-      
+
       Emf       = DataArrayVector3("Emf", isize,jsize,ksize);
-      
-      ElecField = DataArrayVector3("ElecField", isize,jsize,ksize); 
-      
+
+      ElecField = DataArrayVector3("ElecField", isize,jsize,ksize);
+
       DeltaA    = DataArrayVector3("DeltaA", isize,jsize,ksize);
       DeltaB    = DataArrayVector3("DeltaB", isize,jsize,ksize);
       DeltaC    = DataArrayVector3("DeltaC", isize,jsize,ksize);
-      
+
       total_mem_size +=
 	isize*jsize*ksize*nbvar*sizeof(real_t)*21 +
 	isize*jsize*ksize*    3*sizeof(real_t)*5;
-      
+
     }
 
   } // dim == 2 / 3
-  
+
   // perform init condition
   init(U);
-  
+
   // initialize boundaries
   make_boundaries(U);
 
   // copy U into U2
   Kokkos::deep_copy(U2,U);
-  
+
   // compute initialize time step
   compute_dt();
 
@@ -319,14 +319,14 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams& params,
     std::cout << "Solver is " << m_solver_name << "\n";
     std::cout << "Problem (init condition) is " << m_problem_name << "\n";
     std::cout << "##########################" << "\n";
-    
+
     // print parameters on screen
     params.print();
     std::cout << "##########################" << "\n";
-    std::cout << "Memory requested : " << (total_mem_size / 1e6) << " MBytes\n"; 
+    std::cout << "Memory requested : " << (total_mem_size / 1e6) << " MBytes\n";
     std::cout << "##########################" << "\n";
   }
-  
+
 } // SolverMHDMuscl::SolverMHDMuscl
 
 // =======================================================
@@ -347,7 +347,7 @@ void SolverMHDMuscl<dim>::make_boundaries(DataArray Udata)
 {
 
   // this routine is specialized for 2d / 3d
-  
+
 } // SolverMHDMuscl<dim>::make_boundaries
 
 template<>
@@ -390,15 +390,15 @@ void SolverMHDMuscl<dim>::init_orszag_tang(DataArray Udata)
 {
 
   OrszagTangParams otParams = OrszagTangParams(configMap);
-  
+
   // alias to actual device functor
   using InitOrszagTangFunctor =
     typename std::conditional<dim==2,
 			      InitOrszagTangFunctor2D,
 			      InitOrszagTangFunctor3D>::type;
-  
+
   InitOrszagTangFunctor::apply(params, otParams, Udata, nbCells);
-  
+
 } // init_orszag_tang
 
 // =======================================================
@@ -409,7 +409,7 @@ void SolverMHDMuscl<dim>::init_orszag_tang(DataArray Udata)
  * see https://www.astro.princeton.edu/~jstone/Athena/tests/kh/kh.html
  *
  * See also article by Robertson et al:
- * "Computational Eulerian hydrodynamics and Galilean invariance", 
+ * "Computational Eulerian hydrodynamics and Galilean invariance",
  * B.E. Robertson et al, Mon. Not. R. Astron. Soc., 401, 2463-2476, (2010).
  *
  */
@@ -427,14 +427,14 @@ void SolverMHDMuscl<dim>::init_kelvin_helmholtz(DataArray Udata)
 
   // perform init
   InitKelvinHelmholtzFunctor::apply(params, khParams, Udata, nbCells);
-  
+
 } // init_kelvin_helmholtz
 
 // =======================================================
 // =======================================================
 /**
  * Implosion test.
- * 
+ *
  */
 template<int dim>
 void SolverMHDMuscl<dim>::init_implode(DataArray Udata)
@@ -457,7 +457,7 @@ void SolverMHDMuscl<dim>::init_implode(DataArray Udata)
 // =======================================================
 /**
  * Rotor test.
- * 
+ *
  */
 template<int dim>
 void SolverMHDMuscl<dim>::init_rotor(DataArray Udata)
@@ -480,7 +480,7 @@ void SolverMHDMuscl<dim>::init_rotor(DataArray Udata)
 // =======================================================
 /**
  * Field loop test.
- * 
+ *
  */
 template<int dim>
 void SolverMHDMuscl<dim>::init_field_loop(DataArray Udata)
@@ -509,7 +509,7 @@ void SolverMHDMuscl<dim>::init_restart(DataArray Udata)
 #ifdef USE_MPI
   myRank = params.myRank;
 #endif // USE_MPI
-  
+
   // load data
   auto reader = std::make_shared<io::IO_ReadWrite>(params, configMap, m_variables_names);
 
@@ -519,7 +519,7 @@ void SolverMHDMuscl<dim>::init_restart(DataArray Udata)
 
   // increment to avoid overriding last output (?)
   //m_times_saved++;
-  
+
   // do we force total time to be zero ?
   bool resetTotalTime = configMap.getBool("run","restart_reset_totaltime",false);
   if (resetTotalTime)
@@ -528,7 +528,7 @@ void SolverMHDMuscl<dim>::init_restart(DataArray Udata)
   if (myRank == 0) {
     std::cout << "### This is a restarted run ! Current time is " << m_t << " ###\n";
   }
-  
+
 } // SolverMHDMuscl<dim>::init_restart
 
 // =======================================================
@@ -543,39 +543,39 @@ void SolverMHDMuscl<dim>::init(DataArray Udata)
   if (restartEnabled) { // load data from input data file
 
     init_restart(Udata);
-    
+
   } else { // regular initialization
 
     /*
      * initialize hydro array at t=0
      */
     if ( !m_problem_name.compare("blast") ) {
-      
+
       init_blast(Udata);
-      
+
     } else if ( !m_problem_name.compare("implode") ) {
-      
+
       init_implode(U);
-      
+
     } else if ( !m_problem_name.compare("orszag_tang") ) {
-      
+
       init_orszag_tang(U);
-      
+
     } else if ( !m_problem_name.compare("kelvin_helmholtz") ) {
-      
+
       init_kelvin_helmholtz(U);
-      
+
     } else if ( !m_problem_name.compare("rotor") ) {
-      
+
       init_rotor(U);
-      
+
     } else if ( !m_problem_name.compare("field_loop") ||
 		!m_problem_name.compare("field loop")) {
-      
+
       init_field_loop(U);
-      
+
     } else {
-      
+
       std::cout << "Problem : " << m_problem_name
 		<< " is not recognized / implemented."
 		<< std::endl;
@@ -584,9 +584,9 @@ void SolverMHDMuscl<dim>::init(DataArray Udata)
       init_orszag_tang(Udata);
 
     }
-    
+
   } // end regular initialization
-  
+
 } // SolverMHDMuscl::init / 2d / 3D
 
 // =======================================================
@@ -603,7 +603,7 @@ double SolverMHDMuscl<dim>::compute_dt_local()
   real_t dt;
   real_t invDt = ZERO_F;
   DataArray Udata;
-  
+
   // which array is the current one ?
   if (m_iteration % 2 == 0)
     Udata = U;
@@ -618,7 +618,7 @@ double SolverMHDMuscl<dim>::compute_dt_local()
 
   // call device functor
   ComputeDtFunctor::apply(params, Udata, nbCells, invDt);
-    
+
   dt = params.settings.cfl/invDt;
 
   return dt;
@@ -632,7 +632,7 @@ void SolverMHDMuscl<dim>::next_iteration_impl()
 {
 
   int myRank=0;
-  
+
 #ifdef USE_MPI
   myRank = params.myRank;
 #endif // USE_MPI
@@ -642,7 +642,7 @@ void SolverMHDMuscl<dim>::next_iteration_impl()
       printf("time step=%7d (dt=% 10.8f t=% 10.8f)\n",m_iteration,m_dt, m_t);
     }
   }
-  
+
   // output
   if (params.enableOutput) {
     if ( should_save_solution() ) {
@@ -652,20 +652,20 @@ void SolverMHDMuscl<dim>::next_iteration_impl()
 		  << " step " << m_iteration
 		  << " dt=" << m_dt << std::endl;
       }
-      
+
       save_solution();
-      
+
     } // end output
   } // end enable output
-  
+
   // compute new dt
   timers[TIMER_DT]->start();
   compute_dt();
   timers[TIMER_DT]->stop();
-  
+
   // perform one step integration
   godunov_unsplit(m_dt);
-  
+
 } // SolverMHDMuscl::next_iteration_impl
 
 // =======================================================
@@ -676,13 +676,13 @@ void SolverMHDMuscl<dim>::next_iteration_impl()
 template<int dim>
 void SolverMHDMuscl<dim>::godunov_unsplit(real_t dt)
 {
-  
+
   if ( m_iteration % 2 == 0 ) {
     godunov_unsplit_impl(U , U2, dt);
   } else {
     godunov_unsplit_impl(U2, U , dt);
   }
-  
+
 } // SolverMHDMuscl::godunov_unsplit
 
 // =======================================================
@@ -691,25 +691,25 @@ void SolverMHDMuscl<dim>::godunov_unsplit(real_t dt)
 // Actual CPU computation of Godunov scheme
 // ///////////////////////////////////////////
 template<int dim>
-void SolverMHDMuscl<dim>::godunov_unsplit_impl(DataArray data_in, 
-						 DataArray data_out, 
+void SolverMHDMuscl<dim>::godunov_unsplit_impl(DataArray data_in,
+						 DataArray data_out,
 						 real_t dt)
 {
 
-  // 2d / 3d implementation are specialized 
-  
+  // 2d / 3d implementation are specialized
+
 } // SolverMHDMuscl<dim>::godunov_unsplit_impl
 
 // 2d
 template<>
-void SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, 
-					     DataArray data_out, 
+void SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in,
+					     DataArray data_out,
 					     real_t dt);
 
 // 3d
 template<>
-void SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, 
-					     DataArray data_out, 
+void SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in,
+					     DataArray data_out,
 					     real_t dt);
 
 
@@ -730,7 +730,7 @@ void SolverMHDMuscl<dim>::convertToPrimitives(DataArray Udata)
 
   // call device functor
   ConvertToPrimitivesFunctor::apply(params, Udata, Q, nbCells);
-  
+
 } // SolverMHDMuscl::convertToPrimitives
 
 // =======================================================
@@ -740,7 +740,7 @@ void SolverMHDMuscl<dim>::computeElectricField(DataArray Udata)
 {
 
   // NA, 3D only
-  
+
 } // SolverMHDMuscl<dim>::computeElectricField
 
 // 3d
@@ -757,7 +757,7 @@ void SolverMHDMuscl<dim>::computeMagSlopes(DataArray Udata)
 {
 
   // NA, 3D only
-  
+
 } // SolverMHDMuscl<dim>::computeMagSlopes
 
 // 3d
@@ -776,9 +776,9 @@ void SolverMHDMuscl<dim>::save_solution_impl()
     save_data(U,  Uhost, m_times_saved, m_t);
   else
     save_data(U2, Uhost, m_times_saved, m_t);
-  
+
   timers[TIMER_IO]->stop();
-    
+
 } // SolverMHDMuscl::save_solution_impl()
 
 } // namespace muscl

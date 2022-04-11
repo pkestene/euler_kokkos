@@ -63,7 +63,7 @@ public:
 
   SolverHydroMuscl(HydroParams& params, ConfigMap& configMap);
   virtual ~SolverHydroMuscl();
-  
+
   /**
    * Static creation method called by the solver factory.
    */
@@ -83,7 +83,7 @@ public:
   DataArray Fluxes_x; /*!< implementation 0 */
   DataArray Fluxes_y; /*!< implementation 0 */
   DataArray Fluxes_z; /*!< implementation 0 */
-  
+
   /* implementation 1 only */
   DataArray Slopes_x; /*!< implementation 1 only */
   DataArray Slopes_y; /*!< implementation 1 only */
@@ -92,7 +92,7 @@ public:
 
   /* Gravity field */
   VectorField gravity;
-  
+
   //riemann_solver_t riemann_solver_fn; /*!< riemann solver function pointer */
 
   /*
@@ -102,7 +102,7 @@ public:
   // fill boundaries / ghost 2d / 3d
   void make_boundaries(DataArray Udata);
 
-  // host routines (initialization)  
+  // host routines (initialization)
   void init_implode(DataArray Udata); // 2d and 3d
   void init_blast(DataArray Udata); // 2d and 3d
   void init_kelvin_helmholtz(DataArray Udata); // 2d and 3d
@@ -113,7 +113,7 @@ public:
 
   //! init restart (load data from file)
   void init_restart(DataArray Udata);
-  
+
   //! init wrapper (actual initialization)
   void init(DataArray Udata);
 
@@ -125,24 +125,24 @@ public:
 
   //! numerical scheme
   void godunov_unsplit(real_t dt);
-  
-  void godunov_unsplit_impl(DataArray data_in, 
-			    DataArray data_out, 
+
+  void godunov_unsplit_impl(DataArray data_in,
+			    DataArray data_out,
 			    real_t dt);
-  
+
   void convertToPrimitives(DataArray Udata);
-  
+
   //void computeTrace(DataArray Udata, real_t dt);
-  
-  void computeFluxesAndUpdate(DataArray Udata, 
+
+  void computeFluxesAndUpdate(DataArray Udata,
 			      real_t dt);
 
   // output
   void save_solution_impl();
-  
+
   int isize, jsize, ksize;
   int nbCells;
-  
+
 }; // class SolverHydroMuscl
 
 // =======================================================
@@ -171,12 +171,12 @@ SolverHydroMuscl<dim>::SolverHydroMuscl(HydroParams& params,
 
   if (dim==3)
     nbCells = params.isize*params.jsize*params.ksize;
-  
+
   m_nCells = nbCells;
   m_nDofsPerCell = 1;
 
   int nbvar = params.nbvar;
- 
+
   long long int total_mem_size = 0;
 
   /*
@@ -194,26 +194,26 @@ SolverHydroMuscl<dim>::SolverHydroMuscl(HydroParams& params,
     Q     = DataArray("Q", isize, jsize, nbvar);
 
     total_mem_size += isize*jsize*nbvar * sizeof(real_t) * 3;// 1+1+1 for U+U2+Q
-    
+
     if (params.implementationVersion == 0) {
-      
+
       Fluxes_x = DataArray("Fluxes_x", isize, jsize, nbvar);
       Fluxes_y = DataArray("Fluxes_y", isize, jsize, nbvar);
-      
+
       total_mem_size += isize*jsize*nbvar * sizeof(real_t) * 2;// 1+1 for Fluxes_x+Fluxes_y
 
     } else if (params.implementationVersion == 1) {
-      
+
       Slopes_x = DataArray("Slope_x", isize, jsize, nbvar);
       Slopes_y = DataArray("Slope_y", isize, jsize, nbvar);
-      
+
       // direction splitting (only need one flux array)
       Fluxes_x = DataArray("Fluxes_x", isize, jsize, nbvar);
       Fluxes_y = Fluxes_x;
-      
+
       total_mem_size += isize*jsize*nbvar * sizeof(real_t) * 3;// 1+1+1 for Slopes_x+Slopes_y+Fluxes_x
 
-    } 
+    }
 
     if (m_gravity_enabled) {
       gravity = VectorField("gravity field",isize,jsize);
@@ -226,47 +226,47 @@ SolverHydroMuscl<dim>::SolverHydroMuscl(HydroParams& params,
     Uhost = Kokkos::create_mirror(U);
     U2    = DataArray("U2",isize,jsize,ksize, nbvar);
     Q     = DataArray("Q", isize,jsize,ksize, nbvar);
-    
+
     total_mem_size += isize*jsize*ksize*nbvar*sizeof(real_t)*3;// 1+1+1=3 for U+U2+Q
 
     if (params.implementationVersion == 0) {
-      
+
       Fluxes_x = DataArray("Fluxes_x", isize,jsize,ksize, nbvar);
       Fluxes_y = DataArray("Fluxes_y", isize,jsize,ksize, nbvar);
       Fluxes_z = DataArray("Fluxes_z", isize,jsize,ksize, nbvar);
-      
+
       total_mem_size += isize*jsize*ksize*nbvar*sizeof(real_t)*3;// 1+1+1=3 Fluxes
 
     } else if (params.implementationVersion == 1) {
-      
+
       Slopes_x = DataArray("Slope_x", isize,jsize,ksize, nbvar);
       Slopes_y = DataArray("Slope_y", isize,jsize,ksize, nbvar);
       Slopes_z = DataArray("Slope_z", isize,jsize,ksize, nbvar);
-      
+
       // direction splitting (only need one flux array)
       Fluxes_x = DataArray("Fluxes_x", isize,jsize,ksize, nbvar);
       Fluxes_y = Fluxes_x;
       Fluxes_z = Fluxes_x;
-      
+
       total_mem_size += isize*jsize*ksize*nbvar*sizeof(real_t)*4;// 1+1+1+1=4 Slopes
     }
-    
+
     if (m_gravity_enabled) {
       gravity = VectorField("gravity field",isize,jsize,ksize);
       total_mem_size += isize*jsize*ksize*3;
     }
 
   } // dim == 2 / 3
-  
+
   // perform init condition
   init(U);
-  
+
   // initialize boundaries
   make_boundaries(U);
 
   // copy U into U2
   Kokkos::deep_copy(U2,U);
-  
+
   // compute initialize time step
   compute_dt();
 
@@ -280,11 +280,11 @@ SolverHydroMuscl<dim>::SolverHydroMuscl(HydroParams& params,
     std::cout << "Solver is " << m_solver_name << "\n";
     std::cout << "Problem (init condition) is " << m_problem_name << "\n";
     std::cout << "##########################" << "\n";
-    
+
     // print parameters on screen
     params.print();
     std::cout << "##########################" << "\n";
-    std::cout << "Memory requested : " << (total_mem_size / 1e6) << " MBytes\n"; 
+    std::cout << "Memory requested : " << (total_mem_size / 1e6) << " MBytes\n";
     std::cout << "##########################" << "\n";
   }
 
@@ -308,7 +308,7 @@ void SolverHydroMuscl<dim>::make_boundaries(DataArray Udata)
 {
 
   // this routine is specialized for 2d / 3d
-  
+
 } // SolverHydroMuscl<dim>::make_boundaries
 
 // 2d specialization
@@ -330,7 +330,7 @@ void SolverHydroMuscl<dim>::init_implode(DataArray Udata)
 {
 
   ImplodeParams iparams = ImplodeParams(configMap);
-  
+
   // alias to actual device functor
   using InitImplodeFunctor =
     typename std::conditional<dim==2,
@@ -373,7 +373,7 @@ void SolverHydroMuscl<dim>::init_blast(DataArray Udata)
  * see https://www.astro.princeton.edu/~jstone/Athena/tests/kh/kh.html
  *
  * See also article by Robertson et al:
- * "Computational Eulerian hydrodynamics and Galilean invariance", 
+ * "Computational Eulerian hydrodynamics and Galilean invariance",
  * B.E. Robertson et al, Mon. Not. R. Astron. Soc., 401, 2463-2476, (2010).
  *
  */
@@ -438,7 +438,7 @@ void SolverHydroMuscl<dim>::init_four_quadrant(DataArray Udata)
 
   // specialized only for 2d
   std::cerr << "You shouldn't be here: four quadrant problem is not implemented in 3D !\n";
-  
+
 } // SolverHydroMuscl<dim>::init_four_quadrant
 
 // 2d specialization
@@ -458,7 +458,7 @@ void SolverHydroMuscl<dim>::init_isentropic_vortex(DataArray Udata)
 
   // specialized only for 2d
   std::cerr << "You shouldn't be here: isentropic vortex is not implemented in 3D !\n";
-  
+
 } // SolverHydroMuscl::init_isentropic_vortex
 
 // 2d specialization
@@ -476,19 +476,19 @@ template<int dim>
 void SolverHydroMuscl<dim>::init_rayleigh_taylor(DataArray Udata,
 						 VectorField gravity)
 {
-  
+
   RayleighTaylorInstabilityParams rtiParams =
     RayleighTaylorInstabilityParams(configMap);
-  
+
   // alias to actual device functor
   using RTIFunctor =
     typename std::conditional<dim==2,
   			      RayleighTaylorInstabilityFunctor2D,
   			      RayleighTaylorInstabilityFunctor3D>::type;
-  
+
   // perform init
   RTIFunctor::apply(params, rtiParams, Udata, gravity);
-  
+
 } // SolverHydroMuscl::init_rayleigh_taylor
 
 // =======================================================
@@ -501,7 +501,7 @@ void SolverHydroMuscl<dim>::init_restart(DataArray Udata)
 #ifdef USE_MPI
   myRank = params.myRank;
 #endif // USE_MPI
-  
+
   // load data
   auto reader = std::make_shared<io::IO_ReadWrite>(params, configMap, m_variables_names);
 
@@ -511,7 +511,7 @@ void SolverHydroMuscl<dim>::init_restart(DataArray Udata)
 
   // increment to avoid overriding last output (?)
   //m_times_saved++;
-  
+
   // do we force total time to be zero ?
   bool resetTotalTime = configMap.getBool("run","restart_reset_totaltime",false);
   if (resetTotalTime)
@@ -521,37 +521,37 @@ void SolverHydroMuscl<dim>::init_restart(DataArray Udata)
   // random forcing field
   // if (!problemName.compare("turbulence")) {
   //   this->init_randomForcing();
-  // } 
-  
-  // in case of Ornstein-Uhlenbeck turbulence problem, 
+  // }
+
+  // in case of Ornstein-Uhlenbeck turbulence problem,
   // we also need to re-initialize the random forcing field
   // if (!problemName.compare("turbulence-Ornstein-Uhlenbeck")) {
-    
+
   //   bool restartEnabled = true;
-    
+
   //   std::string forcing_filename = configMap.getString("turbulence-Ornstein-Uhlenbeck", "forcing_input_file",  "");
-    
+
   //   if (restartUpscaleEnabled) {
-      
+
   //     // use default parameter when restarting and upscaling
   //     pForcingOrnsteinUhlenbeck -> init_forcing(false);
-      
+
   //   } else if ( forcing_filename.size() != 0) {
-      
+
   //     // if forcing filename is provided, we use it
   //     pForcingOrnsteinUhlenbeck -> init_forcing(false); // call to allocate
   //     pForcingOrnsteinUhlenbeck -> input_forcing(forcing_filename);
-      
+
   //   } else {
-      
+
   //     // the forcing parameter filename is build upon configMap information
   //     pForcingOrnsteinUhlenbeck -> init_forcing(restartEnabled, timeStep);
-      
+
   //   }
-    
+
   // } // end restart problem turbulence-Ornstein-Uhlenbeck
 
-  
+
   if (myRank == 0) {
     std::cout << "### This is a restarted run ! Current time is " << m_t << " ###\n";
   }
@@ -559,7 +559,7 @@ void SolverHydroMuscl<dim>::init_restart(DataArray Udata)
   // some extra stuff that need to be done here (usefull when MRI is activated)
   //restart_run_extra_work();
 
-  
+
 } // SolverHydroMuscl<dim>::init_restart
 
 // =======================================================
@@ -576,7 +576,7 @@ double SolverHydroMuscl<dim>::compute_dt_local()
   real_t dt;
   real_t invDt = ZERO_F;
   DataArray Udata;
-  
+
   // which array is the current one ?
   if (m_iteration % 2 == 0)
     Udata = U;
@@ -586,11 +586,11 @@ double SolverHydroMuscl<dim>::compute_dt_local()
   if (m_gravity_enabled) {
 
     // alias to actual device functor
-    using ComputeDtFunctor = 
+    using ComputeDtFunctor =
       typename std::conditional<dim==2,
       				ComputeDtGravityFunctor2D,
       				ComputeDtGravityFunctor3D>::type;
-    
+
     // call device functor
     ComputeDtFunctor::apply(params,
 			    params.settings.cfl,
@@ -598,7 +598,7 @@ double SolverHydroMuscl<dim>::compute_dt_local()
 			    Udata,
 			    nbCells,
 			    invDt);
-    
+
   } else {
 
     // regular cfl
@@ -608,14 +608,14 @@ double SolverHydroMuscl<dim>::compute_dt_local()
       typename std::conditional<dim==2,
 				ComputeDtFunctor2D,
 				ComputeDtFunctor3D>::type;
-    
+
     // call device functor
     ComputeDtFunctor::apply(params, Udata, nbCells, invDt);
-    
+
   }
-  
+
   dt = params.settings.cfl/invDt;
-  
+
   return dt;
 
 } // SolverHydroMuscl::compute_dt_local
@@ -625,42 +625,42 @@ double SolverHydroMuscl<dim>::compute_dt_local()
 template<int dim>
 void SolverHydroMuscl<dim>::next_iteration_impl()
 {
-  
+
   int myRank=0;
-  
+
 #ifdef USE_MPI
   myRank = params.myRank;
 #endif // USE_MPI
-  
+
   if (m_iteration % m_nlog == 0) {
     if (myRank==0) {
       printf("time step=%7d (dt=% 10.8f t=% 10.8f)\n",m_iteration,m_dt, m_t);
     }
   }
-  
+
   // output
   if (params.enableOutput) {
     if ( should_save_solution() ) {
-      
+
       if (myRank==0) {
 	std::cout << "Output results at time t=" << m_t
 		  << " step " << m_iteration
 		  << " dt=" << m_dt << std::endl;
       }
-      
+
       save_solution();
-      
+
     } // end output
   } // end enable output
-  
+
   // compute new dt
   timers[TIMER_DT]->start();
   compute_dt();
   timers[TIMER_DT]->stop();
-  
+
   // perform one step integration
   godunov_unsplit(m_dt);
-  
+
 } // SolverHydroMuscl::next_iteration_impl
 
 // =======================================================
@@ -671,13 +671,13 @@ void SolverHydroMuscl<dim>::next_iteration_impl()
 template<int dim>
 void SolverHydroMuscl<dim>::godunov_unsplit(real_t dt)
 {
-  
+
   if ( m_iteration % 2 == 0 ) {
     godunov_unsplit_impl(U , U2, dt);
   } else {
     godunov_unsplit_impl(U2, U , dt);
   }
-  
+
 } // SolverHydroMuscl::godunov_unsplit
 
 // =======================================================
@@ -686,25 +686,25 @@ void SolverHydroMuscl<dim>::godunov_unsplit(real_t dt)
 // Actual CPU computation of Godunov scheme
 // ///////////////////////////////////////////
 template<int dim>
-void SolverHydroMuscl<dim>::godunov_unsplit_impl(DataArray data_in, 
-						 DataArray data_out, 
+void SolverHydroMuscl<dim>::godunov_unsplit_impl(DataArray data_in,
+						 DataArray data_out,
 						 real_t dt)
 {
 
   // 2d / 3d implementation are specialized in implementation file
-  
+
 } // SolverHydroMuscl<dim>::godunov_unsplit_impl
 
 // 2d version
 template<>
-void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in, 
-					       DataArray data_out, 
+void SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in,
+					       DataArray data_out,
 					       real_t dt);
 
 // 3d version
 template<>
-void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in, 
-					       DataArray data_out, 
+void SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in,
+					       DataArray data_out,
 					       real_t dt);
 
 // =======================================================
@@ -724,7 +724,7 @@ void SolverHydroMuscl<dim>::convertToPrimitives(DataArray Udata)
 
   // call device functor
   ConvertToPrimitivesFunctor::apply(params, Udata, Q);
-  
+
 } // SolverHydroMuscl::convertToPrimitives
 
 // =======================================================
@@ -738,9 +738,9 @@ void SolverHydroMuscl<dim>::save_solution_impl()
     save_data(U,  Uhost, m_times_saved, m_t);
   else
     save_data(U2, Uhost, m_times_saved, m_t);
-  
+
   timers[TIMER_IO]->stop();
-    
+
 } // SolverHydroMuscl::save_solution_impl()
 
 } // namespace muscl

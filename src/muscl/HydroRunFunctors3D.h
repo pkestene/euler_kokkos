@@ -18,7 +18,7 @@ namespace euler_kokkos { namespace muscl {
 class ComputeDtFunctor3D : public HydroBaseFunctor3D {
 
 public:
-  
+
   /**
    * Compute time step satisfying CFL constraint.
    *
@@ -46,7 +46,7 @@ public:
   {
     // The identity under max is -Inf.
     // Kokkos does not come with a portable way to access
-    // floating-point Inf and NaN. 
+    // floating-point Inf and NaN.
 #ifdef __CUDA_ARCH__
     dst = -CUDART_INF;
 #else
@@ -66,19 +66,19 @@ public:
     const real_t dx = params.dx;
     const real_t dy = params.dy;
     const real_t dz = params.dz;
-    
+
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
 
     if(k >= ghostWidth && k < ksize - ghostWidth &&
        j >= ghostWidth && j < jsize - ghostWidth &&
        i >= ghostWidth && i < isize - ghostWidth) {
-      
+
       HydroState uLoc; // conservative    variables in current cell
       HydroState qLoc; // primitive    variables in current cell
       real_t c=0.0;
       real_t vx, vy, vz;
-      
+
       // get local conservative variable
       uLoc[ID] = Udata(i,j,k,ID);
       uLoc[IP] = Udata(i,j,k,IP);
@@ -93,9 +93,9 @@ public:
       vz = c+FABS(qLoc[IW]);
 
       invDt = FMAX(invDt, vx/dx + vy/dy + vz/dz);
-      
+
     }
-	    
+
   } // operator ()
 
 
@@ -114,7 +114,7 @@ public:
   } // join
 
   DataArray3d Udata;
-  
+
 }; // ComputeDtFunctor3D
 
 /*************************************************/
@@ -162,7 +162,7 @@ public:
   {
     // The identity under max is -Inf.
     // Kokkos does not come with a portable way to access
-    // floating-point Inf and NaN. 
+    // floating-point Inf and NaN.
 #ifdef __CUDA_ARCH__
     dst = -CUDART_INF;
 #else
@@ -189,11 +189,11 @@ public:
     if(k >= ghostWidth && k < ksize - ghostWidth &&
        j >= ghostWidth && j < jsize - ghostWidth &&
        i >= ghostWidth && i < isize - ghostWidth) {
-      
+
       HydroState uLoc; // conservative    variables in current cell
       HydroState qLoc; // primitive    variables in current cell
       real_t c=0.0;
-      
+
       // get local conservative variable
       uLoc[ID] = Udata(i,j,k,ID);
       uLoc[IP] = Udata(i,j,k,IP);
@@ -208,12 +208,12 @@ public:
       velocity += c+FABS(qLoc[IV]);
       velocity += c+FABS(qLoc[IW]);
 
-      /* Due to the gravitational acceleration, the CFL condition 
+      /* Due to the gravitational acceleration, the CFL condition
        * can be written as
-       * g dt^2 / (2 dx) + u dt / dx <= cfl 
+       * g dt^2 / (2 dx) + u dt / dx <= cfl
        * where u = sum(|v_i| + c_s) and g = sum(|g_i|)
        *
-       * u / dx has to be corrected by a factor k / (sqrt(1 + 2k) - 1) 
+       * u / dx has to be corrected by a factor k / (sqrt(1 + 2k) - 1)
        * in order to satisfy the new CFL, where k = g dx cfl / u^2
        */
       double kk =
@@ -229,9 +229,9 @@ public:
       velocity *= kk / (sqrt(1.0 + 2.0 * kk) - 1.0);
 
       invDt = fmax(invDt, velocity/dx);
-      
+
     }
-	    
+
   } // operator ()
 
 
@@ -252,7 +252,7 @@ public:
   real_t cfl;
   VectorField3d gravity;
   DataArray3d Udata;
-  
+
 }; // ComputeDtGravityFunctor3D
 
 /*************************************************/
@@ -273,7 +273,7 @@ public:
 			       DataArray3d Udata,
 			       DataArray3d Qdata) :
     HydroBaseFunctor3D(params), Udata(Udata), Qdata(Qdata)  {};
-  
+
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
                     DataArray3d Udata,
@@ -291,25 +291,25 @@ public:
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     //const int ghostWidth = params.ghostWidth;
-    
+
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
-    
+
     if(k >= 0 && k < ksize  &&
        j >= 0 && j < jsize  &&
        i >= 0 && i < isize ) {
-      
+
       HydroState uLoc; // conservative variables in current cell
       HydroState qLoc; // primitive    variables in current cell
       real_t c;
-      
+
       // get local conservative variable
       uLoc[ID] = Udata(i,j,k,ID);
       uLoc[IP] = Udata(i,j,k,IP);
       uLoc[IU] = Udata(i,j,k,IU);
       uLoc[IV] = Udata(i,j,k,IV);
       uLoc[IW] = Udata(i,j,k,IW);
-      
+
       // get primitive variables in current cell
       computePrimitives(uLoc, &c, qLoc);
 
@@ -319,14 +319,14 @@ public:
       Qdata(i,j,k,IU) = qLoc[IU];
       Qdata(i,j,k,IV) = qLoc[IV];
       Qdata(i,j,k,IW) = qLoc[IW];
-      
+
     }
-    
+
   }
-  
+
   DataArray3d Udata;
   DataArray3d Qdata;
-    
+
 }; // ConvertToPrimitivesFunctor3D
 
 
@@ -348,7 +348,7 @@ public:
    * \param[out] FluxData_y flux coming from the left neighbor along Y
    * \param[out] FluxData_z flux coming from the left neighbor along Z
    * \param[in] gravity_enabled boolean value to activate static gravity
-   * \param[in] gravity is a vector field 
+   * \param[in] gravity is a vector field
    */
   ComputeAndStoreFluxesFunctor3D(HydroParams params,
 				 DataArray3d Qdata,
@@ -361,8 +361,8 @@ public:
     HydroBaseFunctor3D(params),
     Qdata(Qdata),
     FluxData_x(FluxData_x),
-    FluxData_y(FluxData_y), 
-    FluxData_z(FluxData_z), 
+    FluxData_y(FluxData_y),
+    FluxData_z(FluxData_z),
     dt(dt),
     dtdx(dt/params.dx),
     dtdy(dt/params.dy),
@@ -370,7 +370,7 @@ public:
     gravity_enabled(gravity_enabled),
     gravity(gravity)
  {};
-  
+
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
                     DataArray3d Qdata,
@@ -404,13 +404,13 @@ public:
     if(k >= ghostWidth && k <= ksize-ghostWidth  &&
        j >= ghostWidth && j <= jsize-ghostWidth  &&
        i >= ghostWidth && i <= isize-ghostWidth ) {
-      
+
       // local primitive variables
       HydroState qLoc; // local primitive variables
-      
+
       // local primitive variables in neighbor cell
       HydroState qLocNeighbor;
-      
+
       // local primitive variables in neighborbood
       HydroState qNeighbors_0;
       HydroState qNeighbors_1;
@@ -418,7 +418,7 @@ public:
       HydroState qNeighbors_3;
       HydroState qNeighbors_4;
       HydroState qNeighbors_5;
-      
+
       // Local slopes and neighbor slopes
       HydroState dqX;
       HydroState dqY;
@@ -438,7 +438,7 @@ public:
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       // deal with left interface along X !
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
+
       // get primitive variables state vector
       qLoc[ID]         = Qdata(i  ,j  ,k  , ID);
       qNeighbors_0[ID] = Qdata(i+1,j  ,k  , ID);
@@ -447,7 +447,7 @@ public:
       qNeighbors_3[ID] = Qdata(i  ,j-1,k  , ID);
       qNeighbors_4[ID] = Qdata(i  ,j  ,k+1, ID);
       qNeighbors_5[ID] = Qdata(i  ,j  ,k-1, ID);
-      
+
       qLoc[IP]         = Qdata(i  ,j  ,k  , IP);
       qNeighbors_0[IP] = Qdata(i+1,j  ,k  , IP);
       qNeighbors_1[IP] = Qdata(i-1,j  ,k  , IP);
@@ -455,7 +455,7 @@ public:
       qNeighbors_3[IP] = Qdata(i  ,j-1,k  , IP);
       qNeighbors_4[IP] = Qdata(i  ,j  ,k+1, IP);
       qNeighbors_5[IP] = Qdata(i  ,j  ,k-1, IP);
-      
+
       qLoc[IU]         = Qdata(i  ,j  ,k  , IU);
       qNeighbors_0[IU] = Qdata(i+1,j  ,k  , IU);
       qNeighbors_1[IU] = Qdata(i-1,j  ,k  , IU);
@@ -463,7 +463,7 @@ public:
       qNeighbors_3[IU] = Qdata(i  ,j-1,k  , IU);
       qNeighbors_4[IU] = Qdata(i  ,j  ,k+1, IU);
       qNeighbors_5[IU] = Qdata(i  ,j  ,k-1, IU);
-      
+
       qLoc[IV]         = Qdata(i  ,j  ,k  , IV);
       qNeighbors_0[IV] = Qdata(i+1,j  ,k  , IV);
       qNeighbors_1[IV] = Qdata(i-1,j  ,k  , IV);
@@ -471,7 +471,7 @@ public:
       qNeighbors_3[IV] = Qdata(i  ,j-1,k  , IV);
       qNeighbors_4[IV] = Qdata(i  ,j  ,k+1, IV);
       qNeighbors_5[IV] = Qdata(i  ,j  ,k-1, IV);
-      
+
       qLoc[IW]         = Qdata(i  ,j  ,k  , IW);
       qNeighbors_0[IW] = Qdata(i+1,j  ,k  , IW);
       qNeighbors_1[IW] = Qdata(i-1,j  ,k  , IW);
@@ -479,13 +479,13 @@ public:
       qNeighbors_3[IW] = Qdata(i  ,j-1,k  , IW);
       qNeighbors_4[IW] = Qdata(i  ,j  ,k+1, IW);
       qNeighbors_5[IW] = Qdata(i  ,j  ,k-1, IW);
-      
-      slope_unsplit_hydro_3d(qLoc, 
-			     qNeighbors_0, qNeighbors_1, 
+
+      slope_unsplit_hydro_3d(qLoc,
+			     qNeighbors_0, qNeighbors_1,
 			     qNeighbors_2, qNeighbors_3,
 			     qNeighbors_4, qNeighbors_5,
 			     dqX, dqY, dqZ);
-	
+
       // slopes at left neighbor along X
       qLocNeighbor[ID] = Qdata(i-1,j  ,k  , ID);
       qNeighbors_0[ID] = Qdata(i  ,j  ,k  , ID);
@@ -494,7 +494,7 @@ public:
       qNeighbors_3[ID] = Qdata(i-1,j-1,k  , ID);
       qNeighbors_4[ID] = Qdata(i-1,j  ,k+1, ID);
       qNeighbors_5[ID] = Qdata(i-1,j  ,k-1, ID);
-      
+
       qLocNeighbor[IP] = Qdata(i-1,j  ,k  , IP);
       qNeighbors_0[IP] = Qdata(i  ,j  ,k  , IP);
       qNeighbors_1[IP] = Qdata(i-2,j  ,k  , IP);
@@ -502,7 +502,7 @@ public:
       qNeighbors_3[IP] = Qdata(i-1,j-1,k  , IP);
       qNeighbors_4[IP] = Qdata(i-1,j  ,k+1, IP);
       qNeighbors_5[IP] = Qdata(i-1,j  ,k-1, IP);
-      
+
       qLocNeighbor[IU] = Qdata(i-1,j  ,k  , IU);
       qNeighbors_0[IU] = Qdata(i  ,j  ,k  , IU);
       qNeighbors_1[IU] = Qdata(i-2,j  ,k  , IU);
@@ -527,22 +527,22 @@ public:
       qNeighbors_4[IW] = Qdata(i-1,j  ,k+1, IW);
       qNeighbors_5[IW] = Qdata(i-1,j  ,k-1, IW);
 
-      slope_unsplit_hydro_3d(qLocNeighbor, 
-			     qNeighbors_0, qNeighbors_1, 
+      slope_unsplit_hydro_3d(qLocNeighbor,
+			     qNeighbors_0, qNeighbors_1,
 			     qNeighbors_2, qNeighbors_3,
 			     qNeighbors_4, qNeighbors_5,
 			     dqX_neighbor, dqY_neighbor, dqZ_neighbor);
-      
+
       //
       // compute reconstructed states at left interface along X
       //
-      
+
       // left interface : right state
       trace_unsplit_3d_along_dir(qLoc,
 				 dqX, dqY, dqZ,
 				 dtdx, dtdy, dtdz,
 				 FACE_XMIN, qright);
-      
+
       // left interface : left state
       trace_unsplit_3d_along_dir(qLocNeighbor,
 				 dqX_neighbor,dqY_neighbor,dqZ_neighbor,
@@ -552,7 +552,7 @@ public:
       if (gravity_enabled) {
 	// we need to modify input to flux computation with
 	// gravity predictor (half time step)
-	
+
 	qleft[IU]  += 0.5 * dt * gravity(i-1,j,k,IX);
 	qleft[IV]  += 0.5 * dt * gravity(i-1,j,k,IY);
 	qleft[IW]  += 0.5 * dt * gravity(i-1,j,k,IZ);
@@ -565,7 +565,7 @@ public:
 
       // Solve Riemann problem at X-interfaces and compute X-fluxes
       riemann_hydro(qleft,qright,qgdnv,flux_x,params);
-	
+
       //
       // store fluxes X
       //
@@ -574,7 +574,7 @@ public:
       FluxData_x(i  ,j  ,k  , IU) = flux_x[IU] * dtdx;
       FluxData_x(i  ,j  ,k  , IV) = flux_x[IV] * dtdx;
       FluxData_x(i  ,j  ,k  , IW) = flux_x[IW] * dtdx;
-      
+
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       // deal with left interface along Y !
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -587,7 +587,7 @@ public:
       qNeighbors_3[ID] = Qdata(i  ,j-2,k  , ID);
       qNeighbors_4[ID] = Qdata(i  ,j-1,k+1, ID);
       qNeighbors_5[ID] = Qdata(i  ,j-1,k-1, ID);
-      
+
       qLocNeighbor[IP] = Qdata(i  ,j-1,k  , IP);
       qNeighbors_0[IP] = Qdata(i+1,j-1,k  , IP);
       qNeighbors_1[IP] = Qdata(i-1,j-1,k  , IP);
@@ -595,7 +595,7 @@ public:
       qNeighbors_3[IP] = Qdata(i  ,j-2,k  , IP);
       qNeighbors_4[IP] = Qdata(i  ,j-1,k+1, IP);
       qNeighbors_5[IP] = Qdata(i  ,j-1,k-1, IP);
-      
+
       qLocNeighbor[IU] = Qdata(i  ,j-1,k  , IU);
       qNeighbors_0[IU] = Qdata(i+1,j-1,k  , IU);
       qNeighbors_1[IU] = Qdata(i-1,j-1,k  , IU);
@@ -620,8 +620,8 @@ public:
       qNeighbors_4[IW] = Qdata(i  ,j-1,k+1, IW);
       qNeighbors_5[IW] = Qdata(i  ,j-1,k-1, IW);
 
-      slope_unsplit_hydro_3d(qLocNeighbor, 
-			     qNeighbors_0, qNeighbors_1, 
+      slope_unsplit_hydro_3d(qLocNeighbor,
+			     qNeighbors_0, qNeighbors_1,
 			     qNeighbors_2, qNeighbors_3,
 			     qNeighbors_4, qNeighbors_5,
 			     dqX_neighbor, dqY_neighbor, dqZ_neighbor);
@@ -629,7 +629,7 @@ public:
       //
       // compute reconstructed states at left interface along Y
       //
-	
+
       // left interface : right state
       trace_unsplit_3d_along_dir(qLoc,
 				 dqX, dqY, dqZ,
@@ -645,7 +645,7 @@ public:
       if (gravity_enabled) {
 	// we need to modify input to flux computation with
 	// gravity predictor (half time step)
-	
+
 	qleft[IU]  += 0.5 * dt * gravity(i,j-1,k,IX);
 	qleft[IV]  += 0.5 * dt * gravity(i,j-1,k,IY);
 	qleft[IW]  += 0.5 * dt * gravity(i,j-1,k,IZ);
@@ -669,7 +669,7 @@ public:
       FluxData_y(i  ,j  ,k  , IU) = flux_y[IV] * dtdy; //
       FluxData_y(i  ,j  ,k  , IV) = flux_y[IU] * dtdy; //
       FluxData_y(i  ,j  ,k  , IW) = flux_y[IW] * dtdy;
-          
+
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       // deal with left interface along Z !
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -682,7 +682,7 @@ public:
       qNeighbors_3[ID] = Qdata(i  ,j-1,k-1, ID);
       qNeighbors_4[ID] = Qdata(i  ,j  ,k  , ID);
       qNeighbors_5[ID] = Qdata(i  ,j  ,k-2, ID);
-      
+
       qLocNeighbor[IP] = Qdata(i  ,j  ,k-1, IP);
       qNeighbors_0[IP] = Qdata(i+1,j  ,k-1, IP);
       qNeighbors_1[IP] = Qdata(i-1,j  ,k-1, IP);
@@ -690,7 +690,7 @@ public:
       qNeighbors_3[IP] = Qdata(i  ,j-1,k-1, IP);
       qNeighbors_4[IP] = Qdata(i  ,j  ,k  , IP);
       qNeighbors_5[IP] = Qdata(i  ,j  ,k-2, IP);
-      
+
       qLocNeighbor[IU] = Qdata(i  ,j  ,k-1, IU);
       qNeighbors_0[IU] = Qdata(i+1,j  ,k-1, IU);
       qNeighbors_1[IU] = Qdata(i-1,j  ,k-1, IU);
@@ -714,9 +714,9 @@ public:
       qNeighbors_3[IW] = Qdata(i  ,j-1,k-1, IW);
       qNeighbors_4[IW] = Qdata(i  ,j  ,k  , IW);
       qNeighbors_5[IW] = Qdata(i  ,j  ,k-2, IW);
-      
-      slope_unsplit_hydro_3d(qLocNeighbor, 
-			     qNeighbors_0, qNeighbors_1, 
+
+      slope_unsplit_hydro_3d(qLocNeighbor,
+			     qNeighbors_0, qNeighbors_1,
 			     qNeighbors_2, qNeighbors_3,
 			     qNeighbors_4, qNeighbors_5,
 			     dqX_neighbor, dqY_neighbor, dqZ_neighbor);
@@ -724,7 +724,7 @@ public:
       //
       // compute reconstructed states at left interface along Z
       //
-	
+
       // left interface : right state
       trace_unsplit_3d_along_dir(qLoc,
 				 dqX, dqY, dqZ,
@@ -740,7 +740,7 @@ public:
       if (gravity_enabled) {
 	// we need to modify input to flux computation with
 	// gravity predictor (half time step)
-	
+
 	qleft[IU]  += 0.5 * dt * gravity(i,j,k-1,IX);
 	qleft[IV]  += 0.5 * dt * gravity(i,j,k-1,IY);
 	qleft[IW]  += 0.5 * dt * gravity(i,j,k-1,IZ);
@@ -764,11 +764,11 @@ public:
       FluxData_z(i  ,j  ,k  , IU) = flux_z[IW] * dtdz; //
       FluxData_z(i  ,j  ,k  , IV) = flux_z[IV] * dtdz;
       FluxData_z(i  ,j  ,k  , IW) = flux_z[IU] * dtdz; //
-          
+
     } // end if
-    
+
   } // end operator ()
-  
+
   DataArray3d Qdata;
   DataArray3d FluxData_x;
   DataArray3d FluxData_y;
@@ -776,9 +776,9 @@ public:
   real_t dt, dtdx, dtdy, dtdz;
   bool gravity_enabled;
   VectorField3d gravity;
-  
+
 }; // ComputeAndStoreFluxesFunctor3D
-  
+
 /*************************************************/
 /*************************************************/
 /*************************************************/
@@ -802,11 +802,11 @@ public:
 		  DataArray3d FluxData_y,
 		  DataArray3d FluxData_z) :
     HydroBaseFunctor3D(params),
-    Udata(Udata), 
+    Udata(Udata),
     FluxData_x(FluxData_x),
     FluxData_y(FluxData_y),
     FluxData_z(FluxData_z) {};
-  
+
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
                     DataArray3d Udata,
@@ -826,7 +826,7 @@ public:
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
-    
+
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
 
@@ -845,13 +845,13 @@ public:
       Udata(i  ,j  ,k    , IU) -=  FluxData_x(i+1,j  ,k   , IU);
       Udata(i  ,j  ,k    , IV) -=  FluxData_x(i+1,j  ,k   , IV);
       Udata(i  ,j  ,k    , IW) -=  FluxData_x(i+1,j  ,k   , IW);
-      
+
       Udata(i  ,j  ,k    , ID) +=  FluxData_y(i  ,j  ,k    , ID);
       Udata(i  ,j  ,k    , IP) +=  FluxData_y(i  ,j  ,k    , IP);
       Udata(i  ,j  ,k    , IU) +=  FluxData_y(i  ,j  ,k    , IU);
       Udata(i  ,j  ,k    , IV) +=  FluxData_y(i  ,j  ,k    , IV);
       Udata(i  ,j  ,k    , IW) +=  FluxData_y(i  ,j  ,k    , IW);
-      
+
       Udata(i  ,j  ,k    , ID) -=  FluxData_y(i  ,j+1,k  , ID);
       Udata(i  ,j  ,k    , IP) -=  FluxData_y(i  ,j+1,k  , IP);
       Udata(i  ,j  ,k    , IU) -=  FluxData_y(i  ,j+1,k  , IU);
@@ -871,14 +871,14 @@ public:
       Udata(i  ,j  ,k    , IW) -=  FluxData_z(i  ,j  ,k+1, IW);
 
     } // end if
-    
+
   } // end operator ()
-  
+
   DataArray3d Udata;
   DataArray3d FluxData_x;
   DataArray3d FluxData_y;
   DataArray3d FluxData_z;
-  
+
 }; // UpdateFunctor3D
 
 
@@ -901,9 +901,9 @@ public:
 		     DataArray3d Udata,
 		     DataArray3d FluxData) :
     HydroBaseFunctor3D(params),
-    Udata(Udata), 
+    Udata(Udata),
     FluxData(FluxData) {};
-  
+
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
                     DataArray3d Udata,
@@ -921,7 +921,7 @@ public:
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
-    
+
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
 
@@ -936,7 +936,7 @@ public:
 	Udata(i  ,j  ,k  , IU) +=  FluxData(i  ,j  ,k  , IU);
 	Udata(i  ,j  ,k  , IV) +=  FluxData(i  ,j  ,k  , IV);
 	Udata(i  ,j  ,k  , IW) +=  FluxData(i  ,j  ,k  , IW);
-	
+
 	Udata(i  ,j  ,k  , ID) -=  FluxData(i+1,j  ,k   , ID);
 	Udata(i  ,j  ,k  , IP) -=  FluxData(i+1,j  ,k   , IP);
 	Udata(i  ,j  ,k  , IU) -=  FluxData(i+1,j  ,k   , IU);
@@ -950,7 +950,7 @@ public:
 	Udata(i  ,j  ,k  , IU) +=  FluxData(i  ,j  ,k  , IU);
 	Udata(i  ,j  ,k  , IV) +=  FluxData(i  ,j  ,k  , IV);
 	Udata(i  ,j  ,k  , IW) +=  FluxData(i  ,j  ,k  , IW);
-	
+
 	Udata(i  ,j  ,k  , ID) -=  FluxData(i  ,j+1,k   , ID);
 	Udata(i  ,j  ,k  , IP) -=  FluxData(i  ,j+1,k   , IP);
 	Udata(i  ,j  ,k  , IU) -=  FluxData(i  ,j+1,k   , IU);
@@ -964,7 +964,7 @@ public:
 	Udata(i  ,j  ,k  , IU) +=  FluxData(i  ,j  ,k  , IU);
 	Udata(i  ,j  ,k  , IV) +=  FluxData(i  ,j  ,k  , IV);
 	Udata(i  ,j  ,k  , IW) +=  FluxData(i  ,j  ,k  , IW);
-	
+
 	Udata(i  ,j  ,k  , ID) -=  FluxData(i  ,j  ,k+1 , ID);
 	Udata(i  ,j  ,k  , IP) -=  FluxData(i  ,j  ,k+1 , IP);
 	Udata(i  ,j  ,k  , IU) -=  FluxData(i  ,j  ,k+1 , IU);
@@ -972,24 +972,24 @@ public:
 	Udata(i  ,j  ,k  , IW) -=  FluxData(i  ,j  ,k+1,  IW);
 
       }
-      
+
     } // end if
-    
+
   } // end operator ()
-  
+
   DataArray3d Udata;
   DataArray3d FluxData;
-  
+
 }; // UpdateDirFunctor3D
 
-    
+
 /*************************************************/
 /*************************************************/
 /*************************************************/
 class ComputeSlopesFunctor3D : public HydroBaseFunctor3D {
-  
+
 public:
-  
+
   /**
    * Compute limited slopes.
    *
@@ -1005,7 +1005,7 @@ public:
 			 DataArray3d Slopes_z) :
     HydroBaseFunctor3D(params), Qdata(Qdata),
     Slopes_x(Slopes_x), Slopes_y(Slopes_y), Slopes_z(Slopes_z) {};
-  
+
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
                     DataArray3d Qdata,
@@ -1025,7 +1025,7 @@ public:
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
-    
+
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
 
@@ -1057,7 +1057,7 @@ public:
 	qNeighbors_3[ID] = Qdata(i  ,j-1,k   , ID);
 	qNeighbors_4[ID] = Qdata(i  ,j  ,k+1 , ID);
 	qNeighbors_5[ID] = Qdata(i  ,j  ,k-1 , ID);
-	
+
 	qLoc[IP]         = Qdata(i  ,j  ,k   , IP);
 	qNeighbors_0[IP] = Qdata(i+1,j  ,k   , IP);
 	qNeighbors_1[IP] = Qdata(i-1,j  ,k   , IP);
@@ -1065,7 +1065,7 @@ public:
 	qNeighbors_3[IP] = Qdata(i  ,j-1,k   , IP);
 	qNeighbors_4[IP] = Qdata(i  ,j  ,k+1 , IP);
 	qNeighbors_5[IP] = Qdata(i  ,j  ,k-1 , IP);
-	
+
 	qLoc[IU]         = Qdata(i  ,j  ,k   , IU);
 	qNeighbors_0[IU] = Qdata(i+1,j  ,k   , IU);
 	qNeighbors_1[IU] = Qdata(i-1,j  ,k   , IU);
@@ -1073,7 +1073,7 @@ public:
 	qNeighbors_3[IU] = Qdata(i  ,j-1,k   , IU);
 	qNeighbors_4[IU] = Qdata(i  ,j  ,k+1 , IU);
 	qNeighbors_5[IU] = Qdata(i  ,j  ,k-1 , IU);
-	
+
 	qLoc[IV]         = Qdata(i  ,j  ,k   , IV);
 	qNeighbors_0[IV] = Qdata(i+1,j  ,k   , IV);
 	qNeighbors_1[IV] = Qdata(i-1,j  ,k   , IV);
@@ -1081,7 +1081,7 @@ public:
 	qNeighbors_3[IV] = Qdata(i  ,j-1,k   , IV);
 	qNeighbors_4[IV] = Qdata(i  ,j  ,k+1 , IV);
 	qNeighbors_5[IV] = Qdata(i  ,j  ,k-1 , IV);
-	
+
 	qLoc[IW]         = Qdata(i  ,j  ,k   , IW);
 	qNeighbors_0[IW] = Qdata(i+1,j  ,k   , IW);
 	qNeighbors_1[IW] = Qdata(i-1,j  ,k   , IW);
@@ -1089,26 +1089,26 @@ public:
 	qNeighbors_3[IW] = Qdata(i  ,j-1,k   , IW);
 	qNeighbors_4[IW] = Qdata(i  ,j  ,k+1 , IW);
 	qNeighbors_5[IW] = Qdata(i  ,j  ,k-1 , IW);
-	
-	slope_unsplit_hydro_3d(qLoc, 
-			       qNeighbors_0, qNeighbors_1, 
+
+	slope_unsplit_hydro_3d(qLoc,
+			       qNeighbors_0, qNeighbors_1,
 			       qNeighbors_2, qNeighbors_3,
 			       qNeighbors_4, qNeighbors_5,
 			       dqX, dqY, dqZ);
-	
+
 	// copy back slopes in global arrays
 	Slopes_x(i,j,k, ID) = dqX[ID];
 	Slopes_y(i,j,k, ID) = dqY[ID];
 	Slopes_z(i,j,k, ID) = dqZ[ID];
-	
+
 	Slopes_x(i,j,k, IP) = dqX[IP];
 	Slopes_y(i,j,k, IP) = dqY[IP];
 	Slopes_z(i,j,k, IP) = dqZ[IP];
-	
+
 	Slopes_x(i,j,k, IU) = dqX[IU];
 	Slopes_y(i,j,k, IU) = dqY[IU];
 	Slopes_z(i,j,k, IU) = dqZ[IU];
-	
+
 	Slopes_x(i,j,k, IV) = dqX[IV];
 	Slopes_y(i,j,k, IV) = dqY[IV];
 	Slopes_z(i,j,k, IV) = dqZ[IV];
@@ -1116,14 +1116,14 @@ public:
 	Slopes_x(i,j,k, IW) = dqX[IW];
 	Slopes_y(i,j,k, IW) = dqY[IW];
 	Slopes_z(i,j,k, IW) = dqZ[IW];
-      
+
     } // end if
-    
+
   } // end operator ()
-  
+
   DataArray3d Qdata;
   DataArray3d Slopes_x, Slopes_y, Slopes_z;
-  
+
 }; // ComputeSlopesFunctor3D
 
 /*************************************************/
@@ -1131,9 +1131,9 @@ public:
 /*************************************************/
 template <Direction dir>
 class ComputeTraceAndFluxes_Functor3D : public HydroBaseFunctor3D {
-  
+
 public:
-  
+
   /**
    * Compute reconstructed states on faces (not stored), and fluxes (stored).
    *
@@ -1162,7 +1162,7 @@ public:
     gravity_enabled(gravity_enabled),
     gravity(gravity)
   {};
-  
+
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
                     DataArray3d Qdata,
@@ -1183,7 +1183,7 @@ public:
 						 gravity);
     Kokkos::parallel_for(nbCells, functor);
   }
-  
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -1191,10 +1191,10 @@ public:
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
-    
+
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
-    
+
     if(k >= ghostWidth && k <= ksize-ghostWidth  &&
        j >= ghostWidth && j <= jsize-ghostWidth  &&
        i >= ghostWidth && i <= isize-ghostWidth ) {
@@ -1226,12 +1226,12 @@ public:
 	dqX[ID]  = Slopes_x(i,j,k, ID);
 	dqY[ID]  = Slopes_y(i,j,k, ID);
 	dqZ[ID]  = Slopes_z(i,j,k, ID);
-	
+
 	qLoc[IP] = Qdata   (i,j,k, IP);
 	dqX[IP]  = Slopes_x(i,j,k, IP);
 	dqY[IP]  = Slopes_y(i,j,k, IP);
 	dqZ[IP]  = Slopes_z(i,j,k, IP);
-	
+
 	qLoc[IU] = Qdata   (i,j,k, IU);
 	dqX[IU]  = Slopes_x(i,j,k, IU);
 	dqY[IU]  = Slopes_y(i,j,k, IU);
@@ -1254,56 +1254,56 @@ public:
 				     dqX, dqY, dqZ,
 				     dtdx, dtdy, dtdz,
 				     FACE_XMIN, qright);
-	  
+
 	  if (gravity_enabled) {
 	    // we need to modify input to flux computation with
 	    // gravity predictor (half time step)
-	    
+
 	    qright[IU] += 0.5 * dt * gravity(i,j,k,IX);
 	    qright[IV] += 0.5 * dt * gravity(i,j,k,IY);
 	    qright[IW] += 0.5 * dt * gravity(i,j,k,IZ);
-	    
+
 	  }
 
 	  qLocNeighbor[ID] = Qdata   (i-1,j  ,k  , ID);
 	  dqX_neighbor[ID] = Slopes_x(i-1,j  ,k  , ID);
 	  dqY_neighbor[ID] = Slopes_y(i-1,j  ,k  , ID);
 	  dqZ_neighbor[ID] = Slopes_z(i-1,j  ,k  , ID);
-	  
+
 	  qLocNeighbor[IP] = Qdata   (i-1,j  ,k  , IP);
 	  dqX_neighbor[IP] = Slopes_x(i-1,j  ,k  , IP);
 	  dqY_neighbor[IP] = Slopes_y(i-1,j  ,k  , IP);
 	  dqZ_neighbor[IP] = Slopes_z(i-1,j  ,k  , IP);
-	  
+
 	  qLocNeighbor[IU] = Qdata   (i-1,j  ,k  , IU);
 	  dqX_neighbor[IU] = Slopes_x(i-1,j  ,k  , IU);
 	  dqY_neighbor[IU] = Slopes_y(i-1,j  ,k  , IU);
 	  dqZ_neighbor[IU] = Slopes_z(i-1,j  ,k  , IU);
-	  
+
 	  qLocNeighbor[IV] = Qdata   (i-1,j  ,k  , IV);
 	  dqX_neighbor[IV] = Slopes_x(i-1,j  ,k  , IV);
 	  dqY_neighbor[IV] = Slopes_y(i-1,j  ,k  , IV);
 	  dqZ_neighbor[IV] = Slopes_z(i-1,j  ,k  , IV);
-	  
+
 	  qLocNeighbor[IW] = Qdata   (i-1,j  ,k  , IW);
 	  dqX_neighbor[IW] = Slopes_x(i-1,j  ,k  , IW);
 	  dqY_neighbor[IW] = Slopes_y(i-1,j  ,k  , IW);
 	  dqZ_neighbor[IW] = Slopes_z(i-1,j  ,k  , IW);
-	  
+
 	  // left interface : left state
 	  trace_unsplit_3d_along_dir(qLocNeighbor,
 				     dqX_neighbor,dqY_neighbor,dqZ_neighbor,
 				     dtdx, dtdy, dtdz,
 				     FACE_XMAX, qleft);
-	  
+
 	  if (gravity_enabled) {
 	    // we need to modify input to flux computation with
 	    // gravity predictor (half time step)
-	    
+
 	    qleft[IU]  += 0.5 * dt * gravity(i-1,j,k,IX);
 	    qleft[IV]  += 0.5 * dt * gravity(i-1,j,k,IY);
 	    qleft[IW]  += 0.5 * dt * gravity(i-1,j,k,IZ);
-	    
+
 	  }
 
 	  // Solve Riemann problem at X-interfaces and compute X-fluxes
@@ -1311,7 +1311,7 @@ public:
 
 	  //
 	  // store fluxes
-	  //	
+	  //
 	  Fluxes(i  ,j  ,k  , ID) =  flux[ID]*dtdx;
 	  Fluxes(i  ,j  ,k  , IP) =  flux[IP]*dtdx;
 	  Fluxes(i  ,j  ,k  , IU) =  flux[IU]*dtdx;
@@ -1325,27 +1325,27 @@ public:
 				     dqX, dqY, dqZ,
 				     dtdx, dtdy, dtdz,
 				     FACE_YMIN, qright);
-	  
+
 	  if (gravity_enabled) {
 	    // we need to modify input to flux computation with
 	    // gravity predictor (half time step)
-	    
+
 	    qright[IU] += 0.5 * dt * gravity(i,j,k,IX);
 	    qright[IV] += 0.5 * dt * gravity(i,j,k,IY);
 	    qright[IW] += 0.5 * dt * gravity(i,j,k,IZ);
-	    
+
 	  }
 
 	  qLocNeighbor[ID] = Qdata   (i  ,j-1,k  , ID);
 	  dqX_neighbor[ID] = Slopes_x(i  ,j-1,k  , ID);
 	  dqY_neighbor[ID] = Slopes_y(i  ,j-1,k  , ID);
 	  dqZ_neighbor[ID] = Slopes_z(i  ,j-1,k  , ID);
-	  
+
 	  qLocNeighbor[IP] = Qdata   (i  ,j-1,k  , IP);
 	  dqX_neighbor[IP] = Slopes_x(i  ,j-1,k  , IP);
 	  dqY_neighbor[IP] = Slopes_y(i  ,j-1,k  , IP);
 	  dqZ_neighbor[IP] = Slopes_z(i  ,j-1,k  , IP);
-	  
+
 	  qLocNeighbor[IU] = Qdata   (i  ,j-1,k  , IU);
 	  dqX_neighbor[IU] = Slopes_x(i  ,j-1,k  , IU);
 	  dqY_neighbor[IU] = Slopes_y(i  ,j-1,k  , IU);
@@ -1366,25 +1366,25 @@ public:
 				     dqX_neighbor,dqY_neighbor,dqZ_neighbor,
 				     dtdx, dtdy, dtdz,
 				     FACE_YMAX, qleft);
-	  
+
 	  if (gravity_enabled) {
 	    // we need to modify input to flux computation with
 	    // gravity predictor (half time step)
-	    
+
 	    qleft[IU]  += 0.5 * dt * gravity(i,j-1,k,IX);
 	    qleft[IV]  += 0.5 * dt * gravity(i,j-1,k,IY);
 	    qleft[IW]  += 0.5 * dt * gravity(i,j-1,k,IZ);
-	    
+
 	  }
 
 	  // Solve Riemann problem at Y-interfaces and compute Y-fluxes
 	  swapValues(&(qleft[IU]) ,&(qleft[IV]) );
 	  swapValues(&(qright[IU]),&(qright[IV]));
 	  riemann_hydro(qleft,qright,qgdnv,flux,params);
-	  
+
 	  //
 	  // update hydro array
-	  //	  
+	  //
 	  Fluxes(i  ,j  ,k  , ID) =  flux[ID]*dtdy;
 	  Fluxes(i  ,j  ,k  , IP) =  flux[IP]*dtdy;
 	  Fluxes(i  ,j  ,k  , IU) =  flux[IV]*dtdy; // IU/IV swapped
@@ -1398,17 +1398,17 @@ public:
 				     dqX, dqY, dqZ,
 				     dtdx, dtdy, dtdz,
 				     FACE_ZMIN, qright);
-	  
+
 	  qLocNeighbor[ID] = Qdata   (i  ,j  ,k-1  , ID);
 	  dqX_neighbor[ID] = Slopes_x(i  ,j  ,k-1  , ID);
 	  dqY_neighbor[ID] = Slopes_y(i  ,j  ,k-1  , ID);
 	  dqZ_neighbor[ID] = Slopes_z(i  ,j  ,k-1  , ID);
-	  
+
 	  qLocNeighbor[IP] = Qdata   (i  ,j  ,k-1  , IP);
 	  dqX_neighbor[IP] = Slopes_x(i  ,j  ,k-1  , IP);
 	  dqY_neighbor[IP] = Slopes_y(i  ,j  ,k-1  , IP);
 	  dqZ_neighbor[IP] = Slopes_z(i  ,j  ,k-1  , IP);
-	  
+
 	  qLocNeighbor[IU] = Qdata   (i  ,j  ,k-1  , IU);
 	  dqX_neighbor[IU] = Slopes_x(i  ,j  ,k-1  , IU);
 	  dqY_neighbor[IU] = Slopes_y(i  ,j  ,k-1  , IU);
@@ -1429,25 +1429,25 @@ public:
 				     dqX_neighbor,dqY_neighbor,dqZ_neighbor,
 				     dtdx, dtdy, dtdz,
 				     FACE_ZMAX, qleft);
-	  
+
 	  if (gravity_enabled) {
 	    // we need to modify input to flux computation with
 	    // gravity predictor (half time step)
-	    
+
 	    qleft[IU]  += 0.5 * dt * gravity(i,j,k-1,IX);
 	    qleft[IV]  += 0.5 * dt * gravity(i,j,k-1,IY);
 	    qleft[IW]  += 0.5 * dt * gravity(i,j,k-1,IZ);
-	    
+
 	  }
 
 	  // Solve Riemann problem at Y-interfaces and compute Y-fluxes
 	  swapValues(&(qleft[IU]) ,&(qleft[IW]) );
 	  swapValues(&(qright[IU]),&(qright[IW]));
 	  riemann_hydro(qleft,qright,qgdnv,flux,params);
-	  
+
 	  //
 	  // update hydro array
-	  //	  
+	  //
 	  Fluxes(i  ,j  ,k  , ID) =  flux[ID]*dtdz;
 	  Fluxes(i  ,j  ,k  , IP) =  flux[IP]*dtdz;
 	  Fluxes(i  ,j  ,k  , IU) =  flux[IW]*dtdz; // IU/IW swapped
@@ -1455,27 +1455,27 @@ public:
 	  Fluxes(i  ,j  ,k  , IW) =  flux[IU]*dtdz; // IU/IW swapped
 
 	}
-	      
+
     } // end if
-    
+
   } // end operator ()
-  
+
   DataArray3d Qdata;
   DataArray3d Slopes_x, Slopes_y, Slopes_z;
   DataArray3d Fluxes;
   real_t dt, dtdx, dtdy, dtdz;
   bool gravity_enabled;
   VectorField3d gravity;
-  
+
 }; // ComputeTraceAndFluxes_Functor3D
 
 /*************************************************/
 /*************************************************/
 /*************************************************/
 class GravitySourceTermFunctor3D : public HydroBaseFunctor3D {
-  
+
 public:
-  
+
   /**
    * Update with gravity source term.
    *
@@ -1494,7 +1494,7 @@ public:
     gravity(gravity),
     dt(dt)
   {};
-  
+
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
                     DataArray3d Udata_in,
@@ -1506,7 +1506,7 @@ public:
     GravitySourceTermFunctor3D functor(params, Udata_in, Udata_out, gravity, dt);
     Kokkos::parallel_for(nbCells, functor);
   }
-  
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& index) const
   {
@@ -1514,10 +1514,10 @@ public:
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
-    
+
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
-    
+
     if(k >= ghostWidth && k < ksize-ghostWidth  &&
        j >= ghostWidth && j < jsize-ghostWidth  &&
        i >= ghostWidth && i < isize-ghostWidth ) {
@@ -1528,12 +1528,12 @@ public:
       real_t rhou = Udata_out(i,j,k,IU);
       real_t rhov = Udata_out(i,j,k,IV);
       real_t rhow = Udata_out(i,j,k,IW);
-      
+
       // compute kinetic energy before updating momentum
       real_t ekin_old = 0.5 * (rhou*rhou + rhov*rhov + rhow*rhow) / rhoNew;
 
       // update momentum
-      rhou += 0.5 * dt * gravity(i,j,k,IX) * (rhoOld + rhoNew); 
+      rhou += 0.5 * dt * gravity(i,j,k,IX) * (rhoOld + rhoNew);
       rhov += 0.5 * dt * gravity(i,j,k,IY) * (rhoOld + rhoNew);
       rhow += 0.5 * dt * gravity(i,j,k,IZ) * (rhoOld + rhoNew);
 
@@ -1546,15 +1546,15 @@ public:
 
       // update total energy
       Udata_out(i,j,k,IE) += (ekin_new - ekin_old);
-      
+
     }
-    
+
   } // end operator ()
-  
+
   DataArray3d Udata_in, Udata_out;
   VectorField3d gravity;
   real_t dt;
-  
+
 }; // GravitySourceTermFunctor3D
 
 } // namespace muscl
@@ -1562,4 +1562,3 @@ public:
 } // namespace euler_kokkos
 
 #endif // HYDRO_RUN_FUNCTORS_3D_H_
-

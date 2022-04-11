@@ -31,14 +31,14 @@ public:
   KOKKOS_INLINE_FUNCTION
   void swapValues(real_t *a, real_t *b) const
   {
-    
+
     real_t tmp = *a;
-    
+
     *a = *b;
     *b = tmp;
-    
+
   } // swapValues
-  
+
   /**
    * Copy data(i,j,k) into q.
    */
@@ -54,7 +54,7 @@ public:
     q[IBX] = data(i,j,k, IBX);
     q[IBY] = data(i,j,k, IBY);
     q[IBZ] = data(i,j,k, IBZ);
-    
+
   } // get_state
 
   /**
@@ -72,7 +72,7 @@ public:
     data(i,j,k, IBX) = q[IBX];
     data(i,j,k, IBY) = q[IBY];
     data(i,j,k, IBZ) = q[IBZ];
-    
+
   } // set_state
 
   /**
@@ -85,9 +85,9 @@ public:
     b[IBFX] = data(i,j,k, IBX);
     b[IBFY] = data(i,j,k, IBY);
     b[IBFZ] = data(i,j,k, IBZ);
-    
+
   } // get_magField
-  
+
   /**
    * Equation of state:
    * compute pressure p and speed of sound c, from density rho and
@@ -95,7 +95,7 @@ public:
    * of state : \f$ eint=\frac{p}{\rho (\gamma-1)} \f$
    * Recall that \f$ \gamma \f$ is equal to the ratio of specific heats
    *  \f$ \left[ c_p/c_v \right] \f$.
-   * 
+   *
    * @param[in]  rho  density
    * @param[in]  eint internal energy
    * @param[out] p    pressure
@@ -109,14 +109,14 @@ public:
   {
     real_t gamma0 = params.settings.gamma0;
     real_t smallp = params.settings.smallp;
-    
+
     *p = fmax((gamma0 - ONE_F) * rho * eint, rho * smallp);
     *c = sqrt(gamma0 * (*p) / rho);
-    
+
   } // eos
-  
+
   /**
-   * Convert conservative variables (rho, rho*u, rho*v, rho*w, e, bx, by, bz) 
+   * Convert conservative variables (rho, rho*u, rho*v, rho*w, e, bx, by, bz)
    * to primitive variables (rho,u,v,w,p,bx,by,bz
    *)
    * @param[in]  u  conservative variables array
@@ -152,17 +152,17 @@ public:
     // compute pressure
 
     if (params.settings.cIso > 0) { // isothermal
-      
+
       q[IP] = q[ID] * (params.settings.cIso) * (params.settings.cIso);
       c     =  params.settings.cIso;
-      
+
     } else {
-      
+
       real_t eint = (u[IP] - emag) / q[ID] - eken;
 
       q[IP] = fmax((params.settings.gamma0-1.0) * q[ID] * eint,
 		 q[ID] * params.settings.smallp);
-  
+
       // if (q[IP] < 0) {
       // 	printf("MHD pressure neg !!!\n");
       // }
@@ -171,13 +171,13 @@ public:
       // legacy)
       c = sqrt(params.settings.gamma0 * q[IP] / q[ID]);
     }
- 
+
   } // constoprim_mhd
 
     /**
      * Compute primitive variables slopes (dqX,dqY) for one component from q and its neighbors.
      * This routine is only used in the 3D UNSPLIT integration and slope_type = 0,1 and 2.
-     * 
+     *
      * Only slope_type 1 and 2 are supported.
      *
      * \param[in]  q       : current primitive variable
@@ -193,7 +193,7 @@ public:
      *
      */
   KOKKOS_INLINE_FUNCTION
-  void slope_unsplit_hydro_3d_scalar(real_t q, 
+  void slope_unsplit_hydro_3d_scalar(real_t q,
 				     real_t qPlusX,
 				     real_t qMinusX,
 				     real_t qPlusY,
@@ -218,7 +218,7 @@ public:
     if ( (dlft*drgt) <= ZERO_F )
       dlim = ZERO_F;
     *dqX = dsgn * fmin( dlim, FABS(dcen) );
-  
+
     // slopes in second coordinate direction
     dlft = slope_type*(q      - qMinusY);
     drgt = slope_type*(qPlusY - q      );
@@ -247,8 +247,8 @@ public:
   /**
    * Compute primitive variables slope (vector dq) from q and its neighbors.
    * This routine is only used in the 3D UNSPLIT integration and slope_type = 0,1,2 and 3.
-   * 
-   * Note that slope_type is a global variable, located in symbol memory when 
+   *
+   * Note that slope_type is a global variable, located in symbol memory when
    * using the GPU version.
    *
    * Loosely adapted from RAMSES/hydro/umuscl.f90: subroutine uslope
@@ -258,24 +258,24 @@ public:
    * \param[in]  qNb     : array to primitive variable vector state in the neighborhood
    * \param[out] dq      : reference to an array returning the X,Y  and Z slopes
    *
-   * 
+   *
    */
   KOKKOS_INLINE_FUNCTION
-  void slope_unsplit_hydro_3d(const MHDState & q      , 
-			      const MHDState & qPlusX , 
+  void slope_unsplit_hydro_3d(const MHDState & q      ,
+			      const MHDState & qPlusX ,
 			      const MHDState & qMinusX,
-			      const MHDState & qPlusY , 
+			      const MHDState & qPlusY ,
 			      const MHDState & qMinusY,
-			      const MHDState & qPlusZ , 
+			      const MHDState & qPlusZ ,
 			      const MHDState & qMinusZ,
 			      MHDState (&dq)[3]) const
-  {			
+  {
     real_t slope_type = params.settings.slope_type;
 
     MHDState &dqX = dq[IX];
     MHDState &dqY = dq[IY];
     MHDState &dqZ = dq[IZ];
- 
+
     if (slope_type==0) {
 
       dqX[ID]  = ZERO_F; dqY[ID]  = ZERO_F; dqZ[ID]  = ZERO_F;
@@ -301,20 +301,20 @@ public:
       slope_unsplit_hydro_3d_scalar(q[IBX],qPlusX[IBX],qMinusX[IBX],qPlusY[IBX],qMinusY[IBX],qPlusZ[IBX],qMinusZ[IBX], &(dqX[IBX]), &(dqY[IBX]), &(dqZ[IBX]));
       slope_unsplit_hydro_3d_scalar(q[IBY],qPlusX[IBY],qMinusX[IBY],qPlusY[IBY],qMinusY[IBY],qPlusZ[IBY],qMinusZ[IBY], &(dqX[IBY]), &(dqY[IBY]), &(dqZ[IBY]));
       slope_unsplit_hydro_3d_scalar(q[IBZ],qPlusX[IBZ],qMinusX[IBZ],qPlusY[IBZ],qMinusY[IBZ],qPlusZ[IBZ],qMinusY[IBZ], &(dqX[IBZ]), &(dqY[IBZ]), &(dqZ[IBZ]));
-      
+
     }
-  
+
   } // slope_unsplit_hydro_3d
 
 
   /**
    * slope_unsplit_mhd_3d computes only magnetic field slopes in 3D; hydro
    * slopes are always computed in slope_unsplit_hydro_3d.
-   * 
+   *
    * Compute magnetic field slopes (vector dbf) from bf (face-centered)
-   * and its neighbors. 
-   * 
-   * Note that slope_type is a global variable, located in symbol memory when 
+   * and its neighbors.
+   *
+   * Note that slope_type is a global variable, located in symbol memory when
    * using the GPU version.
    *
    * Loosely adapted from RAMSES and DUMSES mhd/umuscl.f90: subroutine uslope
@@ -323,15 +323,15 @@ public:
    * \param[in]  bf  : face centered magnetic field in current
    * and neighboring cells. There are 15 values (5 values for bf_x along
    * y and z, 5 for bf_y along x and z, 5 for bf_z along x and y).
-   * 
-   * \param[out] dbf : reference to an array returning magnetic field slopes 
+   *
+   * \param[out] dbf : reference to an array returning magnetic field slopes
    *
    * \note This routine is called inside trace_unsplit_mhd_3d
    */
   KOKKOS_INLINE_FUNCTION
   void slope_unsplit_mhd_3d(const real_t (&bfNeighbors)[15],
 			    real_t (&dbf)[3][3]) const
-  {			
+  {
     /* layout for face centered magnetic field */
     const real_t &bfx        = bfNeighbors[0];
     const real_t &bfx_yplus  = bfNeighbors[1];
@@ -344,13 +344,13 @@ public:
     const real_t &bfy_xminus = bfNeighbors[7];
     const real_t &bfy_zplus  = bfNeighbors[8];
     const real_t &bfy_zminus = bfNeighbors[9];
-  
+
     const real_t &bfz        = bfNeighbors[10];
     const real_t &bfz_xplus  = bfNeighbors[11];
     const real_t &bfz_xminus = bfNeighbors[12];
     const real_t &bfz_yplus  = bfNeighbors[13];
     const real_t &bfz_yminus = bfNeighbors[14];
-  
+
 
     real_t (&dbfX)[3] = dbf[IX];
     real_t (&dbfY)[3] = dbf[IY];
@@ -362,7 +362,7 @@ public:
       dbfY[nVar] = ZERO_F;
       dbfZ[nVar] = ZERO_F;
     }
-  
+
     /*
      * face-centered magnetic field slopes
      */
@@ -370,7 +370,7 @@ public:
     real_t xslope_type = FMIN(params.settings.slope_type, 2.0);
     real_t dlft, drgt, dcen, dsgn, slop, dlim;
     {
-      // Bx along direction Y     
+      // Bx along direction Y
       dlft = xslope_type * (bfx       - bfx_yminus);
       drgt = xslope_type * (bfx_yplus - bfx       );
       dcen = HALF_F      * (bfx_yplus - bfx_yminus);
@@ -380,7 +380,7 @@ public:
       if ( (dlft*drgt) <= ZERO_F )
 	dlim = ZERO_F;
       dbfY[IX] = dsgn * FMIN( dlim, FABS(dcen) );
-      // Bx along direction Z    
+      // Bx along direction Z
       dlft = xslope_type * (bfx       - bfx_zminus);
       drgt = xslope_type * (bfx_zplus - bfx       );
       dcen = HALF_F      * (bfx_zplus - bfx_zminus);
@@ -390,7 +390,7 @@ public:
       if ( (dlft*drgt) <= ZERO_F )
 	dlim = ZERO_F;
       dbfZ[IX] = dsgn * FMIN( dlim, FABS(dcen) );
-      
+
       // By along direction X
       dlft = xslope_type * (bfy       - bfy_xminus);
       drgt = xslope_type * (bfy_xplus - bfy       );
@@ -439,19 +439,19 @@ public:
 
 
   /**
-   * This another implementation of trace computations simpler than 
+   * This another implementation of trace computations simpler than
    * trace_unsplit_mhd_3d.
    *
    * By simpler, we mean to design a device function that could lead to better
    * ressource utilization and thus better performances (hopefully).
    *
-   * To achieve this goal, several modifications are brought (compared to 
+   * To achieve this goal, several modifications are brought (compared to
    * trace_unsplit_mhd_3d) :
    * - hydro slopes (call to slope_unsplit_hydro_3d is done outside)
    * - face-centered magnetic field slopes is done outside and before, so it is
    *   an input now
-   * - electric field computation is done outside and before (probably in a 
-   *   separate CUDA kernel as for the GPU version), so it is now an input 
+   * - electric field computation is done outside and before (probably in a
+   *   separate CUDA kernel as for the GPU version), so it is now an input
    *
    *
    */
@@ -465,11 +465,11 @@ public:
 				    real_t dtdy,
 				    real_t dtdz,
 				    real_t xPos,
-				    MHDState (&qm)[THREE_D], 
+				    MHDState (&qm)[THREE_D],
 				    MHDState (&qp)[THREE_D],
 				    MHDState (&qEdge)[4][3]) const
   {
-  
+
     // inputs
     // alias to electric field components
     const real_t (&Ex)[2][2] = elecFields[IX];
@@ -509,21 +509,21 @@ public:
     const real_t &FLR = Ey[0][1];
     const real_t &FRL = Ey[1][0];
     const real_t &FRR = Ey[1][1];
-  
+
     const real_t &GLL = Ez[0][0];
     const real_t &GLR = Ez[0][1];
     const real_t &GRL = Ez[1][0];
     const real_t &GRR = Ez[1][1];
-  
+
     // Cell centered values
     real_t r = q[ID];
     real_t p = q[IP];
     real_t u = q[IU];
     real_t v = q[IV];
-    real_t w = q[IW];            
+    real_t w = q[IW];
     real_t A = q[IBX];
     real_t B = q[IBY];
-    real_t C = q[IBZ];            
+    real_t C = q[IBZ];
 
     // Face centered variables
     real_t AL =  bfNb[0];
@@ -541,7 +541,7 @@ public:
     real_t& dwx = dq[IX][IW];  dwx *= HALF_F;
     real_t& dCx = dq[IX][IBZ];  dCx *= HALF_F;
     real_t& dBx = dq[IX][IBY];  dBx *= HALF_F;
-  
+
     // Cell centered TVD slopes in Y direction
     real_t& dry = dq[IY][ID];  dry *= HALF_F;
     real_t& dpy = dq[IY][IP];  dpy *= HALF_F;
@@ -588,12 +588,12 @@ public:
     if (true /*cartesian*/) {
 
       sr0 = (-u*drx-dux*r)              *dtdx + (-v*dry-dvy*r)              *dtdy + (-w*drz-dwz*r)              *dtdz;
-      su0 = (-u*dux-(dpx+B*dBx+C*dCx)/r)*dtdx + (-v*duy+B*dAy/r)            *dtdy + (-w*duz+C*dAz/r)            *dtdz; 
+      su0 = (-u*dux-(dpx+B*dBx+C*dCx)/r)*dtdx + (-v*duy+B*dAy/r)            *dtdy + (-w*duz+C*dAz/r)            *dtdz;
       sv0 = (-u*dvx+A*dBx/r)            *dtdx + (-v*dvy-(dpy+A*dAy+C*dCy)/r)*dtdy + (-w*dvz+C*dBz/r)            *dtdz;
-      sw0 = (-u*dwx+A*dCx/r)            *dtdx + (-v*dwy+B*dCy/r)            *dtdy + (-w*dwz-(dpz+A*dAz+B*dBz)/r)*dtdz; 
+      sw0 = (-u*dwx+A*dCx/r)            *dtdx + (-v*dwy+B*dCy/r)            *dtdy + (-w*dwz-(dpz+A*dAz+B*dBz)/r)*dtdz;
       sp0 = (-u*dpx-dux*gamma*p)        *dtdx + (-v*dpy-dvy*gamma*p)        *dtdy + (-w*dpz-dwz*gamma*p)        *dtdz;
       sA0 =                                     (u*dBy+B*duy-v*dAy-A*dvy)   *dtdy + (u*dCz+C*duz-w*dAz-A*dwz)   *dtdz;
-      sB0 = (v*dAx+A*dvx-u*dBx-B*dux)   *dtdx +                                     (v*dCz+C*dvz-w*dBz-B*dwz)   *dtdz; 
+      sB0 = (v*dAx+A*dvx-u*dBx-B*dux)   *dtdx +                                     (v*dCz+C*dvz-w*dBz-B*dwz)   *dtdz;
       sC0 = (w*dAx+A*dwx-u*dCx-C*dux)   *dtdx + (w*dBy+B*dwy-v*dCy-C*dvy)   *dtdy;
       if (Omega0>0) {
 	real_t shear = -1.5 * Omega0 *xPos;
@@ -606,7 +606,7 @@ public:
 	sB0 = sB0 + (shear*dAx - 1.5 * Omega0 * A *dx)*dtdx + shear*dBz*dtdz;
 	sC0 = sC0 -  shear*dCy*dtdy;
       }
-	
+
       // Face-centered B-field
       sAL0 = +(GLR-GLL)*dtdy*HALF_F -(FLR-FLL)*dtdz*HALF_F;
       sAR0 = +(GRR-GRL)*dtdy*HALF_F -(FRR-FRL)*dtdz*HALF_F;
@@ -626,7 +626,7 @@ public:
     A = A + sA0;
     B = B + sB0;
     C = C + sC0;
-  
+
     AL = AL + sAL0;
     AR = AR + sAR0;
     BL = BL + sBL0;
@@ -645,7 +645,7 @@ public:
     qp[0][IBZ] = C - dCx;
     qp[0][ID] = FMAX(smallR,  qp[0][ID]);
     qp[0][IP] = FMAX(smallp /** qp[0][ID]*/, qp[0][IP]);
-  
+
     // Face averaged left state at right interface
     qm[0][ID] = r + drx;
     qm[0][IU] = u + dux;
@@ -669,7 +669,7 @@ public:
     qp[1][IBZ] = C - dCy;
     qp[1][ID] = FMAX(smallR,  qp[1][ID]);
     qp[1][IP] = FMAX(smallp /** qp[1][ID]*/, qp[1][IP]);
-  
+
     // Face averaged bottom state at top interface
     qm[1][ID] = r + dry;
     qm[1][IU] = u + duy;
@@ -681,7 +681,7 @@ public:
     qm[1][IBZ] = C + dCy;
     qm[1][ID] = FMAX(smallR,  qm[1][ID]);
     qm[1][IP] = FMAX(smallp /** qm[1][ID]*/, qm[1][IP]);
-  
+
     // Face averaged front state at back interface
     qp[2][ID] = r - drz;
     qp[2][IU] = u - duz;
@@ -693,7 +693,7 @@ public:
     qp[2][IBZ] = CL;
     qp[2][ID] = FMAX(smallR,  qp[2][ID]);
     qp[2][IP] = FMAX(smallp /** qp[2][ID]*/, qp[2][IP]);
-  
+
     // Face averaged back state at front interface
     qm[2][ID] = r + drz;
     qm[2][IU] = u + duz;
@@ -717,7 +717,7 @@ public:
     qRT_X[IBZ] = CR+ (+dCRy   );
     qRT_X[ID] = FMAX(smallR,  qRT_X[ID]);
     qRT_X[IP] = FMAX(smallp /** qRT_X[ID]*/, qRT_X[IP]);
-  
+
     // X-edge averaged right-bottom corner state (RB->LR)
     qRB_X[ID] = r + (+dry-drz);
     qRB_X[IU] = u + (+duy-duz);
@@ -729,7 +729,7 @@ public:
     qRB_X[IBZ] = CL+ (+dCLy   );
     qRB_X[ID] = FMAX(smallR,  qRB_X[ID]);
     qRB_X[IP] = FMAX(smallp /** qRB_X[ID]*/, qRB_X[IP]);
-  
+
     // X-edge averaged left-top corner state (LT->RL)
     qLT_X[ID] = r + (-dry+drz);
     qLT_X[IU] = u + (-duy+duz);
@@ -741,7 +741,7 @@ public:
     qLT_X[IBZ] = CR+ (-dCRy   );
     qLT_X[ID] = FMAX(smallR,  qLT_X[ID]);
     qLT_X[IP] = FMAX(smallp /** qLT_X[ID]*/, qLT_X[IP]);
-  
+
     // X-edge averaged left-bottom corner state (LB->RR)
     qLB_X[ID] = r + (-dry-drz);
     qLB_X[IU] = u + (-duy-duz);
@@ -753,7 +753,7 @@ public:
     qLB_X[IBZ] = CL+ (-dCLy   );
     qLB_X[ID] = FMAX(smallR,  qLB_X[ID]);
     qLB_X[IP] = FMAX(smallp /** qLB_X[ID]*/, qLB_X[IP]);
-  
+
     // Y-edge averaged right-top corner state (RT->LL)
     qRT_Y[ID] = r + (+drx+drz);
     qRT_Y[IU] = u + (+dux+duz);
@@ -765,7 +765,7 @@ public:
     qRT_Y[IBZ] = CR+ (+dCRx   );
     qRT_Y[ID] = FMAX(smallR,  qRT_Y[ID]);
     qRT_Y[IP] = FMAX(smallp /** qRT_Y[ID]*/, qRT_Y[IP]);
-  
+
     // Y-edge averaged right-bottom corner state (RB->LR)
     qRB_Y[ID] = r + (+drx-drz);
     qRB_Y[IU] = u + (+dux-duz);
@@ -777,7 +777,7 @@ public:
     qRB_Y[IBZ] = CL+ (+dCLx   );
     qRB_Y[ID] = FMAX(smallR,  qRB_Y[ID]);
     qRB_Y[IP] = FMAX(smallp /** qRB_Y[ID]*/, qRB_Y[IP]);
-  
+
     // Y-edge averaged left-top corner state (LT->RL)
     qLT_Y[ID] = r + (-drx+drz);
     qLT_Y[IU] = u + (-dux+duz);
@@ -789,7 +789,7 @@ public:
     qLT_Y[IBZ] = CR+ (-dCRx   );
     qLT_Y[ID] = FMAX(smallR,  qLT_Y[ID]);
     qLT_Y[IP] = FMAX(smallp /** qLT_Y[ID]*/, qLT_Y[IP]);
-  
+
     // Y-edge averaged left-bottom corner state (LB->RR)
     qLB_Y[ID] = r + (-drx-drz);
     qLB_Y[IU] = u + (-dux-duz);
@@ -801,7 +801,7 @@ public:
     qLB_Y[IBZ] = CL+ (-dCLx   );
     qLB_Y[ID] = FMAX(smallR,  qLB_Y[ID]);
     qLB_Y[IP] = FMAX(smallp /** qLB_Y[ID]*/, qLB_Y[IP]);
-  
+
     // Z-edge averaged right-top corner state (RT->LL)
     qRT_Z[ID] = r + (+drx+dry);
     qRT_Z[IU] = u + (+dux+duy);
@@ -813,7 +813,7 @@ public:
     qRT_Z[IBZ] = C + (+dCx+dCy);
     qRT_Z[ID] = FMAX(smallR,  qRT_Z[ID]);
     qRT_Z[IP] = FMAX(smallp /** qRT_Z[ID]*/, qRT_Z[IP]);
-  
+
     // Z-edge averaged right-bottom corner state (RB->LR)
     qRB_Z[ID] = r + (+drx-dry);
     qRB_Z[IU] = u + (+dux-duy);
@@ -825,7 +825,7 @@ public:
     qRB_Z[IBZ] = C + (+dCx-dCy);
     qRB_Z[ID] = FMAX(smallR,  qRB_Z[ID]);
     qRB_Z[IP] = FMAX(smallp /** qRB_Z[ID]*/, qRB_Z[IP]);
-  
+
     // Z-edge averaged left-top corner state (LT->RL)
     qLT_Z[ID] = r + (-drx+dry);
     qLT_Z[IU] = u + (-dux+duy);
@@ -837,7 +837,7 @@ public:
     qLT_Z[IBZ] = C + (-dCx+dCy);
     qLT_Z[ID] = FMAX(smallR,  qLT_Z[ID]);
     qLT_Z[IP] = FMAX(smallp /** qLT_Z[ID]*/, qLT_Z[IP]);
-  
+
     // Z-edge averaged left-bottom corner state (LB->RR)
     qLB_Z[ID] = r + (-drx-dry);
     qLB_Z[IU] = u + (-dux-duy);

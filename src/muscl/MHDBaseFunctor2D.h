@@ -31,14 +31,14 @@ public:
   KOKKOS_INLINE_FUNCTION
   void swapValues(real_t *a, real_t *b) const
   {
-    
+
     real_t tmp = *a;
-    
+
     *a = *b;
     *b = tmp;
-    
+
   } // swapValues
-  
+
 
   /**
    * Copy data(index) into q.
@@ -55,7 +55,7 @@ public:
     q[IBX] = data(i,j, IBX);
     q[IBY] = data(i,j, IBY);
     q[IBZ] = data(i,j, IBZ);
-    
+
   } // get_state
 
   /**
@@ -73,7 +73,7 @@ public:
     data(i,j, IBX) = q[IBX];
     data(i,j, IBY) = q[IBY];
     data(i,j, IBZ) = q[IBZ];
-    
+
   } // set_state
 
   /**
@@ -86,9 +86,9 @@ public:
     b[IBFX] = data(i,j, IBX);
     b[IBFY] = data(i,j, IBY);
     b[IBFZ] = data(i,j, IBZ);
-    
+
   } // get_magField
-  
+
   /**
    * Equation of state:
    * compute pressure p and speed of sound c, from density rho and
@@ -96,7 +96,7 @@ public:
    * of state : \f$ eint=\frac{p}{\rho (\gamma-1)} \f$
    * Recall that \f$ \gamma \f$ is equal to the ratio of specific heats
    *  \f$ \left[ c_p/c_v \right] \f$.
-   * 
+   *
    * @param[in]  rho  density
    * @param[in]  eint internal energy
    * @param[out] p    pressure
@@ -110,14 +110,14 @@ public:
   {
     real_t gamma0 = params.settings.gamma0;
     real_t smallp = params.settings.smallp;
-    
+
     *p = fmax((gamma0 - ONE_F) * rho * eint, rho * smallp);
     *c = sqrt(gamma0 * (*p) / rho);
-    
+
   } // eos
-  
+
   /**
-   * Convert conservative variables (rho, rho*u, rho*v, rho*w, e, bx, by, bz) 
+   * Convert conservative variables (rho, rho*u, rho*v, rho*w, e, bx, by, bz)
    * to primitive variables (rho,u,v,w,p,bx,by,bz
    *)
    * @param[in]  u  conservative variables array
@@ -153,17 +153,17 @@ public:
     // compute pressure
 
     if (params.settings.cIso > 0) { // isothermal
-      
+
       q[IP] = q[ID] * (params.settings.cIso) * (params.settings.cIso);
       c     =  params.settings.cIso;
-      
+
     } else {
-      
+
       real_t eint = (u[IP] - emag) / q[ID] - eken;
 
       q[IP] = fmax((params.settings.gamma0-1.0) * q[ID] * eint,
 		 q[ID] * params.settings.smallp);
-  
+
       // if (q[IP] < 0) {
       // 	printf("MHD pressure neg !!!\n");
       // }
@@ -172,13 +172,13 @@ public:
       // legacy)
       c = sqrt(params.settings.gamma0 * q[IP] / q[ID]);
     }
- 
+
   } // constoprim_mhd
 
     /**
      * Compute primitive variables slopes (dqX,dqY) for one component from q and its neighbors.
      * This routine is only used in the 2D UNSPLIT integration and slope_type = 0,1 and 2.
-     * 
+     *
      * Only slope_type 1 and 2 are supported.
      *
      * \param[in]  q       : current primitive variable
@@ -191,7 +191,7 @@ public:
      *
      */
   KOKKOS_INLINE_FUNCTION
-  void slope_unsplit_hydro_2d_scalar(real_t q, 
+  void slope_unsplit_hydro_2d_scalar(real_t q,
 				     real_t qPlusX,
 				     real_t qMinusX,
 				     real_t qPlusY,
@@ -213,7 +213,7 @@ public:
     if ( (dlft*drgt) <= ZERO_F )
       dlim = ZERO_F;
     *dqX = dsgn * fmin( dlim, FABS(dcen) );
-  
+
     // slopes in second coordinate direction
     dlft = slope_type*(q      - qMinusY);
     drgt = slope_type*(qPlusY - q      );
@@ -230,8 +230,8 @@ public:
   /**
    * Compute primitive variables slope (vector dq) from q and its neighbors.
    * This routine is only used in the 2D UNSPLIT integration and slope_type = 0,1,2 and 3.
-   * 
-   * Note that slope_type is a global variable, located in symbol memory when 
+   *
+   * Note that slope_type is a global variable, located in symbol memory when
    * using the GPU version.
    *
    * Loosely adapted from RAMSES/hydro/umuscl.f90: subroutine uslope
@@ -241,12 +241,12 @@ public:
    * \param[in]  qNb     : array to primitive variable vector state in the neighborhood
    * \param[out] dq      : reference to an array returning the X and Y slopes
    *
-   * 
+   *
    */
   KOKKOS_INLINE_FUNCTION
   void slope_unsplit_hydro_2d(const MHDState (&qNb)[3][3],
 			      MHDState (&dq)[2]) const
-  {			
+  {
     real_t slope_type = params.settings.slope_type;
 
     // index of current cell in the neighborhood
@@ -256,12 +256,12 @@ public:
     const MHDState &q       = qNb[CENTER  ][CENTER  ];
     const MHDState &qPlusX  = qNb[CENTER+1][CENTER  ];
     const MHDState &qMinusX = qNb[CENTER-1][CENTER  ];
-    const MHDState &qPlusY  = qNb[CENTER  ][CENTER+1]; 
+    const MHDState &qPlusY  = qNb[CENTER  ][CENTER+1];
     const MHDState &qMinusY = qNb[CENTER  ][CENTER-1];
 
     MHDState &dqX = dq[IX];
     MHDState &dqY = dq[IY];
- 
+
     if (slope_type==1 or
 	slope_type==2) {  // minmod or average
 
@@ -273,17 +273,17 @@ public:
       slope_unsplit_hydro_2d_scalar(q[IBX],qPlusX[IBX],qMinusX[IBX],qPlusY[IBX],qMinusY[IBX], &(dqX[IBX]), &(dqY[IBX]));
       slope_unsplit_hydro_2d_scalar(q[IBY],qPlusX[IBY],qMinusX[IBY],qPlusY[IBY],qMinusY[IBY], &(dqX[IBY]), &(dqY[IBY]));
       slope_unsplit_hydro_2d_scalar(q[IBZ],qPlusX[IBZ],qMinusX[IBZ],qPlusY[IBZ],qMinusY[IBZ], &(dqX[IBZ]), &(dqY[IBZ]));
-      
+
     }
     // else if (::gParams.slope_type == 3) {
-    
+
     //   real_t slop, dlim;
     //   real_t dfll, dflm, dflr, dfml, dfmm, dfmr, dfrl, dfrm, dfrr;
     //   real_t vmin, vmax;
     //   real_t dfx, dfy, dff;
 
     //   for (int nVar=0; nVar<NVAR_MHD; ++nVar) {
-    
+
     // 	dfll = qNb[CENTER-1][CENTER-1][nVar]-qNb[CENTER][CENTER][nVar];
     // 	dflm = qNb[CENTER-1][CENTER  ][nVar]-qNb[CENTER][CENTER][nVar];
     // 	dflr = qNb[CENTER-1][CENTER+1][nVar]-qNb[CENTER][CENTER][nVar];
@@ -293,39 +293,39 @@ public:
     // 	dfrl = qNb[CENTER+1][CENTER-1][nVar]-qNb[CENTER][CENTER][nVar];
     // 	dfrm = qNb[CENTER+1][CENTER  ][nVar]-qNb[CENTER][CENTER][nVar];
     // 	dfrr = qNb[CENTER+1][CENTER+1][nVar]-qNb[CENTER][CENTER][nVar];
-      
+
     // 	vmin = FMIN9_(dfll,dflm,dflr,dfml,dfmm,dfmr,dfrl,dfrm,dfrr);
     // 	vmax = FMAX9_(dfll,dflm,dflr,dfml,dfmm,dfmr,dfrl,dfrm,dfrr);
-	
+
     // 	dfx  = HALF_F * (qNb[CENTER+1][CENTER  ][nVar] - qNb[CENTER-1][CENTER  ][nVar]);
     // 	dfy  = HALF_F * (qNb[CENTER  ][CENTER+1][nVar] - qNb[CENTER  ][CENTER-1][nVar]);
     // 	dff  = HALF_F * (FABS(dfx) + FABS(dfy));
-	
+
     // 	if (dff>ZERO_F) {
     // 	  slop = FMIN(ONE_F, FMIN(FABS(vmin), FABS(vmax))/dff);
     // 	} else {
     // 	  slop = ONE_F;
     // 	}
-      
+
     // 	dlim = slop;
-      
+
     // 	dqX[nVar] = dlim*dfx;
     // 	dqY[nVar] = dlim*dfy;
-      
+
     //   } // end for nVar
-  
+
     // } // end slope_type
-  
+
   } // slope_unsplit_hydro_2d
 
   /**
    * slope_unsplit_mhd_2d computes only magnetic field slopes in 2D; hydro
    * slopes are always computed in slope_unsplit_hydro_2d.
-   * 
+   *
    * Compute magnetic field slopes (vector dbf) from bf (face-centered)
-   * and its neighbors. 
-   * 
-   * Note that slope_type is a global variable, located in symbol memory when 
+   * and its neighbors.
+   *
+   * Note that slope_type is a global variable, located in symbol memory when
    * using the GPU version.
    *
    * Loosely adapted from RAMSES and DUMSES mhd/umuscl.f90: subroutine uslope
@@ -334,13 +334,13 @@ public:
    * \param[in]  bf  : face centered magnetic field in current
    * and neighboring cells. There are 6 values (3 values for bf_x along
    * y and 3 for bf_y along x).
-   * 
-   * \param[out] dbf : reference to an array returning magnetic field slopes 
+   *
+   * \param[out] dbf : reference to an array returning magnetic field slopes
    */
   KOKKOS_INLINE_FUNCTION
   void slope_unsplit_mhd_2d(const real_t (&bfNeighbors)[6],
 			    real_t (&dbf)[2][3]) const
-  {			
+  {
     /* layout for face centered magnetic field */
     const real_t &bfx        = bfNeighbors[0];
     const real_t &bfx_yplus  = bfNeighbors[1];
@@ -348,7 +348,7 @@ public:
     const real_t &bfy        = bfNeighbors[3];
     const real_t &bfy_xplus  = bfNeighbors[4];
     const real_t &bfy_xminus = bfNeighbors[5];
-  
+
     real_t (&dbfX)[3] = dbf[IX];
     real_t (&dbfY)[3] = dbf[IY];
 
@@ -357,14 +357,14 @@ public:
       dbfX[nVar] = ZERO_F;
       dbfY[nVar] = ZERO_F;
     }
-  
+
     /*
      * face-centered magnetic field slopes
      */
     // 1D transverse TVD slopes for face-centered magnetic fields
-  
+
     {
-      // Bx along direction Y 
+      // Bx along direction Y
       real_t dlft, drgt, dcen, dsgn, slop, dlim;
       dlft = params.settings.slope_type * (bfx       - bfx_yminus);
       drgt = params.settings.slope_type * (bfx_yplus - bfx       );
@@ -375,7 +375,7 @@ public:
       if ( (dlft*drgt) <= ZERO_F )
 	dlim = ZERO_F;
       dbfY[IX] = dsgn * FMIN( dlim, FABS(dcen) );
-      
+
       // By along direction X
       dlft = params.settings.slope_type * (bfy       - bfy_xminus);
       drgt = params.settings.slope_type * (bfy_xplus - bfy       );
@@ -403,15 +403,15 @@ public:
    * \param[out] qface     : q reconstructed state at cell interface
    */
   KOKKOS_INLINE_FUNCTION
-  void trace_unsplit_2d_along_dir(const MHDState& q, 
+  void trace_unsplit_2d_along_dir(const MHDState& q,
 				  const MHDState& dqX,
 				  const MHDState& dqY,
-				  real_t dtdx, 
-				  real_t dtdy, 
+				  real_t dtdx,
+				  real_t dtdy,
 				  int    faceId,
 				  MHDState& qface) const
   {
-  
+
     real_t gamma0 = params.settings.gamma0;
     real_t smallr = params.settings.smallr;
 
@@ -420,24 +420,24 @@ public:
     real_t p =  q[IP];
     real_t u =  q[IU];
     real_t v =  q[IV];
-  
+
     // TVD slopes in all directions
     real_t drx = dqX[ID];
     real_t dpx = dqX[IP];
     real_t dux = dqX[IU];
     real_t dvx = dqX[IV];
-  
+
     real_t dry = dqY[ID];
     real_t dpy = dqY[IP];
     real_t duy = dqY[IU];
     real_t dvy = dqY[IV];
-  
+
     // source terms (with transverse derivatives)
     real_t sr0 = -u*drx-v*dry - (dux+dvy)*r;
     real_t sp0 = -u*dpx-v*dpy - (dux+dvy)*gamma0*p;
     real_t su0 = -u*dux-v*duy - (dpx    )/r;
     real_t sv0 = -u*dvx-v*dvy - (dpy    )/r;
-  
+
     if (faceId == FACE_XMIN) {
       // Right state at left interface
       qface[ID] = r - 0.5*drx + sr0*dtdx*0.5;
@@ -455,7 +455,7 @@ public:
       qface[IV] = v + 0.5*dvx + sv0*dtdx*0.5;
       qface[ID] = fmax(smallr, qface[ID]);
     }
-  
+
     if (faceId == FACE_YMIN) {
       // Top state at bottom interface
       qface[ID] = r - 0.5*dry + sr0*dtdy*0.5;
@@ -503,7 +503,7 @@ public:
 			      MHDState& qp_x,
 			      MHDState& qp_y) const
   {
-  
+
     real_t gamma0 = params.settings.gamma0;
     real_t smallr = params.settings.smallr;
     real_t smallp = params.settings.smallp;
@@ -519,7 +519,7 @@ public:
     real_t dpx = dqX[IP];  dpx *= 0.5;
     real_t dux = dqX[IU];  dux *= 0.5;
     real_t dvx = dqX[IV];  dvx *= 0.5;
-  
+
     // Cell centered TVD slopes in Y direction
     real_t dry = dqY[ID];  dry *= 0.5;
     real_t dpy = dqY[IP];  dpy *= 0.5;
@@ -534,7 +534,7 @@ public:
       sr0 = (-u*drx-dux*r)       *dtdx + (-v*dry-dvy*r)       *dtdy;
       su0 = (-u*dux-dpx/r)       *dtdx + (-v*duy      )       *dtdy;
       sv0 = (-u*dvx      )       *dtdx + (-v*dvy-dpy/r)       *dtdy;
-      sp0 = (-u*dpx-dux*gamma0*p)*dtdx + (-v*dpy-dvy*gamma0*p)*dtdy;    
+      sp0 = (-u*dpx-dux*gamma0*p)*dtdx + (-v*dpy-dvy*gamma0*p)*dtdy;
     } // end cartesian
 
     // Update in time the  primitive variables
@@ -550,7 +550,7 @@ public:
     qp_x[IP] = p - dpx;
     qp_x[ID] = fmax(smallr,  qp_x[ID]);
     qp_x[IP] = fmax(smallp * qp_x[ID], qp_x[IP]);
-  
+
     // Face averaged left state at right interface
     qm_x[ID] = r + drx;
     qm_x[IU] = u + dux;
@@ -566,7 +566,7 @@ public:
     qp_y[IP] = p - dpy;
     qp_y[ID] = fmax(smallr,  qp_y[ID]);
     qp_y[IP] = fmax(smallp * qp_y[ID], qp_y[IP]);
-  
+
     // Face averaged bottom state at top interface
     qm_y[ID] = r + dry;
     qm_y[IU] = u + duy;
@@ -574,7 +574,7 @@ public:
     qm_y[IP] = p + dpy;
     qm_y[ID] = fmax(smallr,  qm_y[ID]);
     qm_y[IP] = fmax(smallp * qm_y[ID], qm_y[IP]);
-  
+
   } // trace_unsplit_hydro_2d
 
   /**
@@ -583,9 +583,9 @@ public:
    * \note Note that this routine uses global variables iorder, scheme and
    * slope_type.
    *
-   * \note Note that is routine is loosely adapted from trace2d found in 
-   * Dumses and in Ramses sources (sub-dir mhd, file umuscl.f90) to be now a one cell 
-   * computation. 
+   * \note Note that is routine is loosely adapted from trace2d found in
+   * Dumses and in Ramses sources (sub-dir mhd, file umuscl.f90) to be now a one cell
+   * computation.
    *
    * \param[in]  qNb        state in neighbor cells (3-by-3 neighborhood indexed as qNb[i][j], for i,j=0,1,2); current center cell is at index (i=j=1).
    * \param[in]  bfNb       face centered magnetic field in neighbor cells (4-by-4 neighborhood indexed as bfNb[i][j] for i,j=0,1,2,3); current cell is located at index (i=j=1)
@@ -600,11 +600,11 @@ public:
   KOKKOS_INLINE_FUNCTION
   void trace_unsplit_mhd_2d(const MHDState (&qNb)[3][3],
 			    const BField (&bfNb)[4][4],
-			    real_t c, 
+			    real_t c,
 			    real_t dtdx,
 			    real_t dtdy,
 			    real_t xPos,
-			    MHDState (&qm)[2], 
+			    MHDState (&qm)[2],
 			    MHDState (&qp)[2],
 			    MHDState (&qEdge)[4]) const
   {
@@ -634,25 +634,25 @@ public:
     real_t Ez[2][2];
     for (int di=0; di<2; di++)
       for (int dj=0; dj<2; dj++) {
-      
+
 	int centerX = CENTER+di;
 	int centerY = CENTER+dj;
-	real_t u  = 0.25f *  (qNb[centerX-1][centerY-1][IU] + 
-			      qNb[centerX-1][centerY  ][IU] + 
-			      qNb[centerX  ][centerY-1][IU] + 
-			      qNb[centerX  ][centerY  ][IU]); 
-      
+	real_t u  = 0.25f *  (qNb[centerX-1][centerY-1][IU] +
+			      qNb[centerX-1][centerY  ][IU] +
+			      qNb[centerX  ][centerY-1][IU] +
+			      qNb[centerX  ][centerY  ][IU]);
+
 	real_t v  = 0.25f *  (qNb[centerX-1][centerY-1][IV] +
 			      qNb[centerX-1][centerY  ][IV] +
-			      qNb[centerX  ][centerY-1][IV] + 
+			      qNb[centerX  ][centerY-1][IV] +
 			      qNb[centerX  ][centerY  ][IV]);
-      
-	real_t A  = 0.5f  * (bfNb[centerX  ][centerY-1][IBFX] + 
+
+	real_t A  = 0.5f  * (bfNb[centerX  ][centerY-1][IBFX] +
 			     bfNb[centerX  ][centerY  ][IBFX]);
 
-	real_t B  = 0.5f  * (bfNb[centerX-1][centerY  ][IBFY] + 
+	real_t B  = 0.5f  * (bfNb[centerX-1][centerY  ][IBFY] +
 			     bfNb[centerX  ][centerY  ][IBFY]);
-      
+
 	Ez[di][dj] = u*B-v*A;
       }
 
@@ -667,11 +667,11 @@ public:
     real_t p = q[IP];
     real_t u = q[IU];
     real_t v = q[IV];
-    real_t w = q[IW];            
+    real_t w = q[IW];
     real_t A = q[IBX];
     real_t B = q[IBY];
-    real_t C = q[IBZ];            
-    
+    real_t C = q[IBZ];
+
     // Face centered variables
     real_t AL =  bfNb[CENTER  ][CENTER  ][IBFX];
     real_t AR =  bfNb[CENTER+1][CENTER  ][IBFX];
@@ -700,7 +700,7 @@ public:
     real_t dwx = dq[IX][IW];  dwx *= 0.5;
     real_t dCx = dq[IX][IBZ];  dCx *= 0.5;
     real_t dBx = dq[IX][IBY];  dBx *= 0.5;
-  
+
     // Cell centered TVD slopes in Y direction
     real_t dry = dq[IY][ID];  dry *= 0.5;
     real_t dpy = dq[IY][IP];  dpy *= 0.5;
@@ -709,7 +709,7 @@ public:
     real_t dwy = dq[IY][IW];  dwy *= 0.5;
     real_t dCy = dq[IY][IBZ];  dCy *= 0.5;
     real_t dAy = dq[IY][IBX];  dAy *= 0.5;
-  
+
     /*
      * compute dbf slopes needed for Face centered TVD slopes in transverse direction
      */
@@ -717,16 +717,16 @@ public:
     real_t dbf[2][3];
     real_t (&dbfX)[3] = dbf[IX];
     real_t (&dbfY)[3] = dbf[IY];
-  
+
     bfNeighbors[0] =  bfNb[CENTER  ][CENTER  ][IBFX];
     bfNeighbors[1] =  bfNb[CENTER  ][CENTER+1][IBFX];
     bfNeighbors[2] =  bfNb[CENTER  ][CENTER-1][IBFX];
     bfNeighbors[3] =  bfNb[CENTER  ][CENTER  ][IBFY];
     bfNeighbors[4] =  bfNb[CENTER+1][CENTER  ][IBFY];
     bfNeighbors[5] =  bfNb[CENTER-1][CENTER  ][IBFY];
-  
+
     slope_unsplit_mhd_2d(bfNeighbors, dbf);
-  
+
     // Face centered TVD slopes in transverse direction
     real_t dALy = 0.5 * dbfY[IX];
     real_t dBLx = 0.5 * dbfX[IY];
@@ -739,7 +739,7 @@ public:
     bfNeighbors[4] =  bfNb[CENTER+2][CENTER  ][IBFY];
     bfNeighbors[5] =  bfNb[CENTER  ][CENTER  ][IBFY];
 
-    slope_unsplit_mhd_2d(bfNeighbors, dbf);  
+    slope_unsplit_mhd_2d(bfNeighbors, dbf);
 
     real_t dARy = 0.5 * dbfY[IX];
 
@@ -754,11 +754,11 @@ public:
     slope_unsplit_mhd_2d(bfNeighbors, dbf);
 
     real_t dBRx = 0.5 * dbfX[IY];
-  
+
     // Cell centered slopes in normal direction
     real_t dAx = 0.5 * (AR - AL);
     real_t dBy = 0.5 * (BR - BL);
-  
+
     // Source terms (including transverse derivatives)
     real_t sr0, su0, sv0, sw0, sp0, sA0, sB0, sC0;
     real_t sAL0, sAR0, sBL0, sBR0;
@@ -786,7 +786,7 @@ public:
       sBR0 = -(ERR-ELR)*0.5*dtdx;
 
     } // end cartesian
-  
+
     // Update in time the  primitive variables
     r = r + sr0;
     u = u + su0;
@@ -796,12 +796,12 @@ public:
     A = A + sA0;
     B = B + sB0;
     C = C + sC0;
-  
+
     AL = AL + sAL0;
     AR = AR + sAR0;
     BL = BL + sBL0;
     BR = BR + sBR0;
-  
+
     // Right state at left interface
     qp[0][ID] = r - drx;
     qp[0][IU] = u - dux;
@@ -813,7 +813,7 @@ public:
     qp[0][IBZ] = C - dCx;
     qp[0][ID] = FMAX(smallR, qp[0][ID]);
     qp[0][IP] = FMAX(smallp*qp[0][ID], qp[0][IP]);
-  
+
     // Left state at right interface
     qm[0][ID] = r + drx;
     qm[0][IU] = u + dux;
@@ -825,7 +825,7 @@ public:
     qm[0][IBZ] = C + dCx;
     qm[0][ID] = FMAX(smallR, qm[0][ID]);
     qm[0][IP] = FMAX(smallp*qm[0][ID], qm[0][IP]);
-  
+
     // Top state at bottom interface
     qp[1][ID] = r - dry;
     qp[1][IU] = u - duy;
@@ -837,7 +837,7 @@ public:
     qp[1][IBZ] = C - dCy;
     qp[1][ID] = FMAX(smallR, qp[1][ID]);
     qp[1][IP] = FMAX(smallp*qp[1][ID], qp[1][IP]);
-  
+
     // Bottom state at top interface
     qm[1][ID] = r + dry;
     qm[1][IU] = u + duy;
@@ -849,8 +849,8 @@ public:
     qm[1][IBZ] = C + dCy;
     qm[1][ID] = FMAX(smallR, qm[1][ID]);
     qm[1][IP] = FMAX(smallp*qm[1][ID], qm[1][IP]);
-  
-  
+
+
     // Right-top state (RT->LL)
     qRT[ID] = r + (+drx+dry);
     qRT[IU] = u + (+dux+duy);
@@ -862,7 +862,7 @@ public:
     qRT[IBZ] = C + (+dCx+dCy);
     qRT[ID] = FMAX(smallR, qRT[ID]);
     qRT[IP] = FMAX(smallp*qRT[ID], qRT[IP]);
-    
+
     // Right-Bottom state (RB->LR)
     qRB[ID] = r + (+drx-dry);
     qRB[IU] = u + (+dux-duy);
@@ -874,7 +874,7 @@ public:
     qRB[IBZ] = C + (+dCx-dCy);
     qRB[ID] = FMAX(smallR, qRB[ID]);
     qRB[IP] = FMAX(smallp*qRB[ID], qRB[IP]);
-    
+
     // Left-Bottom state (LB->RR)
     qLB[ID] = r + (-drx-dry);
     qLB[IU] = u + (-dux-duy);
@@ -886,7 +886,7 @@ public:
     qLB[IBZ] = C + (-dCx-dCy);
     qLB[ID] = FMAX(smallR, qLB[ID]);
     qLB[IP] = FMAX(smallp*qLB[ID], qLB[IP]);
-    
+
     // Left-Top state (LT->RL)
     qLT[ID] = r + (-drx+dry);
     qLT[IU] = u + (-dux+duy);
@@ -904,7 +904,7 @@ public:
   /**
    * Compute primitive variables slope (vector dq) from q and its neighbors.
    * This routine is only used in the 2D UNSPLIT integration and slope_type = 0,1 and 2.
-   * 
+   *
    * Only slope_type 1 and 2 are supported.
    *
    * \param[in]  q       : current primitive variable state
@@ -917,15 +917,15 @@ public:
    *
    */
   KOKKOS_INLINE_FUNCTION
-  void slope_unsplit_hydro_2d(const MHDState& q, 
-			      const MHDState& qPlusX, 
+  void slope_unsplit_hydro_2d(const MHDState& q,
+			      const MHDState& qPlusX,
 			      const MHDState& qMinusX,
 			      const MHDState& qPlusY,
 			      const MHDState& qMinusY,
 			      MHDState& dqX,
 			      MHDState& dqY) const
   {
-  
+
     real_t slope_type = params.settings.slope_type;
 
     if (slope_type==0) {
@@ -951,9 +951,9 @@ public:
       slope_unsplit_hydro_2d_scalar( q[IV], qPlusX[IV], qMinusX[IV], qPlusY[IV], qMinusY[IV], &(dqX[IV]), &(dqY[IV]));
 
     } // end slope_type == 1 or 2
-  
+
   } // slope_unsplit_hydro_2d
-  
+
 }; // class MHDBaseFunctor2D
 
 } // namespace muscl

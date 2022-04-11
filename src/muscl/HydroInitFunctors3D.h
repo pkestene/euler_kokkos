@@ -18,17 +18,17 @@
 #include <Kokkos_Random.hpp>
 
 namespace euler_kokkos { namespace muscl {
-    
+
 /*************************************************/
 /*************************************************/
 /*************************************************/
 class InitFakeFunctor3D : public HydroBaseFunctor3D {
-  
+
 public:
   InitFakeFunctor3D(HydroParams params,
 		    DataArray3d Udata) :
     HydroBaseFunctor3D(params), Udata(Udata)  {};
-  
+
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
                     DataArray3d Udata,
@@ -45,17 +45,17 @@ public:
     const int isize = params.isize;
     const int jsize = params.jsize;
     const int ksize = params.ksize;
-    
+
     int i,j,k;
 
     index2coord(index,i,j,k,isize,jsize,ksize);
-        
+
     Udata(i  ,j  ,k  , ID) = 0.0;
     Udata(i  ,j  ,k  , IP) = 0.0;
     Udata(i  ,j  ,k  , IU) = 0.0;
     Udata(i  ,j  ,k  , IV) = 0.0;
     Udata(i  ,j  ,k  , IW) = 0.0;
-    
+
   } // end operator ()
 
   DataArray3d Udata;
@@ -66,13 +66,13 @@ public:
 /*************************************************/
 /*************************************************/
 class InitImplodeFunctor3D : public HydroBaseFunctor3D {
-  
+
 public:
   InitImplodeFunctor3D(HydroParams params,
 		       ImplodeParams iparams,
 		       DataArray3d Udata) :
     HydroBaseFunctor3D(params), iparams(iparams), Udata(Udata)  {};
-  
+
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
                     ImplodeParams iparams,
@@ -91,7 +91,7 @@ public:
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
-    
+
 #ifdef USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IY];
@@ -114,16 +114,16 @@ public:
     const real_t dx = params.dx;
     const real_t dy = params.dy;
     const real_t dz = params.dz;
-    
+
     const real_t gamma0 = params.settings.gamma0;
-    
+
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
-    
+
     real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
     real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
     real_t z = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
-    
+
     // outer parameters
     const real_t rho_out = this->iparams.rho_out;
     const real_t p_out = this->iparams.p_out;
@@ -137,13 +137,13 @@ public:
     const real_t u_in = this->iparams.u_in;
     const real_t v_in = this->iparams.v_in;
     const real_t w_in = this->iparams.w_in;
-    
+
     bool tmp;
     if (this->iparams.shape == 1)
       tmp = x+y+z > 0.5 && x+y+z < 2.5;
     else
       tmp = x+y+z > (xmin+xmax)/2. + ymin + zmin;
-    
+
     if (tmp) {
       Udata(i  ,j  ,k  , ID) = rho_out;
       Udata(i  ,j  ,k  , IP) = p_out/(gamma0-1.0) + 0.5 * rho_out *
@@ -157,16 +157,16 @@ public:
 	(u_in*u_in + v_in*v_in + w_in*w_in);
       Udata(i  ,j  ,k  , IU) = u_in;
       Udata(i  ,j  ,k  , IV) = v_in;
-      Udata(i  ,j  ,k  , IW) = w_in;    
+      Udata(i  ,j  ,k  , IW) = w_in;
     }
-    
+
   } // end operator ()
 
   ImplodeParams iparams;
   DataArray3d Udata;
 
 }; // InitImplodeFunctor3D
-  
+
 /*************************************************/
 /*************************************************/
 /*************************************************/
@@ -177,7 +177,7 @@ public:
 		     BlastParams bParams,
 		     DataArray3d Udata) :
     HydroBaseFunctor3D(params), bParams(bParams), Udata(Udata)  {};
-  
+
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
 		    BlastParams bParams,
@@ -196,7 +196,7 @@ public:
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
-    
+
 #ifdef USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IY];
@@ -218,7 +218,7 @@ public:
     const real_t dx = params.dx;
     const real_t dy = params.dy;
     const real_t dz = params.dz;
-    
+
     const real_t gamma0 = params.settings.gamma0;
 
     // blast problem parameters
@@ -231,20 +231,20 @@ public:
     const real_t blast_density_out = bParams.blast_density_out;
     const real_t blast_pressure_in = bParams.blast_pressure_in;
     const real_t blast_pressure_out= bParams.blast_pressure_out;
-  
+
 
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
-    
+
     real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
     real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
     real_t z = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
 
-    real_t d2 = 
+    real_t d2 =
       (x-blast_center_x)*(x-blast_center_x)+
       (y-blast_center_y)*(y-blast_center_y)+
-      (z-blast_center_z)*(z-blast_center_z);    
-    
+      (z-blast_center_z)*(z-blast_center_z);
+
     if (d2 < radius2) {
       Udata(i  ,j  ,k  , ID) = blast_density_in;
       Udata(i  ,j  ,k  , IP) = blast_pressure_in/(gamma0-1.0);
@@ -258,12 +258,12 @@ public:
       Udata(i  ,j  ,k  , IV) = 0.0;
       Udata(i  ,j  ,k  , IW) = 0.0;
     }
-    
+
   } // end operator ()
-  
+
   BlastParams bParams;
   DataArray3d Udata;
-  
+
 }; // InitBlastFunctor3D
 
 /*************************************************/
@@ -280,7 +280,7 @@ public:
     Udata(Udata),
     rand_pool(khParams.seed)
   {};
-  
+
   // static method which does it all: create and execute functor
   static void apply(HydroParams params,
 		    KHParams    khParams,
@@ -299,7 +299,7 @@ public:
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
-    
+
 #ifdef USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IY];
@@ -325,7 +325,7 @@ public:
     const real_t dx = params.dx;
     const real_t dy = params.dy;
     const real_t dz = params.dz;
-    
+
     const real_t gamma0 = params.settings.gamma0;
 
     const real_t d_in      = khParams.d_in;
@@ -334,10 +334,10 @@ public:
     const real_t vflow_out = khParams.vflow_out;
     const real_t ampl      = khParams.amplitude;
     const real_t pressure  = khParams.pressure;
-    
+
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
-    
+
     real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
     real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
     real_t z = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
@@ -351,23 +351,23 @@ public:
 
       // get random number generator state
       rand_type rand_gen = rand_pool.get_state();
-      
+
       real_t d, u, v, w;
-      
+
       if ( zn < 0.25 or zn > 0.75 ) {
-	
+
 	d = d_out;
 	u = vflow_out;
 	v = 0.0;
 	w = 0.0;
-	
+
       } else {
-	
+
 	d = d_in;
 	u = vflow_in;
 	v = 0.0;
 	w = 0.0;
-	
+
       }
 
       u += ampl * (rand_gen.drand() - 0.5);
@@ -380,7 +380,7 @@ public:
       Udata(i,j,k,IW) = d * w;
       Udata(i,j,k,IP) = pressure/(gamma0-1.0) +
 	0.5*d*(u*u + v*v + w*w);
-      
+
       // free random number
       rand_pool.free_state(rand_gen);
 
@@ -402,15 +402,15 @@ public:
       const double v1y = vflow_in/2;
       const double v2y = vflow_out/2;
 
-      const double ramp = 
+      const double ramp =
 	1.0 / ( 1.0 + exp( 2*(z-z1)/delta ) ) +
 	1.0 / ( 1.0 + exp( 2*(z2-z)/delta ) );
-      
+
       const real_t d = rho1 + ramp*(rho2-rho1);
       const real_t u = v1x   + ramp*(v2x-v1x);
       const real_t v = v1y   + ramp*(v2y-v1y);
       const real_t w = w0 * sin(n*M_PI*x) * sin(n*M_PI*y);
-      
+
       Udata(i,j,k,ID) = d;
       Udata(i,j,k,IU) = d * u;
       Udata(i,j,k,IV) = d * v;
@@ -420,10 +420,10 @@ public:
     }
 
   } // end operator ()
-  
+
   KHParams    khParams;
   DataArray3d Udata;
-  
+
   // random number generator
   Kokkos::Random_XorShift64_Pool<Device> rand_pool;
   typedef typename Kokkos::Random_XorShift64_Pool<Device>::generator_type rand_type;
@@ -443,7 +443,7 @@ public:
     gvParams(gvParams),
     Udata(Udata)
   {};
-  
+
   // static method which does it all: create and execute functor
   static void apply(HydroParams  params,
 		    GreshoParams gvParams,
@@ -462,7 +462,7 @@ public:
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
-    
+
 #ifdef USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IY];
@@ -488,46 +488,46 @@ public:
     const real_t dx = params.dx;
     const real_t dy = params.dy;
     //const real_t dz = params.dz;
-    
+
     const real_t gamma0 = params.settings.gamma0;
 
     const real_t rho0  = gvParams.rho0;
     const real_t Ma    = gvParams.Ma;
 
     const real_t p0 = rho0 / (gamma0 * Ma * Ma);
-    
+
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
-    
+
     real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
     real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
     //real_t z = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
 
     real_t r = sqrt(x*x+y*y);
     real_t theta = atan2(y,x);
-    
+
     // polar coordinate
     real_t cosT = cos(theta);
     real_t sinT = sin(theta);
 
     real_t uphi, p;
-    
+
     if ( r < 0.2 ) {
 
       uphi = 5*r;
       p    = p0 + 25/2.0*r*r;
-      
-      
+
+
     } else if ( r < 0.4 ) {
-      
+
       uphi = 2 - 5 * r;
       p    = p0 + 25/2.0*r*r + 4*(1-5*r-log(0.2)+log(r));
-      
+
     } else {
 
       uphi = 0;
       p    = p0-2+4*log(2.0);
-      
+
     }
 
     Udata(i,j,k,ID) = rho0;
@@ -541,10 +541,10 @@ public:
 
 
   } // end operator ()
-  
+
   GreshoParams gvParams;
   DataArray3d  Udata;
-  
+
 }; // InitGreshoVortexFunctor3D
 
 /*************************************************/
@@ -588,7 +588,7 @@ public:
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
-    
+
 #ifdef USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IY];
@@ -618,12 +618,12 @@ public:
     const real_t dx = params.dx;
     const real_t dy = params.dy;
     const real_t dz = params.dz;
-    
+
     const real_t gamma0 = params.settings.gamma0;
-  
+
     int i,j,k;
     index2coord(index,i,j,k,isize,jsize,ksize);
-    
+
     real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
     real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
     real_t z = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
@@ -632,7 +632,7 @@ public:
     real_t amplitude = rtiparams.amplitude;
     real_t        d0 = rtiparams.d0;
     real_t        d1 = rtiparams.d1;
-    
+
     //bool  randomEnabled = rti.randomEnabled;
 
 
@@ -640,13 +640,13 @@ public:
     const real_t gravity_x = rtiparams.gx;
     const real_t gravity_y = rtiparams.gy;
     const real_t gravity_z = rtiparams.gz;
-    
+
     real_t         P0 = 1.0;
-      
-  
+
+
     // the initial condition must ensure the condition of
     // hydrostatic equilibrium for pressure P = P0 - 0.1*\rho*y
-	
+
     // Athena initial conditions are
     // if ( y > 0.0 ) {
     //   h_U(i,j,ID) = 2.0;
@@ -656,7 +656,7 @@ public:
     // h_U(i,j,IP) = P0 + gravity_x*x + gravity_y*y;
     // h_U(i,j,IU) = 0.0;
     // h_U(i,j,IV) = amplitude*(1+cos(2*M_PI*x))*(1+cos(0.5*M_PI*y))/4;
-    
+
     if ( z > (zmin+zmax)/2 ) {
       Udata(i,j,k,ID) = d1;
     } else {
@@ -667,7 +667,7 @@ public:
     // if (randomEnabled)
     //   Udata(i,j,IV) = amplitude * ( rand() * 1.0 / RAND_MAX - 0.5);
     // else
-    Udata(i,j,k,IW) = amplitude * 
+    Udata(i,j,k,IW) = amplitude *
       (1+cos(2*M_PI*x/Lx))*
       (1+cos(2*M_PI*y/Ly))/4;
 
@@ -679,13 +679,13 @@ public:
     gravity(i,j,k,IX) = gravity_x;
     gravity(i,j,k,IY) = gravity_y;
     gravity(i,j,k,IZ) = gravity_z;
-    
+
   } // end operator ()
 
   RayleighTaylorInstabilityParams rtiparams;
   DataArray3d Udata;
   VectorField3d gravity;
-  
+
 }; // class RayleighTaylorInstabilityFunctor3D
 
 } // namespace  muscl

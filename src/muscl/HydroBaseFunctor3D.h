@@ -19,26 +19,26 @@ public:
 
   using HydroState = HydroState3d;
   using DataArray  = DataArray3d;
-  
+
 HydroBaseFunctor3D(HydroParams params) : params(params) {};
   virtual ~HydroBaseFunctor3D() {};
 
   HydroParams params;
   const int nbvar = params.nbvar;
-  
+
   // utility routines used in various computational kernels
 
   KOKKOS_INLINE_FUNCTION
   void swapValues(real_t *a, real_t *b) const
   {
-    
+
     real_t tmp = *a;
-    
+
     *a = *b;
     *b = tmp;
-    
+
   } // swapValues
-  
+
   /**
    * Equation of state:
    * compute pressure p and speed of sound c, from density rho and
@@ -46,7 +46,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
    * of state : \f$ eint=\frac{p}{\rho (\gamma-1)} \f$
    * Recall that \f$ \gamma \f$ is equal to the ratio of specific heats
    *  \f$ \left[ c_p/c_v \right] \f$.
-   * 
+   *
    * @param[in]  rho  density
    * @param[in]  eint internal energy
    * @param[out] p    pressure
@@ -60,14 +60,14 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
   {
     real_t gamma0 = params.settings.gamma0;
     real_t smallp = params.settings.smallp;
-    
+
     *p = FMAX((gamma0 - ONE_F) * rho * eint, rho * smallp);
     *c = SQRT(gamma0 * (*p) / rho);
-    
+
   } // eos
-  
+
   /**
-   * Convert conservative variables (rho, rho*u, rho*v, e) to 
+   * Convert conservative variables (rho, rho*u, rho*v, e) to
    * primitive variables (rho,u,v,p)
    * @param[in]  u  conservative variables array
    * @param[out] q  primitive    variables array (allocated in calling routine, size is constant nbvar)
@@ -81,27 +81,27 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     real_t gamma0 = params.settings.gamma0;
     real_t smallr = params.settings.smallr;
     real_t smallp = params.settings.smallp;
-    
+
     real_t d, p, ux, uy, uz;
-    
+
     d = fmax(u[ID], smallr);
     ux = u[IU] / d;
     uy = u[IV] / d;
     uz = u[IW] / d;
-    
+
     real_t eken = HALF_F * (ux*ux + uy*uy + uz*uz);
     real_t e = u[IP] / d - eken;
-    
+
     // compute pressure and speed of sound
     p = fmax((gamma0 - 1.0) * d * e, d * smallp);
     *c = sqrt(gamma0 * (p) / d);
-    
+
     q[ID] = d;
     q[IP] = p;
     q[IU] = ux;
     q[IV] = uy;
     q[IW] = uz;
-    
+
   } // computePrimitive
 
   /**
@@ -116,15 +116,15 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
    * \param[out] qp        : qp state (one per dimension)
    */
   KOKKOS_INLINE_FUNCTION
-  void trace_unsplit_3d(const HydroState& q, 
+  void trace_unsplit_3d(const HydroState& q,
 			const HydroState& qNeighbors_0,
 			const HydroState& qNeighbors_1,
 			const HydroState& qNeighbors_2,
 			const HydroState& qNeighbors_3,
 			const HydroState& qNeighbors_4,
 			const HydroState& qNeighbors_5,
-			real_t c, 
-			real_t dtdx, 
+			real_t c,
+			real_t dtdx,
 			real_t dtdy,
 			real_t dtdz,
 			HydroState& qm_x,
@@ -134,10 +134,10 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
 			HydroState& qp_y,
 			HydroState& qp_z) const
   {
-    
+
     real_t gamma0 = params.settings.gamma0;
     real_t smallr = params.settings.smallr;
-    
+
     // first compute slopes
     HydroState dqX, dqY, dqZ;
     dqX[ID] = 0.0;
@@ -145,7 +145,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     dqX[IU] = 0.0;
     dqX[IV] = 0.0;
     dqX[IW] = 0.0;
-    
+
     dqY[ID] = 0.0;
     dqY[IP] = 0.0;
     dqY[IU] = 0.0;
@@ -158,26 +158,26 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     dqZ[IV] = 0.0;
     dqZ[IW] = 0.0;
 
-    slope_unsplit_hydro_3d(q, 
-			   qNeighbors_0, qNeighbors_1, 
+    slope_unsplit_hydro_3d(q,
+			   qNeighbors_0, qNeighbors_1,
 			   qNeighbors_2, qNeighbors_3,
 			   qNeighbors_4, qNeighbors_5,
 			   dqX, dqY, dqZ);
-      
+
     // Cell centered values
     real_t r =  q[ID];
     real_t p =  q[IP];
     real_t u =  q[IU];
     real_t v =  q[IV];
     real_t w =  q[IW];
-      
+
     // TVD slopes in all directions
     real_t drx = dqX[ID];
     real_t dpx = dqX[IP];
     real_t dux = dqX[IU];
     real_t dvx = dqX[IV];
     real_t dwx = dqX[IW];
-      
+
     real_t dry = dqY[ID];
     real_t dpy = dqY[IP];
     real_t duy = dqY[IU];
@@ -189,14 +189,14 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     real_t duz = dqZ[IU];
     real_t dvz = dqZ[IV];
     real_t dwz = dqZ[IW];
-      
+
     // source terms (with transverse derivatives)
     real_t sr0 = (-u*drx-dux*r)*dtdx + (-v*dry-dvy*r)*dtdy + (-w*drz-dwz*r)*dtdz;
-    real_t su0 = (-u*dux-dpx/r)*dtdx + (-v*duy      )*dtdy + (-w*duz      )*dtdz; 
+    real_t su0 = (-u*dux-dpx/r)*dtdx + (-v*duy      )*dtdy + (-w*duz      )*dtdz;
     real_t sv0 = (-u*dvx      )*dtdx + (-v*dvy-dpy/r)*dtdy + (-w*dvz      )*dtdz;
-    real_t sw0 = (-u*dwx      )*dtdx + (-v*dwy      )*dtdy + (-w*dwz-dpz/r)*dtdz; 
+    real_t sw0 = (-u*dwx      )*dtdx + (-v*dwy      )*dtdy + (-w*dwz-dpz/r)*dtdz;
     real_t sp0 = (-u*dpx-dux*gamma0*p)*dtdx + (-v*dpy-dvy*gamma0*p)*dtdy + (-w*dpz-dwz*gamma0*p)*dtdz;
-       
+
     // Right state at left interface
     qp_x[ID] = r - HALF_F*drx + sr0*HALF_F;
     qp_x[IP] = p - HALF_F*dpx + sp0*HALF_F;
@@ -204,7 +204,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     qp_x[IV] = v - HALF_F*dvx + sv0*HALF_F;
     qp_x[IW] = w - HALF_F*dwx + sw0*HALF_F;
     qp_x[ID] = fmax(smallr, qp_x[ID]);
-      
+
     // Left state at right interface
     qm_x[ID] = r + HALF_F*drx + sr0*HALF_F;
     qm_x[IP] = p + HALF_F*dpx + sp0*HALF_F;
@@ -212,7 +212,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     qm_x[IV] = v + HALF_F*dvx + sv0*HALF_F;
     qm_x[IW] = w + HALF_F*dwx + sw0*HALF_F;
     qm_x[ID] = fmax(smallr, qm_x[ID]);
-      
+
     // Top state at bottom interface
     qp_y[ID] = r - HALF_F*dry + sr0*HALF_F;
     qp_y[IP] = p - HALF_F*dpy + sp0*HALF_F;
@@ -220,7 +220,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     qp_y[IV] = v - HALF_F*dvy + sv0*HALF_F;
     qp_y[IW] = w - HALF_F*dwy + sw0*HALF_F;
     qp_y[ID] = fmax(smallr, qp_y[ID]);
-      
+
     // Bottom state at top interface
     qm_y[ID] = r + HALF_F*dry + sr0*HALF_F;
     qm_y[IP] = p + HALF_F*dpy + sp0*HALF_F;
@@ -236,7 +236,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     qp_z[IV] = v - HALF_F*dvz + sv0*HALF_F;
     qp_z[IW] = w - HALF_F*dwz + sw0*HALF_F;
     qp_z[ID] = fmax(smallr, qp_z[ID]);
-      
+
     // Front state at top interface
     qm_z[ID] = r + HALF_F*drz + sr0*HALF_F;
     qm_z[IP] = p + HALF_F*dpz + sp0*HALF_F;
@@ -264,17 +264,17 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
    * \param[out] qface     : q reconstructed state at cell interface
    */
   KOKKOS_INLINE_FUNCTION
-  void trace_unsplit_3d_along_dir(const HydroState& q, 
+  void trace_unsplit_3d_along_dir(const HydroState& q,
 				  const HydroState& dqX,
 				  const HydroState& dqY,
 				  const HydroState& dqZ,
-				  real_t dtdx, 
-				  real_t dtdy, 
-				  real_t dtdz, 
+				  real_t dtdx,
+				  real_t dtdy,
+				  real_t dtdz,
 				  int    faceId,
 				  HydroState& qface) const
   {
-  
+
     real_t gamma0 = params.settings.gamma0;
     real_t smallr = params.settings.smallr;
 
@@ -284,26 +284,26 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     real_t u =  q[IU];
     real_t v =  q[IV];
     real_t w =  q[IW];
-  
+
     // TVD slopes in all directions
     real_t drx = dqX[ID];
     real_t dpx = dqX[IP];
     real_t dux = dqX[IU];
     real_t dvx = dqX[IV];
     real_t dwx = dqX[IW];
-  
+
     real_t dry = dqY[ID];
     real_t dpy = dqY[IP];
     real_t duy = dqY[IU];
     real_t dvy = dqY[IV];
     real_t dwy = dqY[IW];
-  
+
     real_t drz = dqZ[ID];
     real_t dpz = dqZ[IP];
     real_t duz = dqZ[IU];
     real_t dvz = dqZ[IV];
     real_t dwz = dqZ[IW];
-  
+
     // source terms (with transverse derivatives)
     real_t sr0 = -u*drx-v*dry-w*drz - (dux+dvy+dwz)*r;
     real_t sp0 = -u*dpx-v*dpy-w*dpz - (dux+dvy+dwz)*gamma0*p;
@@ -330,7 +330,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
       qface[IW] = w + HALF_F*dwx + sw0*dtdx*HALF_F;
       qface[ID] = fmax(smallr, qface[ID]);
     }
-  
+
     if (faceId == FACE_YMIN) {
       // Top state at bottom interface
       qface[ID] = r - HALF_F*dry + sr0*dtdy*HALF_F;
@@ -376,9 +376,9 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
   /**
    * Compute primitive variables slopes (dqX,dqY,dqZ) for one component
    * from q and its neighbors.
-   * This routine is only used in the 3D UNSPLIT integration and 
+   * This routine is only used in the 3D UNSPLIT integration and
    * slope_type = 0,1 and 2.
-   * 
+   *
    * Only slope_type 1 and 2 are supported.
    *
    * \param[in]  q       : current primitive variable
@@ -394,7 +394,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
    *
    */
   KOKKOS_INLINE_FUNCTION
-  void slope_unsplit_hydro_3d_scalar(real_t q, 
+  void slope_unsplit_hydro_3d_scalar(real_t q,
 				     real_t qPlusX,
 				     real_t qMinusX,
 				     real_t qPlusY,
@@ -419,7 +419,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     if ( (dlft*drgt) <= ZERO_F )
       dlim = ZERO_F;
     *dqX = dsgn * fmin( dlim, FABS(dcen) );
-  
+
     // slopes in second coordinate direction
     dlft = slope_type*(q      - qMinusY);
     drgt = slope_type*(qPlusY - q      );
@@ -449,7 +449,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
   /**
    * Compute primitive variables slope (vector dq) from q and its neighbors.
    * This routine is only used in the 3D UNSPLIT integration and slope_type = 0,1 and 2.
-   * 
+   *
    * Only slope_type 1 and 2 are supported.
    *
    * \param[in]  q       : current primitive variable state
@@ -465,8 +465,8 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
    *
    */
   KOKKOS_INLINE_FUNCTION
-  void slope_unsplit_hydro_3d(const HydroState& q, 
-			      const HydroState& qPlusX, 
+  void slope_unsplit_hydro_3d(const HydroState& q,
+			      const HydroState& qPlusX,
 			      const HydroState& qMinusX,
 			      const HydroState& qPlusY,
 			      const HydroState& qMinusY,
@@ -476,7 +476,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
 			      HydroState& dqY,
 			      HydroState& dqZ) const
   {
-  
+
     real_t slope_type = params.settings.slope_type;
 
     if (slope_type==0) {
@@ -516,7 +516,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
 				     &(dqX[IW]), &(dqY[IW]), &(dqZ[IW]));
 
     } // end slope_type == 1 or 2
-  
+
   } // slope_unsplit_hydro_3d
 
 }; // class HydroBaseFunctor3D
