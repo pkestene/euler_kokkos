@@ -3,7 +3,7 @@
 
 //! dimension of the problem
 enum DimensionType {
-  TWO_D = 2, 
+  TWO_D = 2,
   THREE_D = 3,
   DIM2 = 2,
   DIM3 = 3
@@ -15,13 +15,13 @@ enum VarIndex {
   IP=1,   /*!< IP Pressure/Energy field index */
   IE=1,   /*!< IE Energy/Pressure field index */
   IU=2,   /*!< X velocity / momentum index */
-  IV=3,   /*!< Y velocity / momentum index */ 
-  IW=4,   /*!< Z velocity / momentum index */ 
-  IA=5,   /*!< X magnetic field index */ 
-  IB=6,   /*!< Y magnetic field index */ 
-  IC=7,   /*!< Z magnetic field index */ 
-  IBX=5,  /*!< X magnetic field index */ 
-  IBY=6,  /*!< Y magnetic field index */ 
+  IV=3,   /*!< Y velocity / momentum index */
+  IW=4,   /*!< Z velocity / momentum index */
+  IA=5,   /*!< X magnetic field index */
+  IB=6,   /*!< Y magnetic field index */
+  IC=7,   /*!< Z magnetic field index */
+  IBX=5,  /*!< X magnetic field index */
+  IBY=6,  /*!< Y magnetic field index */
   IBZ=7,   /*!< Z magnetic field index */
   IBFX = 0,
   IBFY = 1,
@@ -98,11 +98,11 @@ enum class gradientV_IDS_3d {
   U_X = 0,
   U_Y = 1,
   U_Z = 2,
-    
+
   V_X = 3,
   V_Y = 4,
   V_Z = 5,
-    
+
   W_X = 6,
   W_Y = 7,
   W_Z = 8
@@ -122,7 +122,7 @@ enum FaceIdType {
 
 //! Riemann solver type for hydro fluxes
 enum RiemannSolverType {
-  RIEMANN_APPROX, /*!< quasi-exact Riemann solver (hydro-only) */ 
+  RIEMANN_APPROX, /*!< quasi-exact Riemann solver (hydro-only) */
   RIEMANN_LLF,    /*!< LLF Local Lax-Friedrich */
   RIEMANN_HLL,    /*!< HLL hydro and MHD Riemann solver */
   RIEMANN_HLLC,   /*!< HLLC hydro-only Riemann solver */
@@ -132,7 +132,7 @@ enum RiemannSolverType {
 //! type of boundary condition (note that BC_COPY is only used in the
 //! MPI version for inside boundary)
 enum BoundaryConditionType {
-  BC_UNDEFINED, 
+  BC_UNDEFINED,
   BC_DIRICHLET,   /*!< reflecting border condition */
   BC_NEUMANN,     /*!< absorbing border condition */
   BC_PERIODIC,    /*!< periodic border condition */
@@ -148,7 +148,7 @@ enum ComponentIndex3D {
 
 //! direction used in directional splitting scheme
 enum Direction {
-  XDIR=1, 
+  XDIR=1,
   YDIR=2,
   ZDIR=3,
   DIR_X = 0,
@@ -158,9 +158,9 @@ enum Direction {
 
 //! location of the outside boundary
 enum BoundaryLocation {
-  XMIN = 0, 
-  XMAX = 1, 
-  YMIN = 2, 
+  XMIN = 0,
+  XMAX = 1,
+  YMIN = 2,
   YMAX = 3,
   ZMIN = 4,
   ZMAX = 5

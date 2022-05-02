@@ -39,25 +39,25 @@ struct HydroSettings {
   real_t cp;          /*!< specific heat (constant pressure) */
   real_t mu;          /*!< dynamic viscosity */
   real_t kappa;       /*!< thermal diffusivity */
-  
+
   KOKKOS_INLINE_FUNCTION
   HydroSettings() : gamma0(1.4), gamma6(1.0), cfl(1.0), slope_type(2.0),
 		    iorder(1),
 		    smallr(1e-8), smallc(1e-8), smallp(1e-6), smallpp(1e-6),
 		    cIso(0), Omega0(0.0),
 		    cp(0.0), mu(0.0), kappa(0.0) {}
-  
+
 }; // struct HydroSettings
 
 /**
  * Hydro Parameters (declaration).
  */
 struct HydroParams {
-  
+
 #ifdef USE_MPI
   using MpiCommCart = hydroSimu::MpiCommCart;
 #endif // USE_MPI
-  
+
   // run parameters
   int    nStepmax;   /*!< maximun number of time steps. */
   real_t tEnd;       /*!< end of simulation time. */
@@ -65,12 +65,12 @@ struct HydroParams {
   bool   enableOutput; /*!< enable output file write. */
   bool   mhdEnabled;
   int    nlog;      /*!<  number of time steps between 2 consecutive logs. */
-  
+
   // geometry parameters
   int nx;     /*!< logical size along X (without ghost cells).*/
   int ny;     /*!< logical size along Y (without ghost cells).*/
   int nz;     /*!< logical size along Z (without ghost cells).*/
-  int ghostWidth;  
+  int ghostWidth;
   int nbvar;  /*!< number of variables in HydroState / MHDState. */
   DimensionType dimType; //!< 2D or 3D.
 
@@ -80,7 +80,7 @@ struct HydroParams {
   int jmax;   /*!< index maximum at Y border*/
   int kmin;   /*!< index minimum at Z border*/
   int kmax;   /*!< index maximum at Z border*/
-  
+
   int isize;  /*!< total size (in cell unit) along X direction with ghosts.*/
   int jsize;  /*!< total size (in cell unit) along Y direction with ghosts.*/
   int ksize;  /*!< total size (in cell unit) along Z direction with ghosts.*/
@@ -94,24 +94,24 @@ struct HydroParams {
   real_t dx;   /*!< x resolution */
   real_t dy;   /*!< y resolution */
   real_t dz;   /*!< z resolution */
-  
+
   BoundaryConditionType boundary_type_xmin; /*!< boundary condition */
   BoundaryConditionType boundary_type_xmax; /*!< boundary condition */
   BoundaryConditionType boundary_type_ymin; /*!< boundary condition */
   BoundaryConditionType boundary_type_ymax; /*!< boundary condition */
   BoundaryConditionType boundary_type_zmin; /*!< boundary condition */
   BoundaryConditionType boundary_type_zmax; /*!< boundary condition */
-  
+
   // IO parameters
   bool ioVTK;   /*!< enable VTK  output file format (using VTI).*/
   bool ioHDF5;  /*!< enable HDF5 output file format.*/
-  
+
   //! hydro settings (gamma0, ...) to be passed to Kokkos device functions
   HydroSettings settings;
-  
+
   int niter_riemann;  /*!< number of iteration usd in quasi-exact riemann solver*/
   int riemannSolverType;
-    
+
   // other parameters
   int implementationVersion=0; /*!< triggers which implementation to use (currently 3 versions)*/
 
@@ -122,34 +122,34 @@ struct HydroParams {
 
   //! size of the MPI cartesian grid
   int mx,my,mz;
-  
+
   //! MPI communicator in a cartesian virtual topology
   MpiCommCart *communicator;
-  
+
   //! number of dimension
   int nDim;
-  
+
   //! MPI rank of current process
   int myRank;
-  
+
   //! number of MPI processes
   int nProcs;
-  
+
   //! MPI cartesian coordinates inside MPI topology
   Kokkos::Array<int,3> myMpiPos;
-  
+
   //! number of MPI process neighbors (4 in 2D and 6 in 3D)
   int nNeighbors;
-  
+
   //! MPI rank of adjacent MPI processes
   Kokkos::Array<int,6> neighborsRank;
-  
+
   //! boundary condition type with adjacent domains (corresponding to
   //! neighbor MPI processes)
   Kokkos::Array<BoundaryConditionType,6> neighborsBC;
 
 #endif // USE_MPI
-  
+
   HydroParams() :
     nStepmax(0), tEnd(0.0), nOutput(0), enableOutput(true), mhdEnabled(false),
     nlog(10),
@@ -182,10 +182,10 @@ struct HydroParams {
   //! Initialize MPI-specific parameters
   void setup_mpi(ConfigMap& map);
 #endif // USE_MPI
-  
+
   void init();
   void print();
-  
+
 }; // struct HydroParams
 
 

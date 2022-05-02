@@ -39,9 +39,9 @@ namespace euler_kokkos {
  * Abstract base class for all our actual solvers.
  */
 class SolverBase {
-  
+
 public:
-  
+
   SolverBase(HydroParams& params, ConfigMap& configMap);
   virtual ~SolverBase();
 
@@ -51,13 +51,13 @@ public:
 
   /* some common member data */
   solver_type_t solver_type;
-  
+
   //! is this a restart run ?
   int m_restart_run_enabled;
 
   //! filename containing data from a previous run.
   std::string m_restart_run_filename;
-  
+
   // iteration info
   double               m_t;         //!< the time at the current iteration
   double               m_dt;        //!< the time step at the current iteration
@@ -65,23 +65,23 @@ public:
   double               m_tEnd;      //!< maximun time
   double               m_cfl;       //!< Courant number
   int                  m_nlog;      //!< number of steps between two monitoring print on screen
-  
+
   long long int        m_nCells;       //!< number of cells
-  long long int        m_nDofsPerCell; //!< number of degrees of freedom per cell 
+  long long int        m_nDofsPerCell; //!< number of degrees of freedom per cell
 
   //! init condition name (or problem)
   std::string          m_problem_name;
-  
+
   //! solver name (use in output file).
   std::string          m_solver_name;
-  
+
   //! gravity enabled ?
   bool                 m_static_gravity_enabled;
   bool                 m_gravity_enabled;
 
   /*
    *
-   * Computation interface that may be overriden in a derived 
+   * Computation interface that may be overriden in a derived
    * concrete implementation.
    *
    */
@@ -103,7 +103,7 @@ public:
 
   //! This is the next iteration computation (application specific).
   virtual void next_iteration_impl();
-  
+
   //! Decides if the current time step is eligible for dump data to file
   virtual int  should_save_solution();
 
@@ -115,7 +115,7 @@ public:
 
   //! read restart data
   virtual void read_restart_file();
-  
+
   /* IO related */
 
   //! counter incremented each time an output is written
@@ -145,7 +145,7 @@ public:
 		 DataArray3d::HostMirror Uh,
 		 int iStep,
 		 real_t time);
-  
+
   void save_data_debug(DataArray2d             U,
 		       DataArray2d::HostMirror Uh,
 		       int iStep,
@@ -158,24 +158,24 @@ public:
 		       real_t time,
 		       std::string debug_name);
 
-  /** 
-   * Routine to load data from file (for a restart run). 
+  /**
+   * Routine to load data from file (for a restart run).
    * This routine change iStep and time (loaded from file).
    */
   void load_data(DataArray2d             U,
 		 DataArray2d::HostMirror Uh,
 		 int& iStep,
 		 real_t& time);
-  
+
   void load_data(DataArray3d             U,
 		 DataArray3d::HostMirror Uh,
 		 int& iStep,
 		 real_t& time);
-  
-  
+
+
   virtual void make_boundary(DataArray2d Udata, FaceIdType faceId, bool mhd_enabled);
   virtual void make_boundary(DataArray3d Udata, FaceIdType faceId, bool mhd_enabled);
-  
+
   virtual void make_boundaries_serial(DataArray2d Udata, bool mhd_enabled);
   virtual void make_boundaries_serial(DataArray3d Udata, bool mhd_enabled);
 
@@ -196,7 +196,7 @@ public:
 
   //! initialize m_io_writer (can be override in a derived class)
   virtual void init_io();
-  
+
 protected:
 
   //! io writer
@@ -210,7 +210,7 @@ protected:
   DataArray2d borderBufSend_xmax_2d;
   DataArray2d borderBufSend_ymin_2d;
   DataArray2d borderBufSend_ymax_2d;
-  
+
   DataArray2d borderBufRecv_xmin_2d;
   DataArray2d borderBufRecv_xmax_2d;
   DataArray2d borderBufRecv_ymin_2d;
@@ -222,7 +222,7 @@ protected:
   DataArray3d borderBufSend_ymax_3d;
   DataArray3d borderBufSend_zmin_3d;
   DataArray3d borderBufSend_zmax_3d;
-  
+
   DataArray3d borderBufRecv_xmin_3d;
   DataArray3d borderBufRecv_xmax_3d;
   DataArray3d borderBufRecv_ymin_3d;
