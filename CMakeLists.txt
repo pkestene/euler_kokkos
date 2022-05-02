@@ -1,5 +1,5 @@
 # set minimal version the one requested by kokkos
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 #
 # default local cmake macro repository
@@ -56,8 +56,8 @@ if(${BUILD_CODE})
   # always export compile commands database
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   
-  # C++11 is for Kokkos
-  set(CMAKE_CXX_STANDARD 11)
+  # C++14 is for Kokkos
+  set(CMAKE_CXX_STANDARD 14)
   set(CMAKE_CXX_EXTENSIONS OFF)
   
   #

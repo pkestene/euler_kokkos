@@ -55,17 +55,21 @@ int main(int argc, char *argv[])
 #ifdef USE_MPI
   hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
 #endif // USE_MPI
-  
+
   Kokkos::initialize(argc, argv);
 
   int rank=0;
   int nRanks=1;
-  
+
+  // just to avoid warning when built without MPI
+  UNUSED(rank);
+  UNUSED(nRanks);
+
   {
     std::cout << "##########################\n";
     std::cout << "KOKKOS CONFIG             \n";
     std::cout << "##########################\n";
-    
+
     std::ostringstream msg;
     std::cout << "Kokkos configuration" << std::endl;
     if ( Kokkos::hwloc::available() ) {
@@ -83,12 +87,12 @@ int main(int argc, char *argv[])
     /*
      * Install a signal handler for floating point errors.
      * This only usefull when debugging, doing a backtrace in gdb,
-     * tracking for NaN 
+     * tracking for NaN
      */
     feenableexcept(FE_DIVBYZERO | FE_INVALID);
     signal(SIGFPE, fpehandler);
 #endif // USE_FPE_DEBUG
-    
+
 #ifdef USE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nRanks);
@@ -102,19 +106,19 @@ int main(int argc, char *argv[])
       // on a large cluster, the scheduler should assign ressources
       // in a way that each MPI task is mapped to a different GPU
       // let's cross-checked that:
-      
+
       int cudaDeviceId;
       cudaGetDevice(&cudaDeviceId);
       std::cout << "I'm MPI task #" << rank << " (out of " << nRanks << ")"
 		<< " pinned to GPU #" << cudaDeviceId << "\n";
-      
+
     }
 # endif // KOKKOS_ENABLE_CUDA
 #endif // USE_MPI
 
-    
+
   }
-  
+
   // banner
   if (rank==0) print_version_info();
 
@@ -145,7 +149,7 @@ int main(int argc, char *argv[])
 
   if (params.nOutput != 0)
     solver->save_solution();
-  
+
   // start computation
   if (rank==0) std::cout << "Start computation....\n";
   solver->timers[TIMER_TOTAL]->start();
@@ -171,15 +175,15 @@ int main(int argc, char *argv[])
     euler_kokkos::io::writeXdmfForHdf5Wrapper(params, configMap, solver->m_variables_names, solver->m_times_saved-1, false);
   }
 #endif // USE_HDF5
-  
+
   if (rank==0) printf("final time is %f\n", solver->m_t);
-  
+
   print_solver_monitoring_info(solver);
-  
+
   delete solver;
 
   Kokkos::finalize();
-  
+
   return EXIT_SUCCESS;
 
 } // end main

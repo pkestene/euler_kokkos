@@ -49,14 +49,16 @@ make -j 4
 
 ### Build without MPI / With Kokkos-cuda
 
-To be able to build with CUDA backend, you need to use nvcc_wrapper located in
+**NOT NEEDED ANYMORE (with Kokkos v3.5)**
+To be able to build with CUDA backend, you need to use `nvcc_wrapper` located in
 kokkos source (external/kokkos/bin/nvcc_wrapper).
 
 * Create a build directory, configure and make
 
 ```shell
 mkdir build; cd build
-export CXX=/path/to/nvcc_wrapper
+# exporting CXX to nvcc_wrapper is not needed anymore
+#export CXX=/path/to/nvcc_wrapper
 cmake -DUSE_MPI=OFF -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
@@ -67,15 +69,16 @@ make -j 4
 
 Please make sure to use a CUDA-aware MPI implementation (OpenMPI or MVAPICH2) built with the proper flags for activating CUDA support.
 
-It may happen that eventhough your MPI implementation is actually cuda-aware, cmake find_package macro for MPI does not detect it to be cuda aware. In that case, you can enforce cuda awareness by turning option USE_MPI_CUDA_AWARE_ENFORCED to ON.
+It may happen that eventhough your MPI implementation is actually cuda-aware, cmake find_package macro for MPI does not detect it to be cuda aware. In that case, you can enforce cuda awareness by turning option `USE_MPI_CUDA_AWARE_ENFORCED` to ON.
 
-You don't need to use mpi compiler wrapper mpicxx, cmake *should* be able to correctly populate MPI_CXX_INCLUDE_PATH, MPI_CXX_LIBRARIES which are passed to all final targets.
+You don't need to use mpi compiler wrapper mpicxx, cmake *should* be able to correctly populate `MPI_CXX_INCLUDE_PATH`, `MPI_CXX_LIBRARIES` which are passed to all final targets.
 
 * Create a build directory, configure and make
 
 ```shell
 mkdir build; cd build
-export CXX=/path/to/nvcc_wrapper
+# exporting CXX to nvcc_wrapper is not needed anymore
+#export CXX=/path/to/nvcc_wrapper
 cmake -DUSE_MPI=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
@@ -88,7 +91,7 @@ mpirun -np 4 ./euler_kokkos ./test_implode_2D_mpi.ini
 
 ### Developping with vim or emacs and semantic completion/navigation from ccls
 
-Make sure to have CMake variable CMAKE_EXPORT_COMPILE_COMMANDS set to ON, it will generate a file named _compile_commands.json_.
+Make sure to have CMake variable `CMAKE_EXPORT_COMPILE_COMMANDS` set to ON, it will generate a file named _compile_commands.json_.
 Then you can symlink the generated file in the top level source directory.
 
 Please visit :

@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -64,11 +64,15 @@ int main( int argc , char ** argv )
 
   UNUSED(argc);
   UNUSED(argv);
-  
+
   std::ostringstream msg ;
 
   int mpi_rank = 0 ;
   int nRanks = 1;
+
+  // just to avoid warning when built without MPI
+  UNUSED(mpi_ranks);
+  UNUSED(nRanks);
 
 #if defined( USE_MPI )
 
@@ -85,11 +89,11 @@ int main( int argc , char ** argv )
 
 #ifdef KOKKOS_ENABLE_CUDA
   {
-    
+
     // // get device count
     // int devCount;
     // cudaGetDeviceCount(&devCount);
-    
+
     // int devId = mpi_rank % devCount;
     // cudaSetDevice(devId);
 
@@ -100,12 +104,12 @@ int main( int argc , char ** argv )
     // on a large cluster, the scheduler should assign ressources
     // in a way that each MPI task is mapped to a different GPU
     // let's cross-checked that:
-      
+
     int cudaDeviceId;
     cudaGetDevice(&cudaDeviceId);
     std::cout << "I'm MPI task #" << mpi_rank << " (out of " << nRanks << ")"
 	      << " pinned to GPU #" << cudaDeviceId << "\n";
-      
+
   }
 #endif // KOKKOS_ENABLE_CUDA
 
@@ -120,13 +124,13 @@ int main( int argc , char ** argv )
   }
 
   Kokkos::print_configuration( msg );
-  
+
   msg << "}" << std::endl ;
-  
+
   std::cout << msg.str();
-  
+
   Kokkos::finalize();
-  
+
 #if defined( USE_MPI )
 
   MPI_Finalize();
@@ -135,4 +139,3 @@ int main( int argc , char ** argv )
 
   return 0 ;
 }
-
