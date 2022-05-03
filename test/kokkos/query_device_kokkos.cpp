@@ -71,7 +71,7 @@ int main( int argc , char ** argv )
   int nRanks = 1;
 
   // just to avoid warning when built without MPI
-  UNUSED(mpi_ranks);
+  UNUSED(mpi_rank);
   UNUSED(nRanks);
 
 #if defined( USE_MPI )
