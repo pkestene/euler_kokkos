@@ -24,13 +24,23 @@ Kokkos is built with the same flags as the main application.
 
 A few example builds, with minimal configuration options.
 
+### If you already have Kokkos installed
+
+Just make sure that your env variable `CMAKE_PREFIX_PATH` point to the location where Kokkos where installed. More precisely if Kokkos is installed in `KOKKOS_ROOT`, you add `$KOKKOS_ROOT/lib/cmake` to your `CMAKE_PREFIX_PATH`; this way kokkos will be found automagically by cmake, and the right Kokkos backend will be selected.
+
+```shell
+mkdir -p build; cd build
+cmake -DEULER_KOKKOS_BUILD=OFF ..
+make
+```
+
 ### Build without MPI / With Kokkos-openmp
 
 * Create a build directory, configure and make
 
 ```shell
 mkdir build; cd build
-cmake -DUSE_MPI=OFF -DKokkos_ENABLE_OPENMP=ON -DKokkos_ENABLE_HWLOC=ON ..
+cmake -DUSE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DKokkos_ENABLE_OPENMP=ON -DKokkos_ENABLE_HWLOC=ON ..
 make -j 4
 ```
 
@@ -43,7 +53,7 @@ Add variable CXX on the cmake command line to change the compiler (clang++, icpc
 ```shell
 export CXX=icpc
 mkdir build; cd build
-cmake -DUSE_MPI=OFF -DKokkos_ARCH_KNL=ON -DKokkos_ENABLE_OPENMP=ON ..
+cmake -DUSE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DKokkos_ARCH_KNL=ON -DKokkos_ENABLE_OPENMP=ON ..
 make -j 4
 ```
 
@@ -59,7 +69,7 @@ kokkos source (external/kokkos/bin/nvcc_wrapper).
 mkdir build; cd build
 # exporting CXX to nvcc_wrapper is not needed anymore
 #export CXX=/path/to/nvcc_wrapper
-cmake -DUSE_MPI=OFF -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_MAXWELL50=ON ..
+cmake -DUSE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
 
@@ -79,7 +89,7 @@ You don't need to use mpi compiler wrapper mpicxx, cmake *should* be able to cor
 mkdir build; cd build
 # exporting CXX to nvcc_wrapper is not needed anymore
 #export CXX=/path/to/nvcc_wrapper
-cmake -DUSE_MPI=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_MAXWELL50=ON ..
+cmake -DUSE_MPI=ON -DEULER_KOKKOS_BUILD=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
 
