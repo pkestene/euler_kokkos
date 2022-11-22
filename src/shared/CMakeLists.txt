@@ -34,7 +34,7 @@ target_sources (shared
 
 target_link_libraries(shared
   PUBLIC
-  kokkos
+  Kokkos::kokkos
   EulerKokkos::config
   EulerKokkos::io
   )
@@ -63,7 +63,7 @@ target_include_directories(solver_factory
 )
 target_link_libraries(solver_factory
   PUBLIC
-  kokkos
+  Kokkos::kokkos
   )
 if(USE_MPI)
   target_link_libraries(solver_factory

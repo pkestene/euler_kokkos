@@ -55,11 +55,11 @@ if(${BUILD_CODE})
 
   # always export compile commands database
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-  
+
   # C++14 is for Kokkos
   set(CMAKE_CXX_STANDARD 14)
   set(CMAKE_CXX_EXTENSIONS OFF)
-  
+
   #
   # Write a small header with build data, git version, etc...
   #
@@ -68,7 +68,7 @@ if(${BUILD_CODE})
   #####################################################################
   # External packages: MPI, ...
   #####################################################################
-  
+
   #####################################################################
   #find_package(MPI REQUIRED)
   find_package(MPI)
@@ -79,12 +79,12 @@ if(${BUILD_CODE})
       message(STATUS "MPI include path: " ${MPI_CXX_INCLUDE_PATH})
       message(STATUS "MPI LINK flags path: " ${MPI_CXX_LINK_FLAGS})
       message(STATUS "MPI libraries: " ${MPI_CXX_LIBRARIES})
-      
+
       #set(CMAKE_EXE_LINKER_FLAGS ${MPI_CXX_LINK_FLAGS})
       find_program(OMPI_INFO
 	NAMES ompi_info
 	HINTS ${MPI_CXX_LIBRARIES}/../bin)
-      
+
       # Full command line to probe if cuda support in MPI implementation is enabled
       # ompi_info --parsable --all | grep mpi_built_with_cuda_support:value
       if (OMPI_INFO)
@@ -102,8 +102,8 @@ if(${BUILD_CODE})
       set(USE_MPI OFF)
     endif()
   endif()
-  
-  
+
+
   #####################################################################
   # VTK configuration tips, see
   # /usr/lib/cmake/vtk-6.2/VTKConfig.cmake
@@ -113,7 +113,7 @@ if(${BUILD_CODE})
     # look for VTK only if requested; VTK macro might even be not present
     # on the target platform
     find_package(VTK)
-    
+
     # the following add VTK to all targets
     # if(VTK_FOUND)
     #   include(${VTK_USE_FILE})
@@ -124,7 +124,7 @@ if(${BUILD_CODE})
       message ("*** VTK NOT FOUND")
     endIF()
   endif(USE_VTK)
-  
+
   #####################################################################
   # HDF5
   #####################################################################
@@ -132,7 +132,7 @@ if(${BUILD_CODE})
   if (USE_MPI)
     set(HDF5_PREFER_PARALLEL TRUE)
   endif(USE_MPI)
-  
+
   if (USE_HDF5)
     find_package(HDF5)
     if(HDF5_FOUND)
@@ -144,7 +144,7 @@ if(${BUILD_CODE})
       endif()
     endif(HDF5_FOUND)
   endif(USE_HDF5)
-  
+
   #####################################################################
   # PNETCDF
   #####################################################################
@@ -159,6 +159,11 @@ if(${BUILD_CODE})
   endif(USE_MPI)
 
   #
+  # Kokkos : https://github.com/kokkos/kokkos
+  #
+  include(build_or_find_kokkos)
+
+  #
   # common flags
   #
 
@@ -169,11 +174,11 @@ if(${BUILD_CODE})
   if (USE_MPI)
     add_compile_options(-DUSE_MPI)
   endif()
-  
+
   if (USE_FPE_DEBUG)
     add_compile_options(-DUSE_FPE_DEBUG)
   endif()
-  
+
   ##
   ## Using flags -Wextra, it's to strong for Kokkos, too many warnings
   ## But -Wall is really a minimum
@@ -181,17 +186,14 @@ if(${BUILD_CODE})
   #add_definitions(-Wall -Wextra -Wconversion -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wcast-qual -Wunused -Woverloaded-virtual  -pedantic )
   #add_definitions( -Wall -Wextra )
   add_definitions( -Wall )
-  
+
   #
   # sources
   #
   # backtrace does not build anymore with cuda 10.1
   #add_subdirectory(external/backward-cpp)
-  add_subdirectory(external/kokkos)
-  
-  # pass Kokkos include directories to our target application
-  include_directories(${Kokkos_INCLUDE_DIRS_RET})
-  
+  #add_subdirectory(external/kokkos)
+
   add_subdirectory(test)
   add_subdirectory(src)
 endif()

@@ -22,13 +22,14 @@ target_include_directories(${PROJECT_NAME}
   ${CMAKE_BINARY_DIR}/src
   )
 
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME}
   PUBLIC
   EulerKokkos::solver_factory
-  EulerKokkos::config kokkos
-  dl 
+  EulerKokkos::config
+  Kokkos::kokkos
+  dl
   EulerKokkos::muscl
-  EulerKokkos::shared 
+  EulerKokkos::shared
   EulerKokkos::io
   EulerKokkos::monitoring)
 

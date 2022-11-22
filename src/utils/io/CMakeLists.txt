@@ -19,7 +19,7 @@ if(USE_MPI)
     target_sources (io
       PUBLIC
       ${CMAKE_CURRENT_SOURCE_DIR}/IO_PNETCDF.h
-      )    
+      )
   endif(USE_PNETCDF)
 endif(USE_MPI)
 
@@ -30,7 +30,8 @@ target_include_directories(io
 
 target_link_libraries(io
   PUBLIC
-  kokkos shared
+  Kokkos::kokkos
+  EulerKokkos::shared
   )
 
 if (USE_HDF5)

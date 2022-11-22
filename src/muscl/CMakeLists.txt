@@ -28,7 +28,7 @@ target_include_directories(muscl
 
 target_link_libraries(muscl
   PUBLIC
-  kokkos
+  Kokkos::kokkos
   )
 
 if(USE_MPI)

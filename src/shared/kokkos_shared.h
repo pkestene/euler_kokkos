@@ -2,12 +2,6 @@
 #define KOKKOS_SHARED_H_
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Parallel.hpp>
-#include <Kokkos_View.hpp>
-
-#include <Kokkos_Macros.hpp> // for KOKKOS_ENABLE_XXX
-
-#include <impl/Kokkos_Error.hpp>
 
 #include "shared/real_type.h"
 #include "shared/utils.h"
@@ -61,7 +55,7 @@ void index2coord(int index, int &i, int &j, int Nx, int Ny)
 {
   UNUSED(Nx);
   UNUSED(Ny);
-  
+
 #ifdef KOKKOS_ENABLE_CUDA
   j = index / Nx;
   i = index - j*Nx;

@@ -18,10 +18,10 @@ target_sources(test_io_vtk
 #   )
 target_link_libraries(test_io_vtk
   PUBLIC
-  kokkos 
-  EulerKokkos::shared 
-  EulerKokkos::config 
-  EulerKokkos::monitoring 
+  Kokkos::kokkos
+  EulerKokkos::shared
+  EulerKokkos::config
+  EulerKokkos::monitoring
   EulerKokkos::io)
 
 if(USE_MPI)
@@ -38,16 +38,16 @@ if(USE_HDF5)
     test_io_hdf5.cpp
     #${BACKWARD_ENABLE}
     )
-  
+
   target_link_libraries(test_io_hdf5
     PUBLIC
-    kokkos 
-    EulerKokkos::shared 
-    EulerKokkos::config 
-    EulerKokkos::monitoring 
-    EulerKokkos::io 
+    Kokkos::kokkos
+    EulerKokkos::shared
+    EulerKokkos::config
+    EulerKokkos::monitoring
+    EulerKokkos::io
     ${HDF5_LIBRARIES})
-  
+
   if(USE_MPI)
     target_link_libraries(test_io_hdf5
       PUBLIC
@@ -55,7 +55,7 @@ if(USE_HDF5)
   endif(USE_MPI)
 
   #add_backward(test_io_hdf5)
-  
+
 endif(USE_HDF5)
 
 if(USE_MPI)
@@ -65,18 +65,18 @@ if(USE_MPI)
       test_io_pnetcdf.cpp
       #${BACKWARD_ENABLE}
       )
-    
+
     target_link_libraries(test_io_pnetcdf
       PUBLIC
-      kokkos
+      Kokkos::kokkos
       EulerKokkos::shared
       EulerKokkos::config
       EulerKokkos::monitoring
       EulerKokkos::io
       EulerKokkos::mpiUtils
       ${PNETCDF_LIBRARIES})
-    
+
     #add_backward(test_io_pnetcdf)
-    
+
   endif(USE_PNETCDF)
 endif(USE_MPI)
