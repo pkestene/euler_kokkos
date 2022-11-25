@@ -69,7 +69,7 @@ kokkos source (external/kokkos/bin/nvcc_wrapper).
 mkdir build; cd build
 # exporting CXX to nvcc_wrapper is not needed anymore
 #export CXX=/path/to/nvcc_wrapper
-cmake -DUSE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_MAXWELL50=ON ..
+cmake -DUSE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_CUDA_LAMBDA=ON -DKokkos_ENABLE_CUDA_CONSTEXPR=ON -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
 
@@ -89,7 +89,7 @@ You don't need to use mpi compiler wrapper mpicxx, cmake *should* be able to cor
 mkdir build; cd build
 # exporting CXX to nvcc_wrapper is not needed anymore
 #export CXX=/path/to/nvcc_wrapper
-cmake -DUSE_MPI=ON -DEULER_KOKKOS_BUILD=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_MAXWELL50=ON ..
+cmake -DUSE_MPI=ON -DEULER_KOKKOS_BUILD=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_CUDA_LAMBDA=ON -DKokkos_ENABLE_CUDA_CONSTEXPR=ON -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
 
