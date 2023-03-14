@@ -40,36 +40,21 @@ make
 
 ```shell
 mkdir build; cd build
-cmake -DUSE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DKokkos_ENABLE_OPENMP=ON -DKokkos_ENABLE_HWLOC=ON ..
+cmake -DUSE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=OpenMP ..
 make -j 4
 ```
 
 Add variable CXX on the cmake command line to change the compiler (clang++, icpc, pgcc, ....).
 
-### Build without MPI / With Kokkos-openmp for Intel KNL
-
-* Create a build directory, configure and make
-
-```shell
-export CXX=icpc
-mkdir build; cd build
-cmake -DUSE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DKokkos_ARCH_KNL=ON -DKokkos_ENABLE_OPENMP=ON ..
-make -j 4
-```
-
 ### Build without MPI / With Kokkos-cuda
 
-**NOT NEEDED ANYMORE (with Kokkos v3.5)**
-To be able to build with CUDA backend, you need to use `nvcc_wrapper` located in
-kokkos source (external/kokkos/bin/nvcc_wrapper).
-
 * Create a build directory, configure and make
 
 ```shell
 mkdir build; cd build
-# exporting CXX to nvcc_wrapper is not needed anymore
-#export CXX=/path/to/nvcc_wrapper
-cmake -DUSE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_CUDA_LAMBDA=ON -DKokkos_ENABLE_CUDA_CONSTEXPR=ON -DKokkos_ARCH_MAXWELL50=ON ..
+# If you are compiling and running on the same host, you can omit architecture flags,
+# Kokkos will detect the GPU architecture available on your paltform
+cmake -DUSE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
 
@@ -87,9 +72,7 @@ You don't need to use mpi compiler wrapper mpicxx, cmake *should* be able to cor
 
 ```shell
 mkdir build; cd build
-# exporting CXX to nvcc_wrapper is not needed anymore
-#export CXX=/path/to/nvcc_wrapper
-cmake -DUSE_MPI=ON -DEULER_KOKKOS_BUILD=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_CUDA_LAMBDA=ON -DKokkos_ENABLE_CUDA_CONSTEXPR=ON -DKokkos_ARCH_MAXWELL50=ON ..
+cmake -DUSE_MPI=ON -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
 
