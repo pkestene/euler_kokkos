@@ -109,17 +109,29 @@ endif()
 if (USE_VTK)
   # look for VTK only if requested; VTK macro might even be not present
   # on the target platform
-  find_package(VTK)
+  find_package(VTK COMPONENTS
+    CommonCore
+    CommonDataModel
+    CommonExecutionModel
+    CommonMath
+    CommonMisc
+    CommonSystem
+    CommonTransforms
+    IOCore
+    IOGeometry
+    IOImage
+    IOLegacy
+    IOXML
+    IOXMLParser
+    ParallelCore
+    ParallelMPI
+    IOParallelXML)
 
-  # the following add VTK to all targets
-  # if(VTK_FOUND)
-  #   include(${VTK_USE_FILE})
-  # endif(VTK_FOUND)
   if (VTK_FOUND)
-    message("***VTK FOUND ${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
+    message("VTK version: ${VTK_VERSION}")
   else()
-    message ("*** VTK NOT FOUND")
-  endIF()
+    message ("VTK NOT FOUND")
+  endif()
 endif(USE_VTK)
 
 #####################################################################
@@ -135,7 +147,7 @@ if (USE_HDF5)
   if(HDF5_FOUND)
     include_directories(${HDF5_INCLUDE_DIRS})
     set(my_hdf5_libs hdf5 hdf5_cpp)
-    add_compile_options(-DUSE_HDF5 -DH5_NO_DEPRECATED_SYMBOLS)
+    add_compile_options(-DUSE_HDF5)
     if (HDF5_IS_PARALLEL)
       add_compile_options(-DUSE_HDF5_PARALLEL)
     endif()
