@@ -116,9 +116,12 @@ A Sphinx/html documentation will (hopefully) soon be populated.
 To build it:
 
 ``` shell
-mkdir build
-cd build
-cmake .. -DBUILD_CODE:BOOL=OFF -DBUILD_DOC:BOOL=ON -DDOC:STRING=html
+mkdir -p build/doc
+cd build/doc
+# build doxygen documentation
+cmake .. -DEULER_KOKKOS_BUILD_DOC:BOOL=ON -DEULER_KOKKOS_DOC_TYPE:STRING=doxygen
+# build sphinx/html documentation
+cmake .. -DEULER_KOKKOS_BUILD_DOC:BOOL=ON -DEULER_KOKKOS_DOC_TYPE:STRING=html
 ```
 
-Building documentation requires to have python3 with up-to-date breathe extension.
+Building sphinx documentation requires to have python3 with up-to-date breathe extension.
