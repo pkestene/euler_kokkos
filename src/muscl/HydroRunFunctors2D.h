@@ -84,10 +84,10 @@ public:
 
       // get primitive variables in current cell
       computePrimitives(uLoc, &c, qLoc);
-      vx = c+FABS(qLoc[IU]);
-      vy = c+FABS(qLoc[IV]);
+      vx = c+fabs(qLoc[IU]);
+      vy = c+fabs(qLoc[IV]);
 
-      invDt = FMAX(invDt, vx/dx + vy/dy);
+      invDt = fmax(invDt, vx/dx + vy/dy);
 
     }
 
@@ -200,8 +200,8 @@ public:
       // get primitive variables in current cell
       computePrimitives(uLoc, &c, qLoc);
       real_t velocity = 0.0;
-      velocity += c+FABS(qLoc[IU]);
-      velocity += c+FABS(qLoc[IV]);
+      velocity += c+fabs(qLoc[IU]);
+      velocity += c+fabs(qLoc[IV]);
 
       /* Due to the gravitational acceleration, the CFL condition
        * can be written as

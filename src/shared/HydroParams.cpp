@@ -11,6 +11,8 @@
 using namespace hydroSimu;
 #endif // USE_MPI
 
+namespace euler_kokkos {
+
 // =======================================================
 // =======================================================
 /*
@@ -413,3 +415,5 @@ void HydroParams::print()
   printf( "##########################\n");
 
 } // HydroParams::print
+
+} // namespace euler_kokkos

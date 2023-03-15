@@ -208,22 +208,22 @@ public:
     drgt = slope_type*(qPlusX - q      );
     dcen = 0.5 * (qPlusX - qMinusX);
     dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
-    slop = fmin( FABS(dlft), FABS(drgt) );
+    slop = fmin( fabs(dlft), fabs(drgt) );
     dlim = slop;
     if ( (dlft*drgt) <= ZERO_F )
       dlim = ZERO_F;
-    *dqX = dsgn * fmin( dlim, FABS(dcen) );
+    *dqX = dsgn * fmin( dlim, fabs(dcen) );
 
     // slopes in second coordinate direction
     dlft = slope_type*(q      - qMinusY);
     drgt = slope_type*(qPlusY - q      );
     dcen = 0.5 * (qPlusY - qMinusY);
     dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
-    slop = fmin( FABS(dlft), FABS(drgt) );
+    slop = fmin( fabs(dlft), fabs(drgt) );
     dlim = slop;
     if ( (dlft*drgt) <= ZERO_F )
       dlim = ZERO_F;
-    *dqY = dsgn * fmin( dlim, FABS(dcen) );
+    *dqY = dsgn * fmin( dlim, fabs(dcen) );
 
   } // slope_unsplit_hydro_2d_scalar
 
@@ -299,10 +299,10 @@ public:
 
     // 	dfx  = HALF_F * (qNb[CENTER+1][CENTER  ][nVar] - qNb[CENTER-1][CENTER  ][nVar]);
     // 	dfy  = HALF_F * (qNb[CENTER  ][CENTER+1][nVar] - qNb[CENTER  ][CENTER-1][nVar]);
-    // 	dff  = HALF_F * (FABS(dfx) + FABS(dfy));
+    // 	dff  = HALF_F * (fabs(dfx) + fabs(dfy));
 
     // 	if (dff>ZERO_F) {
-    // 	  slop = FMIN(ONE_F, FMIN(FABS(vmin), FABS(vmax))/dff);
+    // 	  slop = fmin(ONE_F, fmin(fabs(vmin), fabs(vmax))/dff);
     // 	} else {
     // 	  slop = ONE_F;
     // 	}
@@ -370,22 +370,22 @@ public:
       drgt = params.settings.slope_type * (bfx_yplus - bfx       );
       dcen = HALF_F * (bfx_yplus - bfx_yminus);
       dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
-      slop = FMIN( FABS(dlft), FABS(drgt) );
+      slop = fmin( fabs(dlft), fabs(drgt) );
       dlim = slop;
       if ( (dlft*drgt) <= ZERO_F )
 	dlim = ZERO_F;
-      dbfY[IX] = dsgn * FMIN( dlim, FABS(dcen) );
+      dbfY[IX] = dsgn * fmin( dlim, fabs(dcen) );
 
       // By along direction X
       dlft = params.settings.slope_type * (bfy       - bfy_xminus);
       drgt = params.settings.slope_type * (bfy_xplus - bfy       );
       dcen = HALF_F * (bfy_xplus - bfy_xminus);
       dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
-      slop = FMIN( FABS(dlft), FABS(drgt) );
+      slop = fmin( fabs(dlft), fabs(drgt) );
       dlim = slop;
       if( (dlft*drgt) <= ZERO_F )
 	dlim=ZERO_F;
-      dbfX[IY] = dsgn * FMIN( dlim, FABS(dcen) );
+      dbfX[IY] = dsgn * fmin( dlim, fabs(dcen) );
     }
 
   } // slope_unsplit_mhd_2d
@@ -811,8 +811,8 @@ public:
     qp[0][IBX] = AL;
     qp[0][IBY] = B - dBx;
     qp[0][IBZ] = C - dCx;
-    qp[0][ID] = FMAX(smallR, qp[0][ID]);
-    qp[0][IP] = FMAX(smallp*qp[0][ID], qp[0][IP]);
+    qp[0][ID] = fmax(smallR, qp[0][ID]);
+    qp[0][IP] = fmax(smallp*qp[0][ID], qp[0][IP]);
 
     // Left state at right interface
     qm[0][ID] = r + drx;
@@ -823,8 +823,8 @@ public:
     qm[0][IBX] = AR;
     qm[0][IBY] = B + dBx;
     qm[0][IBZ] = C + dCx;
-    qm[0][ID] = FMAX(smallR, qm[0][ID]);
-    qm[0][IP] = FMAX(smallp*qm[0][ID], qm[0][IP]);
+    qm[0][ID] = fmax(smallR, qm[0][ID]);
+    qm[0][IP] = fmax(smallp*qm[0][ID], qm[0][IP]);
 
     // Top state at bottom interface
     qp[1][ID] = r - dry;
@@ -835,8 +835,8 @@ public:
     qp[1][IBX] = A - dAy;
     qp[1][IBY] = BL;
     qp[1][IBZ] = C - dCy;
-    qp[1][ID] = FMAX(smallR, qp[1][ID]);
-    qp[1][IP] = FMAX(smallp*qp[1][ID], qp[1][IP]);
+    qp[1][ID] = fmax(smallR, qp[1][ID]);
+    qp[1][IP] = fmax(smallp*qp[1][ID], qp[1][IP]);
 
     // Bottom state at top interface
     qm[1][ID] = r + dry;
@@ -847,8 +847,8 @@ public:
     qm[1][IBX] = A + dAy;
     qm[1][IBY] = BR;
     qm[1][IBZ] = C + dCy;
-    qm[1][ID] = FMAX(smallR, qm[1][ID]);
-    qm[1][IP] = FMAX(smallp*qm[1][ID], qm[1][IP]);
+    qm[1][ID] = fmax(smallR, qm[1][ID]);
+    qm[1][IP] = fmax(smallp*qm[1][ID], qm[1][IP]);
 
 
     // Right-top state (RT->LL)
@@ -860,8 +860,8 @@ public:
     qRT[IBX] = AR+ (   +dARy);
     qRT[IBY] = BR+ (+dBRx   );
     qRT[IBZ] = C + (+dCx+dCy);
-    qRT[ID] = FMAX(smallR, qRT[ID]);
-    qRT[IP] = FMAX(smallp*qRT[ID], qRT[IP]);
+    qRT[ID] = fmax(smallR, qRT[ID]);
+    qRT[IP] = fmax(smallp*qRT[ID], qRT[IP]);
 
     // Right-Bottom state (RB->LR)
     qRB[ID] = r + (+drx-dry);
@@ -872,8 +872,8 @@ public:
     qRB[IBX] = AR+ (   -dARy);
     qRB[IBY] = BL+ (+dBLx   );
     qRB[IBZ] = C + (+dCx-dCy);
-    qRB[ID] = FMAX(smallR, qRB[ID]);
-    qRB[IP] = FMAX(smallp*qRB[ID], qRB[IP]);
+    qRB[ID] = fmax(smallR, qRB[ID]);
+    qRB[IP] = fmax(smallp*qRB[ID], qRB[IP]);
 
     // Left-Bottom state (LB->RR)
     qLB[ID] = r + (-drx-dry);
@@ -884,8 +884,8 @@ public:
     qLB[IBX] = AL+ (   -dALy);
     qLB[IBY] = BL+ (-dBLx   );
     qLB[IBZ] = C + (-dCx-dCy);
-    qLB[ID] = FMAX(smallR, qLB[ID]);
-    qLB[IP] = FMAX(smallp*qLB[ID], qLB[IP]);
+    qLB[ID] = fmax(smallR, qLB[ID]);
+    qLB[IP] = fmax(smallp*qLB[ID], qLB[IP]);
 
     // Left-Top state (LT->RL)
     qLT[ID] = r + (-drx+dry);
@@ -896,8 +896,8 @@ public:
     qLT[IBX] = AL+ (   +dALy);
     qLT[IBY] = BR+ (-dBRx   );
     qLT[IBZ] = C + (-dCx+dCy);
-    qLT[ID] = FMAX(smallR, qLT[ID]);
-    qLT[IP] = FMAX(smallp*qLT[ID], qLT[IP]);
+    qLT[ID] = fmax(smallR, qLT[ID]);
+    qLT[IP] = fmax(smallp*qLT[ID], qLT[IP]);
 
   } // trace_unsplit_mhd_2d
 

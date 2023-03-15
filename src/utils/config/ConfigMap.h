@@ -12,6 +12,8 @@
 
 #include "inih/INIReader.h"
 
+namespace euler_kokkos {
+
 /**
  * \class ConfigMap ConfigMap.h
  * \brief This is a specialized version of INIReader which reads and parses a INI
@@ -27,10 +29,10 @@ public:
 
   //! Get a floating point value from the map.
   float getFloat(std::string section, std::string name, float default_value) const;
-  
+
   //! Set a floating point value to a section/name.
   void setFloat(std::string section, std::string name, float value);
-  
+
   //! Get a boolean value from the map.
   bool  getBool (std::string section, std::string name, bool default_value) const;
 
@@ -46,5 +48,6 @@ public:
  */
 ConfigMap broadcast_parameters(std::string filename);
 
+} // namespace euler_kokkos
 
 #endif // CONFIG_MAP_H_

@@ -22,6 +22,8 @@
 #include "utils/mpiUtils/MpiCommCart.h"
 #endif // USE_MPI
 
+namespace euler_kokkos {
+
 struct HydroSettings {
 
   // hydro (numerical scheme) parameters
@@ -188,5 +190,6 @@ struct HydroParams {
 
 }; // struct HydroParams
 
+} // namespace euler_kokkos
 
 #endif // HYDRO_PARAMS_H_

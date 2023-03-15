@@ -16,6 +16,8 @@
 #include <mpi.h>
 #endif
 
+namespace euler_kokkos {
+
 // =======================================================
 // =======================================================
 ConfigMap::ConfigMap(std::string filename) :
@@ -66,18 +68,18 @@ bool ConfigMap::getBool(std::string section, std::string name, bool default_valu
 {
   bool val = default_value;
   std::string valstr = getString(section, name, "");
-  
-  if (!valstr.compare("1") or 
-      !valstr.compare("yes") or 
+
+  if (!valstr.compare("1") or
+      !valstr.compare("yes") or
       !valstr.compare("true") or
       !valstr.compare("on"))
     val = true;
-  if (!valstr.compare("0") or 
-      !valstr.compare("no") or 
+  if (!valstr.compare("0") or
+      !valstr.compare("no") or
       !valstr.compare("false") or
       !valstr.compare("off"))
     val=false;
-  
+
   // if valstr is empty, return the default value
   if (!valstr.size())
     val = default_value;
@@ -108,22 +110,22 @@ ConfigMap broadcast_parameters(std::string filename)
   int nTasks;
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
   MPI_Comm_size(MPI_COMM_WORLD, &nTasks);
-  
+
   char* buffer = nullptr;
   int buffer_size = 0;
-  
+
   // MPI rank 0 reads parameter file
   if (myRank == 0) {
-    
+
     // open file and go to the end to get file size in bytes
     std::ifstream filein(filename.c_str(), std::ifstream::ate);
     int file_size = filein.tellg();
-    
+
     filein.seekg(0); // rewind
-    
+
     buffer_size = file_size;
     buffer = new char[buffer_size];
-    
+
     filein.read(buffer, buffer_size);
   }
 
@@ -138,7 +140,7 @@ ConfigMap broadcast_parameters(std::string filename)
 
   // broastcast buffer itself (collective)
   MPI_Bcast(&buffer[0], buffer_size, MPI_CHAR, 0, MPI_COMM_WORLD);
-  
+
   // now all MPI rank should have buffer filled, try to build a ConfigMap
   ConfigMap configMap(buffer,buffer_size);
 
@@ -151,6 +153,7 @@ ConfigMap broadcast_parameters(std::string filename)
   ConfigMap configMap(filename);
   return configMap;
 #endif
-    
+
 } // broadcast_parameters
 
+} // namespace euler_kokkos

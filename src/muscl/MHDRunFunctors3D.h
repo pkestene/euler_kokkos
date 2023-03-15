@@ -90,7 +90,7 @@ public:
       real_t vy = fastInfoSpeed[IY];
       real_t vz = fastInfoSpeed[IZ];
 
-      invDt = FMAX(invDt, vx/dx + vy/dy + vz/dz);
+      invDt = fmax(invDt, vx/dx + vy/dy + vz/dz);
 
     }
 

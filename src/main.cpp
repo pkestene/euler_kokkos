@@ -49,7 +49,7 @@ void fpehandler(int sig_num)
 int main(int argc, char *argv[])
 {
 
-  using namespace euler_kokkos;
+  namespace ek = ::euler_kokkos;
 
   // Create MPI session if MPI enabled
 #ifdef USE_MPI
@@ -133,19 +133,19 @@ int main(int argc, char *argv[])
    */
   // only MPI rank 0 actually reads input file
   std::string input_file = std::string(argv[1]);
-  ConfigMap configMap = broadcast_parameters(input_file);
+  ek::ConfigMap configMap = ek::broadcast_parameters(input_file);
 
   // test: create a HydroParams object
-  HydroParams params = HydroParams();
+  ek::HydroParams params = ek::HydroParams();
   params.setup(configMap);
 
   // retrieve solver name from settings
   const std::string solver_name = configMap.getString("run", "solver_name", "Unknown");
 
   // initialize workspace memory (U, U2, ...)
-  SolverBase *solver = SolverFactory::Instance().create(solver_name,
-							params,
-							configMap);
+  ek::SolverBase *solver = ek::SolverFactory::Instance().create(solver_name,
+                                                                params,
+                                                                configMap);
 
   if (params.nOutput != 0)
     solver->save_solution();
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 
   if (rank==0) printf("final time is %f\n", solver->m_t);
 
-  print_solver_monitoring_info(solver);
+  ek::print_solver_monitoring_info(solver);
 
   delete solver;
 

@@ -4,8 +4,7 @@
 #ifndef RIEMANN_SOLVERS_H_
 #define RIEMANN_SOLVERS_H_
 
-#include <math.h>
-
+#include "real_type.h"
 #include "HydroParams.h"
 #include "HydroState.h"
 
@@ -87,8 +86,8 @@ void riemann_approx(const HydroState& qleft,
   real_t cr = gamma0*pr*rr;
 
   // First guess
-  real_t wl = SQRT(cl);
-  real_t wr = SQRT(cr);
+  real_t wl = sqrt(cl);
+  real_t wr = sqrt(cr);
   real_t pstar = fmax(((wr*pl+wl*pr)+wl*wr*(ul-ur))/(wl+wr), (real_t) ZERO_F);
   real_t pold = pstar;
   real_t conv = ONE_F;
@@ -96,8 +95,8 @@ void riemann_approx(const HydroState& qleft,
   // Newton-Raphson iterations to find pstar at the required accuracy
   for(int iter = 0; (iter < 10 /*niter_riemann*/) && (conv > 1e-6); ++iter)
     {
-      real_t wwl = SQRT(cl*(ONE_F+gamma6*(pold-pl)/pl));
-      real_t wwr = SQRT(cr*(ONE_F+gamma6*(pold-pr)/pr));
+      real_t wwl = sqrt(cl*(ONE_F+gamma6*(pold-pl)/pl));
+      real_t wwr = sqrt(cr*(ONE_F+gamma6*(pold-pr)/pr));
       real_t ql = 2.0f*wwl*wwl*wwl/(wwl*wwl+cl);
       real_t qr = 2.0f*wwr*wwr*wwr/(wwr*wwr+cr);
       real_t usl = ul-(pold-pl)/wwl;
@@ -105,14 +104,14 @@ void riemann_approx(const HydroState& qleft,
       real_t delp = fmax(qr*ql/(qr+ql)*(usl-usr),-pold);
 
       pold = pold+delp;
-      conv = FABS(delp/(pold+smallpp));	 // Convergence indicator
+      conv = fabs(delp/(pold+smallpp));	 // Convergence indicator
     }
 
   // Star region pressure
   // for a two-shock Riemann problem
   pstar = pold;
-  wl = SQRT(cl*(ONE_F+gamma6*(pstar-pl)/pl));
-  wr = SQRT(cr*(ONE_F+gamma6*(pstar-pr)/pr));
+  wl = sqrt(cl*(ONE_F+gamma6*(pstar-pl)/pl));
+  wr = sqrt(cr*(ONE_F+gamma6*(pstar-pr)/pr));
 
   // Star region velocity
   // for a two shock Riemann problem
@@ -137,12 +136,12 @@ void riemann_approx(const HydroState& qleft,
       po = pr;
       wo = wr;
     }
-  real_t co = fmax(smallc, SQRT(FABS(gamma0*po/ro)));
+  real_t co = fmax(smallc, sqrt(fabs(gamma0*po/ro)));
 
   // Star region density (Shock, fmax prevents vacuum formation in star region)
   real_t rstar = fmax((real_t) (ro/(ONE_F+ro*(po-pstar)/(wo*wo))), (real_t) (smallr));
   // Star region sound speed
-  real_t cstar = fmax(smallc, SQRT(FABS(gamma0*pstar/rstar)));
+  real_t cstar = fmax(smallc, sqrt(fabs(gamma0*pstar/rstar)));
 
   // Compute rarefaction head and tail speed
   real_t spout  = co    - sgnm*uo;
@@ -157,7 +156,7 @@ void riemann_approx(const HydroState& qleft,
     }
 
   // Sample the solution at x/t=0
-  real_t scr = fmax(spout-spin, smallc+FABS(spout+spin));
+  real_t scr = fmax(spout-spin, smallc+fabs(spout+spin));
   real_t frac = HALF_F * (ONE_F + (spout + spin)/scr);
 
   if (frac != frac) /* Not a Number */
@@ -238,18 +237,18 @@ void riemann_llf(const HydroState& qleft,
   //============================
   // Compute maximum wave speed
   //============================
-  real_t rl=FMAX(qleft [ID],smallr);
+  real_t rl=fmax(qleft [ID],smallr);
   real_t ul=     qleft [IU];
-  real_t pl=FMAX(qleft [IP],rl*smallp);
+  real_t pl=fmax(qleft [IP],rl*smallp);
 
-  real_t rr=FMAX(qright[ID],smallr);
+  real_t rr=fmax(qright[ID],smallr);
   real_t ur=     qright[IU];
-  real_t pr=FMAX(qright[IP],rr*smallp);
+  real_t pr=fmax(qright[IP],rr*smallp);
 
-  real_t cl= SQRT(gamma0*pl/rl);
-  real_t cr= SQRT(gamma0*pr/rr);
+  real_t cl= sqrt(gamma0*pl/rl);
+  real_t cr= sqrt(gamma0*pr/rr);
 
-  real_t cmax = FMAX(FABS(ul)+cl,FABS(ur)+cr);
+  real_t cmax = fmax(fabs(ul)+cl,fabs(ur)+cr);
 
   // Compute average velocity
   qgdnv[IU] = HALF_F*(qleft[IU]+qright[IU]);
@@ -359,19 +358,19 @@ void riemann_hll(const HydroState& qleft,
   const real_t entho = ONE_F / (gamma0 - ONE_F);
 
   // Maximum wave speed
-  real_t rl=FMAX(qleft [ID],smallr);
+  real_t rl=fmax(qleft [ID],smallr);
   real_t ul=     qleft [IU];
-  real_t pl=FMAX(qleft [IP],rl*smallp);
+  real_t pl=fmax(qleft [IP],rl*smallp);
 
-  real_t rr=FMAX(qright[ID],smallr);
+  real_t rr=fmax(qright[ID],smallr);
   real_t ur=     qright[IU];
-  real_t pr=FMAX(qright[IP],rr*smallp);
+  real_t pr=fmax(qright[IP],rr*smallp);
 
-  real_t cl= SQRT(gamma0*pl/rl);
-  real_t cr= SQRT(gamma0*pr/rr);
+  real_t cl= sqrt(gamma0*pl/rl);
+  real_t cr= sqrt(gamma0*pr/rr);
 
-  real_t SL = FMIN(FMIN(ul,ur)-FMAX(cl,cr),(real_t) ZERO_F);
-  real_t SR = FMAX(FMAX(ul,ur)+FMAX(cl,cr),(real_t) ZERO_F);
+  real_t SL = fmin(fmin(ul,ur)-fmax(cl,cr),(real_t) ZERO_F);
+  real_t SR = fmax(fmax(ul,ur)+fmax(cl,cr),(real_t) ZERO_F);
 
   // Compute average velocity
   qgdnv[IU] = HALF_F*(qleft[IU]+qright[IU]);
@@ -480,8 +479,8 @@ void riemann_hllc(const HydroState& qleft,
   real_t ptotr = pr;
 
   // Find the largest eigenvalues in the normal direction to the interface
-  real_t cfastl = SQRT(fmax(gamma0*pl/rl,smallc*smallc));
-  real_t cfastr = SQRT(fmax(gamma0*pr/rr,smallc*smallc));
+  real_t cfastl = sqrt(fmax(gamma0*pl/rl,smallc*smallc));
+  real_t cfastr = sqrt(fmax(gamma0*pr/rr,smallc*smallc));
 
   // Compute HLL wave speed
   real_t SL = fmin(ul,ur) - fmax(cfastl,cfastr);

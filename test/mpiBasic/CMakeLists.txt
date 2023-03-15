@@ -8,7 +8,7 @@ macro(MPI_TEST_ADD_EXEC test_name)
     )
   target_link_libraries(${EXE_NAME}
     PRIVATE
-    EulerKokkos::monitoring 
+    EulerKokkos::monitoring
     EulerKokkos::mpiUtils)
 endmacro(MPI_TEST_ADD_EXEC)
 
@@ -32,10 +32,10 @@ if(USE_VTK)
       set_target_properties(testVtkXMLPImageDataWriter PROPERTIES
 	COMPILE_FLAGS "-DHAVE_VTK6")
     endif()
-    
+
     target_include_directories(testVtkXMLPImageDataWriter PUBLIC ${VTK_INCLUDE_DIRS})
-    
-    target_link_libraries(testVtkXMLPImageDataWriter ${VTK_LIBRARIES})
+
+    target_link_libraries(testVtkXMLPImageDataWriter PRIVATE ${VTK_LIBRARIES})
   endif(VTK_FOUND)
-  
+
 endif(USE_VTK)

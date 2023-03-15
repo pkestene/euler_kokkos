@@ -11,6 +11,8 @@
 
 #include "config/ConfigMap.h"
 
+namespace euler_kokkos {
+
 // =====================================================================
 // =====================================================================
 // =====================================================================
@@ -21,27 +23,27 @@ int test1(std::string filename) {
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
   MPI_Comm_size(MPI_COMM_WORLD, &nTasks);
 
-  
+
   char* buffer = nullptr;
   int buffer_size = 0;
-  
+
   // MPI rank 0 reads parameter file
   if (myRank == 0) {
 
     std::cout << "Rank 0 reading input file....\n";
-    
+
     // open file and go to the end to get file size in bytes
     std::ifstream filein(filename.c_str(), std::ifstream::ate);
     int file_size = filein.tellg();
 
     filein.seekg(0); // rewind
-    
+
     buffer_size = file_size;
     buffer = new char[buffer_size];
-    
+
     if(filein.read(buffer, buffer_size))
       std::cout << buffer << '\n';
-    
+
   }
 
   // broacast buffer size (collective)
@@ -64,12 +66,14 @@ int test1(std::string filename) {
 
   // just for checking, choose one tank and print the configMap
   if (myRank==nTasks-1) {
-    std::cout << configMap << std::endl;    
+    std::cout << configMap << std::endl;
   }
-  
+
   return 0;
-  
-} // test1()  
+
+} // test1()
+
+} // namespace euler_kokkos
 
 // =====================================================================
 // =====================================================================
@@ -78,17 +82,17 @@ int main(int argc, char* argv[])
 {
 
   hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
-  
+
   std::string input_file;
-  
+
   if (argc>1) {
-    input_file = std::string(argv[1]);  
+    input_file = std::string(argv[1]);
   } else {
     input_file = "test_mpi.ini";
   }
 
-  int status = test1(input_file);
-  
+  int status = euler_kokkos::test1(input_file);
+
   return status;
-  
+
 } // main

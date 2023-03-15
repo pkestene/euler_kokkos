@@ -61,8 +61,8 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     real_t gamma0 = params.settings.gamma0;
     real_t smallp = params.settings.smallp;
 
-    *p = FMAX((gamma0 - ONE_F) * rho * eint, rho * smallp);
-    *c = SQRT(gamma0 * (*p) / rho);
+    *p = fmax((gamma0 - ONE_F) * rho * eint, rho * smallp);
+    *c = sqrt(gamma0 * (*p) / rho);
 
   } // eos
 
@@ -414,33 +414,33 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     drgt = slope_type*(qPlusX - q      );
     dcen = HALF_F * (qPlusX - qMinusX);
     dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
-    slop = fmin( FABS(dlft), FABS(drgt) );
+    slop = fmin( fabs(dlft), fabs(drgt) );
     dlim = slop;
     if ( (dlft*drgt) <= ZERO_F )
       dlim = ZERO_F;
-    *dqX = dsgn * fmin( dlim, FABS(dcen) );
+    *dqX = dsgn * fmin( dlim, fabs(dcen) );
 
     // slopes in second coordinate direction
     dlft = slope_type*(q      - qMinusY);
     drgt = slope_type*(qPlusY - q      );
     dcen = HALF_F * (qPlusY - qMinusY);
     dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
-    slop = fmin( FABS(dlft), FABS(drgt) );
+    slop = fmin( fabs(dlft), fabs(drgt) );
     dlim = slop;
     if ( (dlft*drgt) <= ZERO_F )
       dlim = ZERO_F;
-    *dqY = dsgn * fmin( dlim, FABS(dcen) );
+    *dqY = dsgn * fmin( dlim, fabs(dcen) );
 
     // slopes in third coordinate direction
     dlft = slope_type*(q      - qMinusZ);
     drgt = slope_type*(qPlusZ - q      );
     dcen = HALF_F * (qPlusZ - qMinusZ);
     dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
-    slop = fmin( FABS(dlft), FABS(drgt) );
+    slop = fmin( fabs(dlft), fabs(drgt) );
     dlim = slop;
     if ( (dlft*drgt) <= ZERO_F )
       dlim = ZERO_F;
-    *dqZ = dsgn * fmin( dlim, FABS(dcen) );
+    *dqZ = dsgn * fmin( dlim, fabs(dcen) );
 
   } // slope_unsplit_hydro_3d_scalar
 

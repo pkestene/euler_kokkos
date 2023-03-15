@@ -658,7 +658,7 @@ public:
     real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
     real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
 
-    real_t r = SQRT( (x-xCenter)*(x-xCenter) +
+    real_t r = sqrt( (x-xCenter)*(x-xCenter) +
 		     (y-yCenter)*(y-yCenter) );
     real_t f_r = (r1-r)/(r1-r0);
 
@@ -677,7 +677,7 @@ public:
     }
 
     Udata(i,j,IW) = 0.0;
-    Udata(i,j,IA) = b0; //5.0/SQRT(FourPi);
+    Udata(i,j,IA) = b0; //5.0/sqrt(FourPi);
     Udata(i,j,IB) = 0.0;
     Udata(i,j,IC) = 0.0;
     Udata(i,j,IP) = p0/(gamma0-1.0) +

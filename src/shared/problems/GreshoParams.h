@@ -3,6 +3,8 @@
 
 #include "utils/config/ConfigMap.h"
 
+namespace euler_kokkos {
+
 /**
  * The Gresho problem is a rotating vortex problem independent of time
  * for the case of inviscid flow (Euler equations).
@@ -16,7 +18,7 @@ struct GreshoParams {
 
   // advection velocity (optional)
   real_t u, v, w;
-  
+
   GreshoParams(ConfigMap& configMap)
   {
 
@@ -26,9 +28,11 @@ struct GreshoParams {
     u     = configMap.getFloat("Gresho", "u",   0.0);
     v     = configMap.getFloat("Gresho", "v",   0.0);
     w     = configMap.getFloat("Gresho", "w",   0.0);
-    
+
   } // GreshoParams
-  
+
 }; // struct GreshoParams
+
+} // namespace euler_kokkos
 
 #endif // GRESHO_VORTEX_PARAMS_H_

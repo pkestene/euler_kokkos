@@ -3,6 +3,8 @@
 
 #include "utils/config/ConfigMap.h"
 
+namespace euler_kokkos {
+
 /**
  * isentropic vortex advection test parameters.
  */
@@ -56,5 +58,7 @@ struct ImplodeParams {
   }
 
 }; // struct ImplodeParams
+
+} // namespace euler_kokkos
 
 #endif // IMPLODE_PARAMS_H_

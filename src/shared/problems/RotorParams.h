@@ -5,6 +5,7 @@
 
 #include "utils/config/ConfigMap.h"
 
+namespace euler_kokkos {
 
 struct RotorParams {
 
@@ -13,15 +14,17 @@ struct RotorParams {
 
   RotorParams(ConfigMap& configMap)
   {
-    
+
     r0 = configMap.getFloat("rotor","r0",0.1);
     r1 = configMap.getFloat("rotor","r1",0.115);
     u0 = configMap.getFloat("rotor","u0",2.0);
     p0 = configMap.getFloat("rotor","p0",1.0);
     b0 = configMap.getFloat("rotor","b0",5.0/sqrt(4*M_PI));
-    
+
   }
 
 }; // struct RotorParams
+
+} // namespace euler_kokkos
 
 #endif // ROTOR_PARAMS_H_

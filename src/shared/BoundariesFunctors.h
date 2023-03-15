@@ -4,6 +4,8 @@
 #include "HydroParams.h"    // for HydroParams
 #include "kokkos_shared.h"  // for Data arrays
 
+namespace euler_kokkos {
+
 /*************************************************/
 /*************************************************/
 /*************************************************/
@@ -903,5 +905,7 @@ public:
   DataArray3d Udata;
 
 }; // MakeBoundariesFunctor3D_MHD
+
+} // namespace euler_kokkos
 
 #endif // BOUNDARIES_FUNCTORS_H_

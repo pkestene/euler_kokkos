@@ -4,10 +4,9 @@
 #ifndef RIEMANN_SOLVERS_MHD_H_
 #define RIEMANN_SOLVERS_MHD_H_
 
-#include <math.h>
-
 #include "HydroParams.h"
 #include "HydroState.h"
+#include "real_type.h"
 #include "mhd_utils.h"
 
 namespace euler_kokkos {
@@ -111,7 +110,7 @@ void riemann_llf(MHDState &qleft,
   real_t cleft  = find_speed_info(qleft ,params);
   real_t cright = find_speed_info(qright,params);
 
-  real_t vel_info = FMAX(cleft,cright);
+  real_t vel_info = fmax(cleft,cright);
 
   // the Local Lax-Friedrich flux
   for (int iVar=0; iVar<MHD_NBVAR; iVar++)
@@ -238,7 +237,7 @@ void riemann_hlld(MHDState &qleft,
   real_t vstarr, wstarr;
   real_t bstarr, cstarr;
   // not very good (should use a small energy cut-off !!!)
-  if(a*a>0 and FABS(estar/(a*a)-ONE_F)<=1e-8) {
+  if(a*a>0 and fabs(estar/(a*a)-ONE_F)<=1e-8) {
     vstarr=vr;
     bstarr=br;
     wstarr=wr;
@@ -488,23 +487,23 @@ real_t mag_riemann2d_hlld(const MHDState (&qLLRR)[4],
   real_t EstarRRy = uRR   * bRR     - vstar * AstarRR;
   real_t EstarRR  = ustar * BstarRR - vstar * AstarRR;
 
-  real_t calfvenL = FMAX5(FABS(aLR)/SQRT(rstarLRx), FABS(AstarLR)/SQRT(rstarLR),
-			  FABS(aLL)/SQRT(rstarLLx), FABS(AstarLL)/SQRT(rstarLL),
+  real_t calfvenL = FMAX5(fabs(aLR)/sqrt(rstarLRx), fabs(AstarLR)/sqrt(rstarLR),
+			  fabs(aLL)/sqrt(rstarLLx), fabs(AstarLL)/sqrt(rstarLL),
 			  params.settings.smallc);
-  real_t calfvenR = FMAX5(FABS(aRR)/SQRT(rstarRRx), FABS(AstarRR)/SQRT(rstarRR),
-			  FABS(aRL)/SQRT(rstarRLx), FABS(AstarRL)/SQRT(rstarRL),
+  real_t calfvenR = FMAX5(fabs(aRR)/sqrt(rstarRRx), fabs(AstarRR)/sqrt(rstarRR),
+			  fabs(aRL)/sqrt(rstarRLx), fabs(AstarRL)/sqrt(rstarRL),
 			  params.settings.smallc);
-  real_t calfvenB = FMAX5(FABS(bLL)/SQRT(rstarLLy), FABS(BstarLL)/SQRT(rstarLL),
-			  FABS(bRL)/SQRT(rstarRLy), FABS(BstarRL)/SQRT(rstarRL),
+  real_t calfvenB = FMAX5(fabs(bLL)/sqrt(rstarLLy), fabs(BstarLL)/sqrt(rstarLL),
+			  fabs(bRL)/sqrt(rstarRLy), fabs(BstarRL)/sqrt(rstarRL),
 			  params.settings.smallc);
-  real_t calfvenT = FMAX5(FABS(bLR)/SQRT(rstarLRy), FABS(BstarLR)/SQRT(rstarLR),
-			  FABS(bRR)/SQRT(rstarRRy), FABS(BstarRR)/SQRT(rstarRR),
+  real_t calfvenT = FMAX5(fabs(bLR)/sqrt(rstarLRy), fabs(BstarLR)/sqrt(rstarLR),
+			  fabs(bRR)/sqrt(rstarRRy), fabs(BstarRR)/sqrt(rstarRR),
 			  params.settings.smallc);
 
-  real_t SAL = FMIN(ustar - calfvenL, (real_t) ZERO_F);
-  real_t SAR = FMAX(ustar + calfvenR, (real_t) ZERO_F);
-  real_t SAB = FMIN(vstar - calfvenB, (real_t) ZERO_F);
-  real_t SAT = FMAX(vstar + calfvenT, (real_t) ZERO_F);
+  real_t SAL = fmin(ustar - calfvenL, (real_t) ZERO_F);
+  real_t SAR = fmax(ustar + calfvenR, (real_t) ZERO_F);
+  real_t SAB = fmin(vstar - calfvenB, (real_t) ZERO_F);
+  real_t SAT = fmax(vstar + calfvenT, (real_t) ZERO_F);
 
   real_t AstarT = (SAR*AstarRR - SAL*AstarLR) / (SAR-SAL);
   real_t AstarB = (SAR*AstarRL - SAL*AstarLL) / (SAR-SAL);

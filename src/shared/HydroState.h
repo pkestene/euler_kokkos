@@ -3,6 +3,8 @@
 
 #include "real_type.h"
 
+namespace euler_kokkos {
+
 constexpr int HYDRO_2D_NBVAR=4;
 constexpr int HYDRO_3D_NBVAR=5;
 constexpr int MHD_2D_NBVAR=8;
@@ -13,5 +15,7 @@ using HydroState2d = Kokkos::Array<real_t,HYDRO_2D_NBVAR>;
 using HydroState3d = Kokkos::Array<real_t,HYDRO_3D_NBVAR>;
 using MHDState     = Kokkos::Array<real_t,MHD_NBVAR>;
 using BField       = Kokkos::Array<real_t,3>;
+
+} // namespace euler_kokkos
 
 #endif // HYDRO_STATE_H_

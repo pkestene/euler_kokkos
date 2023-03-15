@@ -1,6 +1,8 @@
 #ifndef SHARED_ENUMS_H_
 #define SHARED_ENUMS_H_
 
+namespace euler_kokkos {
+
 //! dimension of the problem
 enum DimensionType {
   TWO_D = 2,
@@ -208,5 +210,7 @@ enum ProblemType {
   PROBLEM_BLAST,
   PROBLEM_ORSZAG_TANG
 };
+
+} // namespace euler_kokkos
 
 #endif // SHARED_ENUMS_H_

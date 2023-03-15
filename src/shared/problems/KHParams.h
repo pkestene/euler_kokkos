@@ -5,6 +5,8 @@
 
 //#include <cstdlib> // for srand
 
+namespace euler_kokkos {
+
 /**
  * A small structure to hold parameters passed to a Kokkos functor,
  * for initializing the Kelvin-Helmholtz instability init condition.
@@ -34,7 +36,7 @@ struct KHParams {
   int    mode;
   real_t w0;
   real_t delta;
-  
+
   KHParams(ConfigMap& configMap)
   {
 
@@ -63,14 +65,14 @@ struct KHParams {
       MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
       seed *= (mpiRank+1);
 #endif // USE_MPI
-      
+
     }
 
     amplitude = configMap.getFloat("KH", "amplitude", 0.1);
 
 
     if (p_sine_rob or p_sine) {
-      
+
       // perturbation mode number
       inner_size = configMap.getFloat("KH","inner_size", 0.2);
 
@@ -78,10 +80,12 @@ struct KHParams {
       w0         = configMap.getFloat("KH", "w0", 0.1);
       delta      = configMap.getFloat("KH", "delta", 0.03);
     }
-    
-    
+
+
   } // KHParams
 
 }; // struct KHParams
+
+} // namespace euler_kokkos
 
 #endif // KELVIN_HELMHOLTZ_PARAMS_H_

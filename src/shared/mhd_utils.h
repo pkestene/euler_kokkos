@@ -12,6 +12,8 @@
 #ifndef MHD_UTILS_H_
 #define MHD_UTILS_H_
 
+#include "real_type.h"
+
 namespace euler_kokkos {
 
 /**
@@ -24,7 +26,7 @@ real_t FMAX4(real_t a0, real_t a1, real_t a2, real_t a3)
   returnVal = ( a1 > returnVal) ? a1 : returnVal;
   returnVal = ( a2 > returnVal) ? a2 : returnVal;
   returnVal = ( a3 > returnVal) ? a3 : returnVal;
-  
+
   return returnVal;
 } // FMAX4
 
@@ -38,7 +40,7 @@ real_t FMIN4(real_t a0, real_t a1, real_t a2, real_t a3)
   returnVal = ( a1 < returnVal) ? a1 : returnVal;
   returnVal = ( a2 < returnVal) ? a2 : returnVal;
   returnVal = ( a3 < returnVal) ? a3 : returnVal;
-  
+
   return returnVal;
 } // FMIN4
 
@@ -53,16 +55,16 @@ real_t FMAX5(real_t a0, real_t a1, real_t a2, real_t a3, real_t a4)
   returnVal = ( a2 > returnVal) ? a2 : returnVal;
   returnVal = ( a3 > returnVal) ? a3 : returnVal;
   returnVal = ( a4 > returnVal) ? a4 : returnVal;
-  
+
   return returnVal;
 } // FMAX5
 
 /**
  * Compute the fast magnetosonic velocity.
- * 
+ *
  * IU is index to Vnormal
  * IA is index to Bnormal
- * 
+ *
  * IV, IW are indexes to Vtransverse1, Vtransverse2,
  * IB, IC are indexes to Btransverse1, Btransverse2
  *
@@ -83,13 +85,13 @@ real_t find_speed_fast(const MHDState& qvar,
   c2 = gamma0 * p / d;
   d2 = 0.5 * (b2/d + c2);
   if (dir==IX)
-    cf = SQRT( d2 + SQRT(d2*d2 - c2*a*a/d) );
+    cf = sqrt( d2 + sqrt(d2*d2 - c2*a*a/d) );
 
   if (dir==IY)
-    cf = SQRT( d2 + SQRT(d2*d2 - c2*b*b/d) );
+    cf = sqrt( d2 + sqrt(d2*d2 - c2*b*b/d) );
 
   if (dir==IZ)
-    cf = SQRT( d2 + SQRT(d2*d2 - c2*c*c/d) );
+    cf = sqrt( d2 + sqrt(d2*d2 - c2*c*c/d) );
 
   return cf;
 
@@ -99,7 +101,7 @@ real_t find_speed_fast(const MHDState& qvar,
  * Compute the Alfven velocity.
  *
  * The structure of qvar is :
- * rho, pressure, 
+ * rho, pressure,
  * vnormal, vtransverse1, vtransverse2,
  * bnormal, btransverse1, btransverse2
  *
@@ -111,7 +113,7 @@ real_t find_speed_alfven(MHDState qvar)
   real_t d=qvar[ID];
   real_t a=qvar[IA];
 
-  return SQRT(a*a/d);
+  return sqrt(a*a/d);
 
 } // find_speed_alfven
 
@@ -127,7 +129,7 @@ KOKKOS_INLINE_FUNCTION
 real_t find_speed_alfven(real_t d, real_t a)
 {
 
-  return SQRT(a*a/d);
+  return sqrt(a*a/d);
 
 } // find_speed_alfven
 
@@ -137,9 +139,9 @@ real_t find_speed_alfven(real_t d, real_t a)
  * Only used in Riemann solver HLL (probably cartesian only
  * compatible, since gas pressure is included).
  *
- * variables. The structure of qvar is : 
+ * variables. The structure of qvar is :
  * rho, pressure,
- * vnormal, vtransverse1, vtransverse2, 
+ * vnormal, vtransverse1, vtransverse2,
  * bnormal, btransverse1, btransverse2.
  *
  * @param[in]  qvar state vector (primitive variables)
@@ -155,7 +157,7 @@ void find_mhd_flux(const MHDState& qvar,
 {
 
   const real_t &gamma0 = params.settings.gamma0;
-  
+
   // ISOTHERMAL
   const real_t &cIso = params.settings.cIso;
   real_t p;
@@ -220,7 +222,7 @@ void fast_mhd_speed(const MHDState& qState,
 {
 
   const real_t &gamma0 = params.settings.gamma0;
-  
+
   const real_t& rho = qState[ID];
   const real_t& p   = qState[IP];
   /*const real_t& vx  = qState[IU];
@@ -241,10 +243,10 @@ void fast_mhd_speed(const MHDState& qState,
   // always the same
   som_vit2 =  som_vit * som_vit;
 
-  delta    = FMAX(ZERO_F, som_vit2 - 4 * vit_son*alfv );
+  delta    = fmax(ZERO_F, som_vit2 - 4 * vit_son*alfv );
 
-  fast_speed =  0.5 * ( som_vit + SQRT( delta ) );
-  fast_speed =  SQRT( fast_speed );
+  fast_speed =  0.5 * ( som_vit + sqrt( delta ) );
+  fast_speed =  sqrt( fast_speed );
 
   fastMagSpeed[IX] = fast_speed;
 
@@ -252,10 +254,10 @@ void fast_mhd_speed(const MHDState& qState,
   mag_perp =  (bx*bx + bz*bz)  /  rho;
   alfv     =   by*by           /  rho;
 
-  delta    = FMAX(ZERO_F, som_vit2 - 4 * vit_son*alfv );
+  delta    = fmax(ZERO_F, som_vit2 - 4 * vit_son*alfv );
 
-  fast_speed =  0.5 * ( som_vit + SQRT( delta ) );
-  fast_speed =  SQRT( fast_speed );
+  fast_speed =  0.5 * ( som_vit + sqrt( delta ) );
+  fast_speed =  sqrt( fast_speed );
 
   fastMagSpeed[IY] = fast_speed;
 
@@ -264,10 +266,10 @@ void fast_mhd_speed(const MHDState& qState,
     mag_perp =  (bx*bx + by*by)  /  rho;
     alfv     =   bz*bz           /  rho;
 
-    delta    = FMAX(ZERO_F, som_vit2 - 4 * vit_son*alfv );
+    delta    = fmax(ZERO_F, som_vit2 - 4 * vit_son*alfv );
 
-    fast_speed =  0.5 * ( som_vit + SQRT( delta ) );
-    fast_speed =  SQRT( fast_speed );
+    fast_speed =  0.5 * ( som_vit + sqrt( delta ) );
+    fast_speed =  sqrt( fast_speed );
 
     fastMagSpeed[IZ] = fast_speed;
   }
@@ -282,7 +284,7 @@ void fast_mhd_speed(const MHDState& qState,
  * x, y, and z direction.
  *
  * Directionnal information speed being defined as :
- * directionnal fast magneto speed + FABS(velocity component)
+ * directionnal fast magneto speed + fabs(velocity component)
  *
  * \warning This routine uses gamma ! You need to set gamma to something very near to 1
  *
@@ -317,21 +319,21 @@ void find_speed_info(const MHDState qState,
 
   d2 = 0.5 * (b2/d + c2);
 
-  cf = SQRT( d2 + SQRT(d2*d2 - c2*a*a/d) );
+  cf = sqrt( d2 + sqrt(d2*d2 - c2*a*a/d) );
 
-  fastInfoSpeed[IX] = cf+FABS(u);
+  fastInfoSpeed[IX] = cf+fabs(u);
 
   // compute fastest info speed along Y
-  cf = SQRT( d2 + SQRT(d2*d2 - c2*b*b/d) );
+  cf = sqrt( d2 + sqrt(d2*d2 - c2*b*b/d) );
 
-  fastInfoSpeed[IY] = cf+FABS(v);
+  fastInfoSpeed[IY] = cf+fabs(v);
 
 
   // compute fastest info speed along Z
   if (NDIM == THREE_D) {
-    cf = SQRT( d2 + SQRT(d2*d2 - c2*c*c/d) );
+    cf = sqrt( d2 + sqrt(d2*d2 - c2*c*c/d) );
 
-    fastInfoSpeed[IZ] = cf+FABS(w);
+    fastInfoSpeed[IZ] = cf+fabs(w);
   } // end THREE_D
 
 } // find_speed_info
@@ -363,10 +365,10 @@ real_t find_speed_info(const MHDState& qState,
   b2 = a*a + b*b + c*c;
   c2 = gamma0 * p / d;
   d2 = 0.5 * (b2/d + c2);
-  cf = SQRT( d2 + SQRT(d2*d2 - c2*a*a/d) );
+  cf = sqrt( d2 + sqrt(d2*d2 - c2*a*a/d) );
 
   // return value
-  return cf+FABS(u);
+  return cf+fabs(u);
 
 } // find_speed_info
 

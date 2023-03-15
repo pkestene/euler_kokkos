@@ -73,7 +73,7 @@ void save_VTK_3D_mpi(DataArray3d             Udata,
 		     std::string debug_name);
 
 /**
- * Write Parallel VTI header. 
+ * Write Parallel VTI header.
  * Must be done by a single MPI process.
  *
  */

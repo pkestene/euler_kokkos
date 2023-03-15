@@ -3,6 +3,8 @@
 
 #include "utils/config/ConfigMap.h"
 
+namespace euler_kokkos {
+
 /**
  * isentropic vortex advection test parameters.
  */
@@ -30,7 +32,7 @@ struct IsentropicVortexParams {
   //! useful to compute solution at final time
   bool use_tEnd;
   real_t tEnd;
-  
+
   IsentropicVortexParams(ConfigMap& configMap)
   {
 
@@ -41,7 +43,7 @@ struct IsentropicVortexParams {
     double xmax = configMap.getFloat("mesh", "xmax", 1.0);
     double ymax = configMap.getFloat("mesh", "ymax", 1.0);
     double zmax = configMap.getFloat("mesh", "zmax", 1.0);
-    
+
     rho_a  = configMap.getFloat("isentropic_vortex","density_ambient", 1.0);
     p_a  = configMap.getFloat("isentropic_vortex","pressure_ambient", 1.0);
     T_a  = configMap.getFloat("isentropic_vortex","temperature_ambient", 1.0);
@@ -63,5 +65,7 @@ struct IsentropicVortexParams {
   }
 
 }; // struct IsentropicVortexParams
+
+} // namespace euler_kokkos
 
 #endif // ISENTROPIC_VORTEX_PARAMS_H_

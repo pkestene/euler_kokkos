@@ -5,6 +5,8 @@
 
 #include <math.h> // for M_PI
 
+namespace euler_kokkos {
+
 /**
  * A small structure to hold parameters passed to a Kokkos functor,
  * used in border condition routine for the Wedge (Double Mach reflection) test.
@@ -25,10 +27,10 @@ struct WedgeParams {
 
   //! conservative variable in the inflow region
   real_t rho1, e_tot1, rho_u1, rho_v1, rho_w1;
-  
+
   //! conservative variable in the pre-shock region
   real_t rho2, e_tot2, rho_u2, rho_v2, rho_w2;
-  
+
   WedgeParams (ConfigMap& configMap, real_t t)
   {
     real_t gamma0 = configMap.getFloat("hydro","gamma0", 1.4);
@@ -64,7 +66,7 @@ struct WedgeParams {
     real_t u2 = configMap.getFloat("wedge", "u2", 0.0);
     real_t v2 = configMap.getFloat("wedge", "v2", 0.0);
     real_t w2 = configMap.getFloat("wedge", "w2", 0.0);
-    
+
     rho_u2 = rho2 * u2;
     rho_v2 = rho2 * v2;
     rho_w2 = rho2 * w2;
@@ -73,7 +75,9 @@ struct WedgeParams {
       0.5 * rho2 * ( u2*u2 + v2*v2 + w2*w2 );
 
   } // WedgeParams constructor
-  
+
 }; // struct WedgeParams
+
+} // namespace euler_kokkos
 
 #endif // WEDGE_PARAMS_H_
