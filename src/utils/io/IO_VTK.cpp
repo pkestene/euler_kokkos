@@ -473,13 +473,12 @@ void save_VTK_2D_mpi(DataArray2d             Udata,
 
   // write header
   if (params.myRank == 0) {
-    // TODO FIX ME
-    // write_pvti_header(headerFilename,
-    //     	      outputPrefix,
-    //     	      params,
-    //     	      nbvar,
-    //     	      variables_names,
-    //     	      iStep);
+    write_pvti_header(headerFilename,
+        	      outputPrefix,
+        	      params,
+        	      nbvar,
+        	      variables_names,
+        	      iStep);
   }
 
   // if writing raw binary data (file does not respect XML standard)
@@ -690,13 +689,12 @@ void save_VTK_3D_mpi(DataArray3d             Udata,
 
   // write header
   if (params.myRank == 0) {
-    // TODO FIX ME
-    // write_pvti_header(headerFilename,
-    //     	      outputPrefix,
-    //     	      params,
-    //     	      nbvar,
-    //     	      variables_names,
-    //     	      iStep);
+    write_pvti_header(headerFilename,
+        	      outputPrefix,
+        	      params,
+        	      nbvar,
+        	      variables_names,
+        	      iStep);
   }
 
   // if writing raw binary data (file does not respect XML standard)

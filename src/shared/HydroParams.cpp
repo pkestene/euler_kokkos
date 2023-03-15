@@ -18,7 +18,7 @@ namespace euler_kokkos {
 /*
  * Hydro Parameters (read parameter file)
  */
-void HydroParams::setup(ConfigMap &configMap)
+void HydroParams::setup(ConfigMap& configMap)
 {
 
   /* initialize RUN parameters */
