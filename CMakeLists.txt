@@ -173,7 +173,7 @@ include(build_or_find_kokkos)
 #
 if (EULER_KOKKOS_USE_MPI)
 
-  if ( MPI_FOUND AND (EULER_KOKKOS_BACKEND MATCHES "Cuda") AND (NOT MPI_CUDA_AWARE) )
+  if ( MPI_FOUND AND (EULER_KOKKOS_BACKEND MATCHES "Cuda") AND (NOT MPI_CUDA_AWARE_ENABLED) )
 
     message(FATAL_ERROR "You must use a cuda-aware MPI implementation.")
 
