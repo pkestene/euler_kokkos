@@ -88,8 +88,10 @@ if (EULER_KOKKOS_USE_MPI)
       execute_process(COMMAND ${OMPI_INFO}
         OUTPUT_VARIABLE _output)
       if ( (_output MATCHES "smcuda") OR (EULER_KOKKOS_USE_MPI_CUDA_AWARE_ENFORCED) )
+        set(MPI_CUDA_AWARE_ENABLED True)
         message(STATUS "Found OpenMPI with CUDA support built.")
       else()
+        set(MPI_CUDA_AWARE_ENABLED False)
         message(WARNING "OpenMPI found, but it is not built with CUDA support.")
 	add_compile_options(-DMPI_CUDA_AWARE_OFF)
       endif()
@@ -165,6 +167,19 @@ endif(EULER_KOKKOS_USE_MPI)
 # Kokkos : https://github.com/kokkos/kokkos
 #
 include(build_or_find_kokkos)
+
+#
+# if MPI is enabled and kokkos backend is cuda, we need a cuda aware implementation
+#
+if (EULER_KOKKOS_USE_MPI)
+
+  if ( MPI_FOUND AND (EULER_KOKKOS_BACKEND MATCHES "Cuda") AND (NOT MPI_CUDA_AWARE) )
+
+    message(FATAL_ERROR "You must use a cuda-aware MPI implementation.")
+
+  endif()
+
+endif()
 
 #
 # common flags
