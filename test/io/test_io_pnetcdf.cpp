@@ -20,6 +20,8 @@
 // PNETCDF IO implementation (to be tested)
 #include "utils/io/IO_PNETCDF.h"
 
+namespace euler_kokkos {
+
 // ===========================================================
 // ===========================================================
 // create some fake data
@@ -30,16 +32,16 @@ class InitData
 public:
   //! Decide at compile-time which data array type to use
   using DataArray  = typename std::conditional<dim==2,DataArray2d,DataArray3d>::type;
-  
+
   InitData(HydroParams params, DataArray data) :
     params(params),
     data(data) {};
   ~InitData() {};
 
-  //! functor for 2d 
+  //! functor for 2d
   template<unsigned int dim_ = dim>
   KOKKOS_INLINE_FUNCTION
-  void operator()(const typename Kokkos::Impl::enable_if<dim_==2, int>::type& index)  const
+  void operator()(const typename std::enable_if<dim_==2, int>::type& index)  const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
@@ -50,7 +52,7 @@ public:
 
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IY];
-    
+
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
     const real_t dx = params.dx;
@@ -66,13 +68,13 @@ public:
     data(i,j,IE) = 2*x+y;
     data(i,j,IU) = 3*x+y;
     data(i,j,IV) = 4*x+y;
-    
+
   }
 
-  //! functor for 3d 
+  //! functor for 3d
   template<unsigned int dim_ = dim>
   KOKKOS_INLINE_FUNCTION
-  void operator()(const typename Kokkos::Impl::enable_if<dim_==3, int>::type& index)  const
+  void operator()(const typename std::enable_if<dim_==3, int>::type& index)  const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
@@ -86,7 +88,7 @@ public:
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
-    
+
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
     const real_t zmin = params.zmin;
@@ -117,56 +119,18 @@ public:
 
   HydroParams params;
   DataArray data;
-  
+
 }; // class InitData
 
-
 // ===========================================================
 // ===========================================================
-int main(int argc, char* argv[])
-{
-
-  // namespace alias
-  namespace io = ::euler_kokkos::io;
-
-  // Create MPI session if MPI enabled
-  hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
-
-  Kokkos::initialize(argc, argv);
+void run_test_pnetcdf(const std::string input_filename) {
 
   int mpi_rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-  if (mpi_rank==0) {
-    std::cout << "##########################\n";
-    std::cout << "KOKKOS CONFIG             \n";
-    std::cout << "##########################\n";
-    
-    std::ostringstream msg;
-    std::cout << "Kokkos configuration" << std::endl;
-    if ( Kokkos::hwloc::available() ) {
-      msg << "hwloc( NUMA[" << Kokkos::hwloc::get_available_numa_count()
-          << "] x CORE["    << Kokkos::hwloc::get_available_cores_per_numa()
-          << "] x HT["      << Kokkos::hwloc::get_available_threads_per_core()
-          << "] )"
-          << std::endl ;
 
-    }
-    Kokkos::print_configuration( msg );
-    std::cout << msg.str();
-    std::cout << "##########################\n";
-  }
+  ConfigMap configMap(input_filename);
 
-  // if (argc != 2) {
-  //   fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter on the command line\n");
-  //   Kokkos::finalize();
-  //   exit(EXIT_FAILURE);
-  // }
-  
-  // read parameter file and initialize parameter
-  // parse parameters from input file
-  std::string input_file = std::string(argv[1]);
-  ConfigMap configMap(input_file);
-  
   // test: create a HydroParams object
   HydroParams params = HydroParams();
   params.setup(configMap);
@@ -177,7 +141,7 @@ int main(int argc, char* argv[])
   var_names[IU] = "rho_vx";
   var_names[IV] = "rho_vy";
   var_names[IW] = "rho_vz";
-  
+
   // =================
   // ==== 2D test ====
   // =================
@@ -185,7 +149,7 @@ int main(int argc, char* argv[])
 
     if (mpi_rank==0)
       std::cout << "2D test\n";
-    
+
     DataArray2d     data("data",params.isize,params.jsize,HYDRO_2D_NBVAR);
     DataArray2dHost data_host = Kokkos::create_mirror(data);
 
@@ -196,14 +160,14 @@ int main(int argc, char* argv[])
     // save to file
     io::Save_PNETCDF<TWO_D> writer(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
-    
+
   }
 
   // =================
   // ==== 3D test ====
   // =================
   if (params.nz > 1) {
-    
+
     if (mpi_rank==0)
       std::cout << "3D test\n";
 
@@ -217,11 +181,61 @@ int main(int argc, char* argv[])
     // save to file
     io::Save_PNETCDF<THREE_D> writer(data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
-    
+
   }
- 
+
+} // run_test_pnetcdf
+
+} // namespace euler_kokkos
+
+// ===========================================================
+// ===========================================================
+int main(int argc, char* argv[])
+{
+
+  // Create MPI session if MPI enabled
+  hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
+
+  Kokkos::initialize(argc, argv);
+
+  {
+    int mpi_rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    if (mpi_rank==0) {
+      std::cout << "##########################\n";
+      std::cout << "KOKKOS CONFIG             \n";
+      std::cout << "##########################\n";
+
+      std::ostringstream msg;
+      std::cout << "Kokkos configuration" << std::endl;
+      if ( Kokkos::hwloc::available() ) {
+        msg << "hwloc( NUMA[" << Kokkos::hwloc::get_available_numa_count()
+            << "] x CORE["    << Kokkos::hwloc::get_available_cores_per_numa()
+            << "] x HT["      << Kokkos::hwloc::get_available_threads_per_core()
+            << "] )"
+            << std::endl ;
+
+      }
+      Kokkos::print_configuration( msg );
+      std::cout << msg.str();
+      std::cout << "##########################\n";
+    }
+
+    // if (argc != 2) {
+    //   fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter on the command line\n");
+    //   Kokkos::finalize();
+    //   exit(EXIT_FAILURE);
+    // }
+
+    // read parameter file and initialize parameter
+    // parse parameters from input file
+    std::string input_filename = std::string(argv[1]);
+
+    euler_kokkos::run_test_pnetcdf(input_filename);
+  }
+
   Kokkos::finalize();
 
   return EXIT_SUCCESS;
-  
-}
+
+} // main
