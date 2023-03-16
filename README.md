@@ -34,7 +34,7 @@ cmake -DEULER_KOKKOS_BUILD=OFF ..
 make
 ```
 
-### Build without MPI / With Kokkos-openmp
+### Build without MPI / With Kokkos openmp backend
 
 * Create a build directory, configure and make
 
@@ -46,7 +46,7 @@ make -j 4
 
 Add variable CXX on the cmake command line to change the compiler (clang++, icpc, pgcc, ....).
 
-### Build without MPI / With Kokkos-cuda
+### Build without MPI / With Kokkos cuda backend
 
 * Create a build directory, configure and make
 
@@ -60,7 +60,7 @@ make -j 4
 
 `nvcc_wrapper` is a compiler wrapper arroud NVIDIA `nvcc`. It is available from Kokkos sources: `external/kokkos/bin/nvcc_wrapper`. Any Kokkos application target NVIDIA GPUs must be built with `nvcc_wrapper`.
 
-### Build with MPI / With Kokkos-cuda
+### Build with MPI / With Kokkos cuda backend
 
 Please make sure to use a CUDA-aware MPI implementation (OpenMPI or MVAPICH2) built with the proper flags for activating CUDA support.
 
@@ -81,6 +81,20 @@ Example command line to run the application (1 GPU used per MPI task)
 ```shell
 mpirun -np 4 ./euler_kokkos ./test_implode_2D_mpi.ini
 ```
+
+### Build for AMD GPU with Kokkos Hip backend
+
+Make sure to have rocm/hip tools with version at least 5.2 if build againt kokkos 4.0.
+
+For example:
+
+```shell
+mkdir build/hip; cd build/hip
+export CXX=hipcc
+cmake -DEULER_KOKKOS_USE_MPI=ON -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=HIP -DKokkos_ARCH_VEGA90A=ON ..
+make -j 4
+```
+
 
 ### Developping with vim or emacs and semantic completion/navigation from ccls
 
