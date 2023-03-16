@@ -40,7 +40,7 @@ make
 
 ```shell
 mkdir build; cd build
-cmake -DUSE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=OpenMP ..
+cmake -DEULER_KOKKOS_USE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=OpenMP ..
 make -j 4
 ```
 
@@ -54,7 +54,7 @@ Add variable CXX on the cmake command line to change the compiler (clang++, icpc
 mkdir build; cd build
 # If you are compiling and running on the same host, you can omit architecture flags,
 # Kokkos will detect the GPU architecture available on your paltform
-cmake -DUSE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_MAXWELL50=ON ..
+cmake -DEULER_KOKKOS_USE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
 
@@ -64,7 +64,7 @@ make -j 4
 
 Please make sure to use a CUDA-aware MPI implementation (OpenMPI or MVAPICH2) built with the proper flags for activating CUDA support.
 
-It may happen that eventhough your MPI implementation is actually cuda-aware, cmake find_package macro for MPI does not detect it to be cuda aware. In that case, you can enforce cuda awareness by turning option `USE_MPI_CUDA_AWARE_ENFORCED` to ON.
+It may happen that eventhough your MPI implementation is actually cuda-aware, cmake find_package macro for MPI does not detect it to be cuda aware. In that case, you can enforce cuda awareness by turning option `EULER_KOKKOS_USE_MPI_CUDA_AWARE_ENFORCED` to ON.
 
 You don't need to use mpi compiler wrapper mpicxx, cmake *should* be able to correctly populate `MPI_CXX_INCLUDE_PATH`, `MPI_CXX_LIBRARIES` which are passed to all final targets.
 
@@ -72,7 +72,7 @@ You don't need to use mpi compiler wrapper mpicxx, cmake *should* be able to cor
 
 ```shell
 mkdir build; cd build
-cmake -DUSE_MPI=ON -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_MAXWELL50=ON ..
+cmake -DEULER_KOKKOS_USE_MPI=ON -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
 

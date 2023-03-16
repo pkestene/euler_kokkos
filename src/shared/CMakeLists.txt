@@ -38,11 +38,11 @@ target_link_libraries(shared
   EulerKokkos::config
   EulerKokkos::io
   )
-if(USE_MPI)
+if(EULER_KOKKOS_USE_MPI)
   target_link_libraries(shared
   PUBLIC
   EulerKokkos::mpiUtils)
-endif(USE_MPI)
+endif(EULER_KOKKOS_USE_MPI)
 
 #Add an alias so that library can be used inside the build tree
 add_library(EulerKokkos::shared ALIAS shared)
@@ -65,11 +65,11 @@ target_link_libraries(solver_factory
   PUBLIC
   Kokkos::kokkos
   )
-if(USE_MPI)
+if(EULER_KOKKOS_USE_MPI)
   target_link_libraries(solver_factory
   PUBLIC
   EulerKokkos::mpiUtils)
-endif(USE_MPI)
+endif(EULER_KOKKOS_USE_MPI)
 
 #Add an alias so that library can be used inside the build tree
 add_library(EulerKokkos::solver_factory ALIAS solver_factory)

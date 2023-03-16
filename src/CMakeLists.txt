@@ -33,8 +33,8 @@ target_link_libraries(${PROJECT_NAME}
   EulerKokkos::io
   EulerKokkos::monitoring)
 
-if (USE_MPI)
+if (EULER_KOKKOS_USE_MPI)
   target_link_libraries(${PROJECT_NAME}
     PUBLIC
     EulerKokkos::mpiUtils)
-endif(USE_MPI)
+endif(EULER_KOKKOS_USE_MPI)

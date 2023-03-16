@@ -24,7 +24,7 @@ MPI_TEST_ADD_EXEC(testMpiTopology_2D)
 
 # if VTK is activated and found
 # build this test
-if(USE_VTK)
+if(EULER_KOKKOS_USE_VTK)
 
   if (VTK_FOUND)
     MPI_TEST_ADD_EXEC(testVtkXMLPImageDataWriter)
@@ -38,4 +38,4 @@ if(USE_VTK)
     target_link_libraries(testVtkXMLPImageDataWriter PRIVATE ${VTK_LIBRARIES})
   endif(VTK_FOUND)
 
-endif(USE_VTK)
+endif(EULER_KOKKOS_USE_VTK)

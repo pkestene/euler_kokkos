@@ -37,7 +37,7 @@ else()
   # https://bugzilla.gnome.org/show_bug.cgi?id=792676
   set(DOXY_WARN_AS_ERR "NO")
 
-  if(USE_SPHINX_EXHALE)
+  if(EULER_KOKKOS_USE_SPHINX_EXHALE)
     set(EXHALE_API_COMMAND "api/${PROJECT_NAME}_root")
   endif()
 
@@ -81,7 +81,7 @@ else()
 
   include(plantuml)
 
-  if (USE_SPHINX_EXHALE)
+  if (EULER_KOKKOS_USE_SPHINX_EXHALE)
     configure_file(
       "${DOC_SRC_DIR}/conf.py.in.exhale"
       "${DOC_BIN_DIR}/conf.py"

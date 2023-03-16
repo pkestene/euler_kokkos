@@ -11,8 +11,8 @@ target_link_libraries(ConfigMapTest
   EulerKokkos::config)
 
 ##############################################
-if(USE_MPI)
-  
+if(EULER_KOKKOS_USE_MPI)
+
   configure_file(test_mpi.ini test_mpi.ini COPYONLY)
 
   add_executable(ConfigMapTest_mpi
@@ -22,5 +22,5 @@ if(USE_MPI)
     PRIVATE
     EulerKokkos::config
     EulerKokkos::mpiUtils)
-  
-endif(USE_MPI)
+
+endif(EULER_KOKKOS_USE_MPI)

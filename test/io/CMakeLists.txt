@@ -24,16 +24,16 @@ target_link_libraries(test_io_vtk
   EulerKokkos::monitoring
   EulerKokkos::io)
 
-if(USE_MPI)
+if(EULER_KOKKOS_USE_MPI)
   target_link_libraries(test_io_vtk
     PUBLIC
     EulerKokkos::mpiUtils)
-endif(USE_MPI)
+endif(EULER_KOKKOS_USE_MPI)
 
 ###############################
 # HDF5 test
 ###############################
-if(USE_HDF5)
+if(EULER_KOKKOS_USE_HDF5)
   add_executable(test_io_hdf5
     test_io_hdf5.cpp
     #${BACKWARD_ENABLE}
@@ -48,18 +48,18 @@ if(USE_HDF5)
     EulerKokkos::io
     ${HDF5_LIBRARIES})
 
-  if(USE_MPI)
+  if(EULER_KOKKOS_USE_MPI)
     target_link_libraries(test_io_hdf5
       PUBLIC
       EulerKokkos::mpiUtils)
-  endif(USE_MPI)
+  endif(EULER_KOKKOS_USE_MPI)
 
   #add_backward(test_io_hdf5)
 
-endif(USE_HDF5)
+endif(EULER_KOKKOS_USE_HDF5)
 
-if(USE_MPI)
-  if(USE_PNETCDF)
+if(EULER_KOKKOS_USE_MPI)
+  if(EULER_KOKKOS_USE_PNETCDF)
 
     add_executable(test_io_pnetcdf
       test_io_pnetcdf.cpp
@@ -78,5 +78,5 @@ if(USE_MPI)
 
     #add_backward(test_io_pnetcdf)
 
-  endif(USE_PNETCDF)
-endif(USE_MPI)
+  endif(EULER_KOKKOS_USE_PNETCDF)
+endif(EULER_KOKKOS_USE_MPI)

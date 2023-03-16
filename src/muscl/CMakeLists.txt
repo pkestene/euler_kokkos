@@ -31,9 +31,9 @@ target_link_libraries(muscl
   Kokkos::kokkos
   )
 
-if(USE_MPI)
+if(EULER_KOKKOS_USE_MPI)
   target_link_libraries(muscl PUBLIC EulerKokkos::mpiUtils)
-endif(USE_MPI)
+endif(EULER_KOKKOS_USE_MPI)
 
 #Add an alias so that library can be used inside the build tree
 add_library(EulerKokkos::muscl ALIAS muscl)

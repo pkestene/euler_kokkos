@@ -5,7 +5,6 @@ add_subdirectory(kokkos)
 add_subdirectory(io)
 add_subdirectory(configMap)
 
-if(USE_MPI)
+if(EULER_KOKKOS_USE_MPI)
   add_subdirectory(mpiBasic)
-endif(USE_MPI)
-
+endif(EULER_KOKKOS_USE_MPI)
