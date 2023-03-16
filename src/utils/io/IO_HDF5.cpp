@@ -27,7 +27,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
   const int my = params.my;
   const int mz = params.mz;
 #endif
-  
+
   const int ghostWidth = params.ghostWidth;
 
   const int dimType = params.dimType;
@@ -41,7 +41,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
   int nxg = mx*nx;
   int nyg = my*ny;
   int nzg = mz*nz;
-#else  
+#else
   // data size actually written on disk
   int nxg = nx;
   int nyg = ny;
@@ -69,7 +69,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
   }
 
   /*
-   * Let MPIIO underneath hdf5 re-assemble the pieces and provides a single 
+   * Let MPIIO underneath hdf5 re-assemble the pieces and provides a single
    * nice file. Thanks parallel HDF5 !
    */
   bool reassembleInFile = configMap.getBool("output", "reassembleInFile", true);
@@ -95,7 +95,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
     }
   }
 #endif // USE_MPI
-  
+
   // get data type as a string for Xdmf
   std::string dataTypeName;
   if (sizeof(real_t) == sizeof(float))
@@ -131,7 +131,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
   int deltaStep=1;
   if (params.nOutput == -1)
     deltaStep=1;
-  
+
   if (singleStep) {
     startStep = totalNumberOfSteps;
     stopStep  = totalNumberOfSteps+1;
@@ -139,7 +139,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
   }
 
   for (int iStep=startStep; iStep<=stopStep; iStep+=deltaStep) {
- 
+
     std::ostringstream outNum;
     outNum.width(7);
     outNum.fill('0');
@@ -154,11 +154,11 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
     xdmfFile << "    <Time Value=\"" << iStep << "\" />"                      << std::endl;
 
     // topology CoRectMesh
-    if (dimType == TWO_D) 
+    if (dimType == TWO_D)
       xdmfFile << "      <Topology TopologyType=\"2DCoRectMesh\" NumberOfElements=\"" << nyg << " " << nxg << "\"/>" << std::endl;
     else
       xdmfFile << "      <Topology TopologyType=\"3DCoRectMesh\" NumberOfElements=\"" << nzg << " " << nyg << " " << nxg << "\"/>" << std::endl;
-      
+
     // geometry
     if (dimType == TWO_D) {
       xdmfFile << "    <Geometry Type=\"ORIGIN_DXDY\">"        << std::endl;
@@ -195,7 +195,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
       xdmfFile << "    </DataStructure>"                       << std::endl;
       xdmfFile << "    </Geometry>"                            << std::endl;
     }
-      
+
     // density
     xdmfFile << "      <Attribute Center=\"Node\" Name=\""<< variables_names.at(ID) << "\">" << std::endl;
     xdmfFile << "        <DataStructure"                             << std::endl;
@@ -208,7 +208,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
     xdmfFile << "           "<<hdf5Filename<<":/" << variables_names.at(ID) <<""             << std::endl;
     xdmfFile << "        </DataStructure>"                           << std::endl;
     xdmfFile << "      </Attribute>"                                 << std::endl;
-      
+
     // energy
     xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IE) << "\">" << std::endl;
     xdmfFile << "        <DataStructure"                              << std::endl;
@@ -221,7 +221,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
     xdmfFile << "           "<<hdf5Filename<<":/"<<  variables_names.at(IE) <<""             << std::endl;
     xdmfFile << "        </DataStructure>"                            << std::endl;
     xdmfFile << "      </Attribute>"                                  << std::endl;
-      
+
     // momentum X
     xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IU) << "\">" << std::endl;
     xdmfFile << "        <DataStructure"                                << std::endl;
@@ -234,7 +234,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
     xdmfFile << "           "<<hdf5Filename<<":/"<<  variables_names.at(IU) <<""             << std::endl;
     xdmfFile << "        </DataStructure>"                              << std::endl;
     xdmfFile << "      </Attribute>"                                    << std::endl;
-      
+
     // momentum Y
     xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IV) << "\">" << std::endl;
     xdmfFile << "        <DataStructure" << std::endl;
@@ -247,7 +247,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
     xdmfFile << "           "<<hdf5Filename<<":/"<<  variables_names.at(IV) <<""             << std::endl;
     xdmfFile << "        </DataStructure>"                              << std::endl;
     xdmfFile << "      </Attribute>"                                    << std::endl;
-      
+
     // momentum Z
     if (dimType == THREE_D and !mhdEnabled) {
       xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IW) << "\">" << std::endl;
@@ -259,7 +259,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
       xdmfFile << "        </DataStructure>"                              << std::endl;
       xdmfFile << "      </Attribute>"                                    << std::endl;
     }
-      
+
     if (mhdEnabled) {
       // momentum Z
       xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IW) <<"\">" << std::endl;
@@ -286,7 +286,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
       xdmfFile << "           "<<hdf5Filename<<":/"<<  variables_names.at(IA) <<""             << std::endl;
       xdmfFile << "        </DataStructure>"                              << std::endl;
       xdmfFile << "      </Attribute>"                                    << std::endl;
-	
+
       // magnetic field Y
       xdmfFile << "      <Attribute Center=\"Node\" Name=\""<< variables_names.at(IB) <<"\">" << std::endl;
       xdmfFile << "        <DataStructure" << std::endl;
@@ -299,7 +299,7 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
       xdmfFile << "           "<<hdf5Filename<<":/"<< variables_names.at(IB) <<""             << std::endl;
       xdmfFile << "        </DataStructure>"                              << std::endl;
       xdmfFile << "      </Attribute>"                                    << std::endl;
-	
+
       // magnetic field Z
       xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IC) <<"\">" << std::endl;
       xdmfFile << "        <DataStructure" << std::endl;
@@ -312,12 +312,12 @@ void writeXdmfForHdf5Wrapper(HydroParams& params,
       xdmfFile << "           "<<hdf5Filename<<":/"<< variables_names.at(IC) <<""             << std::endl;
       xdmfFile << "        </DataStructure>"                              << std::endl;
       xdmfFile << "      </Attribute>"                                    << std::endl;
-	
+
     } // end mhdEnabled
 
       // finalize grid file for the current time step
     xdmfFile << "   </Grid>" << std::endl;
-      
+
   } // end for loop over time step
 
   // finalize Xdmf wrapper file
