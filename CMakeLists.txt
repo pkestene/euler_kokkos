@@ -53,7 +53,7 @@ endif()
 # always export compile commands database
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# C++14 is for Kokkos
+# C++17 is for Kokkos
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
