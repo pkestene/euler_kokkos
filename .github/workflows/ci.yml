@@ -52,13 +52,13 @@ jobs:
           submodules: true
 
       - name: configure_openmp
-        run: mkdir build_openmp && cd build_openmp && cmake -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=OpenMP ..
+        run: mkdir build_openmp && cd build_openmp && cmake -DEULER_KOKKOS_BUILD_KOKKOS=ON -DEULER_KOKKOS_BACKEND=OpenMP ..
 
       - name: make_openmp
         run: cd build_openmp && make
 
       - name: configure_cuda
-        run: mkdir build_cuda && cd build_cuda && cmake -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_AMPERE80=ON ..
+        run: mkdir build_cuda && cd build_cuda && cmake -DEULER_KOKKOS_BUILD_KOKKOS=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_AMPERE80=ON ..
 
       - name: make_cuda
         run: cd build_cuda && make

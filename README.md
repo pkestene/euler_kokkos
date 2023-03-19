@@ -30,7 +30,7 @@ Just make sure that your env variable `CMAKE_PREFIX_PATH` point to the location 
 
 ```shell
 mkdir -p build; cd build
-cmake -DEULER_KOKKOS_BUILD=OFF ..
+cmake -DEULER_KOKKOS_BUILD_KOKKOS=OFF ..
 make
 ```
 
@@ -40,7 +40,7 @@ make
 
 ```shell
 mkdir build; cd build
-cmake -DEULER_KOKKOS_USE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=OpenMP ..
+cmake -DEULER_KOKKOS_USE_MPI=OFF -DEULER_KOKKOS_BUILD_KOKKOS=ON -DEULER_KOKKOS_BACKEND=OpenMP ..
 make -j 4
 ```
 
@@ -54,7 +54,7 @@ Add variable CXX on the cmake command line to change the compiler (clang++, icpc
 mkdir build; cd build
 # If you are compiling and running on the same host, you can omit architecture flags,
 # Kokkos will detect the GPU architecture available on your paltform
-cmake -DEULER_KOKKOS_USE_MPI=OFF -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_MAXWELL50=ON ..
+cmake -DEULER_KOKKOS_USE_MPI=OFF -DEULER_KOKKOS_BUILD_KOKKOS=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
 
@@ -72,7 +72,7 @@ You don't need to use mpi compiler wrapper mpicxx, cmake *should* be able to cor
 
 ```shell
 mkdir build; cd build
-cmake -DEULER_KOKKOS_USE_MPI=ON -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_MAXWELL50=ON ..
+cmake -DEULER_KOKKOS_USE_MPI=ON -DEULER_KOKKOS_BUILD_KOKKOS=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
 
@@ -91,7 +91,7 @@ For example:
 ```shell
 mkdir build/hip; cd build/hip
 export CXX=hipcc
-cmake -DEULER_KOKKOS_USE_MPI=ON -DEULER_KOKKOS_BUILD=ON -DEULER_KOKKOS_BACKEND=HIP -DKokkos_ARCH_VEGA90A=ON ..
+cmake -DEULER_KOKKOS_USE_MPI=ON -DEULER_KOKKOS_BUILD_KOKKOS=ON -DEULER_KOKKOS_BACKEND=HIP -DKokkos_ARCH_VEGA90A=ON ..
 make -j 4
 ```
 

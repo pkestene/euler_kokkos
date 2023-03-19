@@ -1,6 +1,6 @@
 # Two alternatives:
-# 1. If EULER_KOKKOS_BUILD is ON, we download kokkos sources and build them using FetchContent (which actually uses add_subdirectory)
-# 2. If EULER_KOKKOS_BUILD is OFF (default), we don't build kokkos, but use find_package for setup (you must have kokkos already installed)
+# 1. If EULER_KOKKOS_BUILD_KOKKOS is ON, we download kokkos sources and build them using FetchContent (which actually uses add_subdirectory)
+# 2. If EULER_KOKKOS_BUILD_KOKKOS is OFF (default), we don't build kokkos, but use find_package for setup (you must have kokkos already installed)
 
 # NOTE about required C++ standard
 # we better chose to set the minimum C++ standard level if not already done:
@@ -11,7 +11,7 @@
 #
 # Do we want to build kokkos (https://github.com/kokkos/kokkos) ?
 #
-option(EULER_KOKKOS_BUILD "Turn ON if you want to build kokkos (default: OFF)" OFF)
+option(EULER_KOKKOS_BUILD_KOKKOS "Turn ON if you want to build kokkos (default: OFF)" OFF)
 
 #
 # Option to use git (instead of tarball release) for downloading kokkos
@@ -31,7 +31,7 @@ set_property(CACHE EULER_KOKKOS_BACKEND PROPERTY STRINGS
   "OpenMP" "Cuda" "HIP" "Undefined")
 
 # check if user requested a build of kokkos
-if(EULER_KOKKOS_BUILD)
+if(EULER_KOKKOS_BUILD_KOKKOS)
 
   message("[euler / kokkos] Building kokkos from source")
 
