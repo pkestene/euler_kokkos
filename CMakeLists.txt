@@ -213,8 +213,9 @@ add_subdirectory(src)
 
 ##################### PRINT CONFIGURE STATUS ######################
 message("//===================================================")
-message("  ${PROJECT_NAME} build configuration:")
+message("// ${PROJECT_NAME} build configuration:")
 message("//===================================================")
+message("")
 message("  C++ Compiler : ${CMAKE_CXX_COMPILER_ID} "
                          "${CMAKE_CXX_COMPILER_VERSION} "
                          "${CMAKE_CXX_COMPILER_WRAPPER}")
@@ -236,9 +237,25 @@ endif()
 
 if(Kokkos_ENABLE_CUDA)
   message("  Kokkos_ENABLE_CUDA           = ${Kokkos_ENABLE_CUDA}")
-  message("  Kokkos_ENABLE_CUDA_LAMBDA    = ${Kokkos_CUDA_LAMBDA_ENABLED}")
-  message("  Kokkos_ENABLE_CUDA_CONSTEXPR = ${Kokkos_CUDA_CONSTEXPR_ENABLED}")
-  message("  Kokkos_ENABLE_CUDA_UVM       = ${Kokkos_CUDA_UVM_ENABLED}")
+
+  if( (${Kokkos_CUDA_LAMBDA_ENABLED}) OR (${Kokkos_ENABLE_CUDA_LAMBDA}))
+    message("  Kokkos_ENABLE_CUDA_LAMBDA    = ON")
+  else()
+    message("  Kokkos_ENABLE_CUDA_LAMBDA    = OFF")
+  endif()
+
+  if( (${Kokkos_CUDA_CONSTEXPR_ENABLED}) OR (${Kokkos_ENABLE_CUDA_CONSTEXPR}))
+    message("  Kokkos_ENABLE_CUDA_CONSTEXPR = ON")
+  else()
+    message("  Kokkos_ENABLE_CUDA_CONSTEXPR = OFF")
+  endif()
+
+  if( (${Kokkos_CUDA_UVM_ENABLED}) OR (${Kokkos_ENABLE_CUDA_UVM}))
+    message("  Kokkos_ENABLE_CUDA_UVM       = ON")
+  else()
+    message("  Kokkos_ENABLE_CUDA_UVM       = OFF")
+  endif()
+
   message("  Kokkos CUDA   flags          = ${KOKKOS_CUDA_OPTIONS}")
   #message("  CUDA Compiler      : ${CMAKE_CUDA_COMPILER}")
   #message("  CUDA Compiler exec : ${CUDA_NVCC_EXECUTABLE}")
@@ -249,7 +266,11 @@ if(Kokkos_ENABLE_HIP)
   message("  Kokkos_ENABLE_HIP            = ${Kokkos_ENABLE_HIP}")
 endif(Kokkos_ENABLE_HIP)
 
-message("  Kokkos_ENABLE_HWLOC          = ${Kokkos_TPLS_HWLOC_ENABLED}")
+if ( (${Kokkos_TPLS_HWLOC_ENABLED}) OR (${Kokkos_ENABLE_HWLOC}) )
+  message("  Kokkos_ENABLE_HWLOC          = ON")
+else()
+  message("  Kokkos_ENABLE_HWLOC          = OFF")
+endif()
 
 message("  Kokkos architecture          = ${Kokkos_ARCH}")
 
