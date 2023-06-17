@@ -6,3 +6,4 @@ euler2d.cuda
 _build
 build_*
 .ccls-cache
+.clangd
