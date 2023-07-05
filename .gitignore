@@ -7,3 +7,4 @@ _build
 build_*
 .ccls-cache
 .clangd
+.cache
