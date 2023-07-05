@@ -5,7 +5,8 @@
 
 #include <math.h> // for M_PI
 
-namespace euler_kokkos {
+namespace euler_kokkos
+{
 
 /**
  * A small structure to hold parameters passed to a Kokkos functor,
@@ -19,7 +20,8 @@ namespace euler_kokkos {
  * http://www.sciencedirect.com/science/article/pii/S0021999110004535
  *
  */
-struct JetParams {
+struct JetParams
+{
 
   // jet hydro state
   real_t rho_jet; //! density of injected fluid (jet)
@@ -47,44 +49,38 @@ struct JetParams {
   //! jet width
   real_t width_jet;
 
-  JetParams (ConfigMap& configMap)
+  JetParams(ConfigMap & configMap)
   {
-    real_t gamma0 = configMap.getFloat("hydro","gamma0", 5.0/3.0);
+    real_t gamma0 = configMap.getFloat("hydro", "gamma0", 5.0 / 3.0);
 
     // read jet parameters
     rho_jet = configMap.getFloat("jet", "rho_jet", 5.0);
-    u_jet   = configMap.getFloat("jet", "u_jet", 800.0);
-    v_jet   = configMap.getFloat("jet", "v_jet", 0.0);
-    w_jet   = configMap.getFloat("jet", "w_jet", 0.0);
-    p_jet   = configMap.getFloat("jet", "p_jet", 0.4127);
+    u_jet = configMap.getFloat("jet", "u_jet", 800.0);
+    v_jet = configMap.getFloat("jet", "v_jet", 0.0);
+    w_jet = configMap.getFloat("jet", "w_jet", 0.0);
+    p_jet = configMap.getFloat("jet", "p_jet", 0.4127);
 
     rho1 = rho_jet;
     rho_u1 = rho1 * u_jet;
     rho_v1 = rho1 * v_jet;
     rho_w1 = rho1 * w_jet;
-    e_tot1 = p_jet / (gamma0-1.0) +
-      0.5 * rho1 * ( u_jet*u_jet +
-		     v_jet*v_jet +
-		     w_jet*w_jet );
+    e_tot1 = p_jet / (gamma0 - 1.0) + 0.5 * rho1 * (u_jet * u_jet + v_jet * v_jet + w_jet * w_jet);
 
     pos_jet = configMap.getFloat("jet", "pos_jet", 0.0);
     width_jet = configMap.getFloat("jet", "width_jet", 0.1);
 
     // read bulk (ambiant) region
     rho_bulk = configMap.getFloat("jet", "rho_bulk", 0.5);
-    u_bulk   = configMap.getFloat("jet", "u_bulk", 0.0);
-    v_bulk   = configMap.getFloat("jet", "v_bulk", 0.0);
-    w_bulk   = configMap.getFloat("jet", "w_bulk", 0.0);
-    p_bulk   = configMap.getFloat("jet", "p_bulk", 0.4127);
+    u_bulk = configMap.getFloat("jet", "u_bulk", 0.0);
+    v_bulk = configMap.getFloat("jet", "v_bulk", 0.0);
+    w_bulk = configMap.getFloat("jet", "w_bulk", 0.0);
+    p_bulk = configMap.getFloat("jet", "p_bulk", 0.4127);
 
-    rho2   = rho_bulk,
-    rho_u2 = rho2 * u_bulk;
+    rho2 = rho_bulk, rho_u2 = rho2 * u_bulk;
     rho_v2 = rho2 * v_bulk;
     rho_w2 = rho2 * w_bulk;
-    e_tot2 = p_bulk / (gamma0-1.0) +
-      0.5 * rho2 * ( u_bulk*u_bulk +
-		     v_bulk*v_bulk +
-		     w_bulk*w_bulk );
+    e_tot2 =
+      p_bulk / (gamma0 - 1.0) + 0.5 * rho2 * (u_bulk * u_bulk + v_bulk * v_bulk + w_bulk * w_bulk);
 
   } // JetParams constructor
 

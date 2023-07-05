@@ -3,14 +3,18 @@
 
 #include <string>
 
-namespace euler_kokkos { namespace io {
+namespace euler_kokkos
+{
+namespace io
+{
 
 // =======================================================
 // =======================================================
 /**
  * Return current date in a string.
  */
-std::string current_date();
+std::string
+current_date();
 
 } // namespace io
 

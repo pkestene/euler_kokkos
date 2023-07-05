@@ -42,12 +42,12 @@
 
 #define NX 100
 #define NY 200
-#define NZ   1
+#define NZ 1
 
 struct args_tmp
 {
-  int argc;
-  char** argv;
+  int     argc;
+  char ** argv;
 };
 
 /**

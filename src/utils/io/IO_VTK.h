@@ -8,7 +8,10 @@
 #include <shared/HydroParams.h>
 #include "utils/config/ConfigMap.h"
 
-namespace euler_kokkos { namespace io {
+namespace euler_kokkos
+{
+namespace io
+{
 
 // ///////////////////////////////////////////////////////
 // output routine (VTK file format, ASCII, VtkImageData)
@@ -20,14 +23,15 @@ namespace euler_kokkos { namespace io {
  * \param[in] Udata device data to save
  * \param[in,out] Uhost host data temporary array before saving to file
  */
-void save_VTK_2D(DataArray2d             Udata,
-		 DataArray2d::HostMirror Uhost,
-		 HydroParams& params,
-		 ConfigMap& configMap,
-		 int nbvar,
-		 const std::map<int, std::string>& variables_names,
-		 int iStep,
-		 std::string debug_name);
+void
+save_VTK_2D(DataArray2d                        Udata,
+            DataArray2d::HostMirror            Uhost,
+            HydroParams &                      params,
+            ConfigMap &                        configMap,
+            int                                nbvar,
+            const std::map<int, std::string> & variables_names,
+            int                                iStep,
+            std::string                        debug_name);
 
 // ///////////////////////////////////////////////////////
 // output routine (VTK file format, ASCII, VtkImageData)
@@ -35,14 +39,15 @@ void save_VTK_2D(DataArray2d             Udata,
 // To make sure OpenMP and CUDA version give the same
 // results, we transpose the OpenMP data.
 // ///////////////////////////////////////////////////////
-void save_VTK_3D(DataArray3d             Udata,
-		 DataArray3d::HostMirror Uhost,
-		 HydroParams& params,
-		 ConfigMap& configMap,
-		 int nbvar,
-		 const std::map<int, std::string>& variables_names,
-		 int iStep,
-		 std::string debug_name);
+void
+save_VTK_3D(DataArray3d                        Udata,
+            DataArray3d::HostMirror            Uhost,
+            HydroParams &                      params,
+            ConfigMap &                        configMap,
+            int                                nbvar,
+            const std::map<int, std::string> & variables_names,
+            int                                iStep,
+            std::string                        debug_name);
 
 
 #ifdef USE_MPI
@@ -50,39 +55,42 @@ void save_VTK_3D(DataArray3d             Udata,
  * \param[in] Udata device data to save
  * \param[in,out] Uhost host data temporary array before saving to file
  */
-void save_VTK_2D_mpi(DataArray2d             Udata,
-		     DataArray2d::HostMirror Uhost,
-		     HydroParams& params,
-		     ConfigMap& configMap,
-		     int nbvar,
-		     const std::map<int, std::string>& variables_names,
-		     int iStep,
-		     std::string debug_name);
+void
+save_VTK_2D_mpi(DataArray2d                        Udata,
+                DataArray2d::HostMirror            Uhost,
+                HydroParams &                      params,
+                ConfigMap &                        configMap,
+                int                                nbvar,
+                const std::map<int, std::string> & variables_names,
+                int                                iStep,
+                std::string                        debug_name);
 
 /**
  * \param[in] Udata device data to save
  * \param[in,out] Uhost host data temporary array before saving to file
  */
-void save_VTK_3D_mpi(DataArray3d             Udata,
-		     DataArray3d::HostMirror Uhost,
-		     HydroParams& params,
-		     ConfigMap& configMap,
-		     int nbvar,
-		     const std::map<int, std::string>& variables_names,
-		     int iStep,
-		     std::string debug_name);
+void
+save_VTK_3D_mpi(DataArray3d                        Udata,
+                DataArray3d::HostMirror            Uhost,
+                HydroParams &                      params,
+                ConfigMap &                        configMap,
+                int                                nbvar,
+                const std::map<int, std::string> & variables_names,
+                int                                iStep,
+                std::string                        debug_name);
 
 /**
  * Write Parallel VTI header.
  * Must be done by a single MPI process.
  *
  */
-void write_pvti_header(std::string headerFilename,
-		       std::string outputPrefix,
-		       HydroParams& params,
-		       int nbvar,
-		       const std::map<int, std::string>& varNames,
-		       int iStep);
+void
+write_pvti_header(std::string                        headerFilename,
+                  std::string                        outputPrefix,
+                  HydroParams &                      params,
+                  int                                nbvar,
+                  const std::map<int, std::string> & varNames,
+                  int                                iStep);
 #endif // USE_MPI
 
 } // namespace io

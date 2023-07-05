@@ -10,15 +10,16 @@
 
 // for timer
 #ifdef KOKKOS_ENABLE_CUDA
-#include "utils/monitoring/CudaTimer.h"
+#  include "utils/monitoring/CudaTimer.h"
 #else
-#include "utils/monitoring/OpenMPTimer.h"
+#  include "utils/monitoring/OpenMPTimer.h"
 #endif
 
 //! this enum helps identifying the type of solver used
-enum solver_type_t {
-  SOLVER_UNDEFINED=0,
-  SOLVER_MUSCL_HANCOCK=1
+enum solver_type_t
+{
+  SOLVER_UNDEFINED = 0,
+  SOLVER_MUSCL_HANCOCK = 1
 };
 
 namespace euler_kokkos { namespace io {

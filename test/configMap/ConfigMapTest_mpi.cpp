@@ -11,12 +11,15 @@
 
 #include "config/ConfigMap.h"
 
-namespace euler_kokkos {
+namespace euler_kokkos
+{
 
 // =====================================================================
 // =====================================================================
 // =====================================================================
-int test1(std::string filename) {
+int
+test1(std::string filename)
+{
 
   int myRank;
   int nTasks;
@@ -24,33 +27,34 @@ int test1(std::string filename) {
   MPI_Comm_size(MPI_COMM_WORLD, &nTasks);
 
 
-  char* buffer = nullptr;
-  int buffer_size = 0;
+  char * buffer = nullptr;
+  int    buffer_size = 0;
 
   // MPI rank 0 reads parameter file
-  if (myRank == 0) {
+  if (myRank == 0)
+  {
 
     std::cout << "Rank 0 reading input file....\n";
 
     // open file and go to the end to get file size in bytes
     std::ifstream filein(filename.c_str(), std::ifstream::ate);
-    int file_size = filein.tellg();
+    int           file_size = filein.tellg();
 
     filein.seekg(0); // rewind
 
     buffer_size = file_size;
     buffer = new char[buffer_size];
 
-    if(filein.read(buffer, buffer_size))
+    if (filein.read(buffer, buffer_size))
       std::cout << buffer << '\n';
-
   }
 
   // broacast buffer size (collective)
   MPI_Bcast(&buffer_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  if (myRank>0) {
-    printf("I'm rank %d allocating buffer of size %d\n",myRank,buffer_size);
+  if (myRank > 0)
+  {
+    printf("I'm rank %d allocating buffer of size %d\n", myRank, buffer_size);
     buffer = new char[buffer_size];
   }
 
@@ -59,13 +63,14 @@ int test1(std::string filename) {
 
 
   // now all MPI rank should have buffer filled, try to build a ConfigMap
-  ConfigMap configMap(buffer,buffer_size);
+  ConfigMap configMap(buffer, buffer_size);
 
   if (buffer)
-    delete [] buffer;
+    delete[] buffer;
 
   // just for checking, choose one tank and print the configMap
-  if (myRank==nTasks-1) {
+  if (myRank == nTasks - 1)
+  {
     std::cout << configMap << std::endl;
   }
 

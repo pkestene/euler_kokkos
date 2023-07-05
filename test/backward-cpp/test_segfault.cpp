@@ -1,9 +1,10 @@
 /**
- * A minimalist example to use library backward-cpp to pretty print 
+ * A minimalist example to use library backward-cpp to pretty print
  * error / stack trace...
  *
  * for as standalone build:
- * g++ -DBACKWARD_HAS_DW=1 -g -I../../external/backward-cpp test_segfault.cpp ../../external/backward-cpp/backward.cpp -ldw
+ * g++ -DBACKWARD_HAS_DW=1 -g -I../../external/backward-cpp test_segfault.cpp
+ * ../../external/backward-cpp/backward.cpp -ldw
  *
  */
 
@@ -11,9 +12,11 @@
 
 #include "backward.hpp"
 
-void badass_function() {
-        char* ptr = (char*)42;
-        *ptr = 42;
+void
+badass_function()
+{
+  char * ptr = (char *)42;
+  *ptr = 42;
 }
 
 int main(int argc, char* argv[])

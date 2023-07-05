@@ -5,9 +5,11 @@
 
 #include "utils/config/ConfigMap.h"
 
-namespace euler_kokkos {
+namespace euler_kokkos
+{
 
-struct FieldLoopParams {
+struct FieldLoopParams
+{
 
   // field loop problem parameters
   real_t radius;
@@ -17,16 +19,15 @@ struct FieldLoopParams {
   double amp;
   int    seed;
 
-  FieldLoopParams(ConfigMap& configMap)
+  FieldLoopParams(ConfigMap & configMap)
   {
 
-    radius    = configMap.getFloat  ("FieldLoop","radius"   ,  1.0);
-    density_in= configMap.getFloat  ("FieldLoop","density_in", 1.0);
-    amplitude = configMap.getFloat  ("FieldLoop","amplitude",  1.0);
-    vflow     = configMap.getFloat  ("FieldLoop","vflow"    ,  1.0);
-    amp       = configMap.getFloat  ("FieldLoop","amp",        0.01);
-    seed      = configMap.getInteger("FieldLoop","seed",       0);
-
+    radius = configMap.getFloat("FieldLoop", "radius", 1.0);
+    density_in = configMap.getFloat("FieldLoop", "density_in", 1.0);
+    amplitude = configMap.getFloat("FieldLoop", "amplitude", 1.0);
+    vflow = configMap.getFloat("FieldLoop", "vflow", 1.0);
+    amp = configMap.getFloat("FieldLoop", "amp", 0.01);
+    seed = configMap.getInteger("FieldLoop", "seed", 0);
   }
 
 }; // struct FieldLoopParams

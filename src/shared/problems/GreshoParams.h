@@ -3,7 +3,8 @@
 
 #include "utils/config/ConfigMap.h"
 
-namespace euler_kokkos {
+namespace euler_kokkos
+{
 
 /**
  * The Gresho problem is a rotating vortex problem independent of time
@@ -11,7 +12,8 @@ namespace euler_kokkos {
  *
  * reference : https://www.cfd-online.com/Wiki/Gresho_vortex
  */
-struct GreshoParams {
+struct GreshoParams
+{
 
   real_t rho0;
   real_t Ma;
@@ -19,15 +21,15 @@ struct GreshoParams {
   // advection velocity (optional)
   real_t u, v, w;
 
-  GreshoParams(ConfigMap& configMap)
+  GreshoParams(ConfigMap & configMap)
   {
 
-    rho0  = configMap.getFloat("Gresho", "rho0", 1.0);
-    Ma    = configMap.getFloat("Gresho", "Ma",   0.1);
+    rho0 = configMap.getFloat("Gresho", "rho0", 1.0);
+    Ma = configMap.getFloat("Gresho", "Ma", 0.1);
 
-    u     = configMap.getFloat("Gresho", "u",   0.0);
-    v     = configMap.getFloat("Gresho", "v",   0.0);
-    w     = configMap.getFloat("Gresho", "w",   0.0);
+    u = configMap.getFloat("Gresho", "u", 0.0);
+    v = configMap.getFloat("Gresho", "v", 0.0);
+    w = configMap.getFloat("Gresho", "w", 0.0);
 
   } // GreshoParams
 

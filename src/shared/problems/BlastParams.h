@@ -3,9 +3,11 @@
 
 #include "utils/config/ConfigMap.h"
 
-namespace euler_kokkos {
+namespace euler_kokkos
+{
 
-struct BlastParams {
+struct BlastParams
+{
 
   // blast problem parameters
   real_t blast_radius;
@@ -17,7 +19,7 @@ struct BlastParams {
   real_t blast_pressure_in;
   real_t blast_pressure_out;
 
-  BlastParams(ConfigMap& configMap)
+  BlastParams(ConfigMap & configMap)
   {
 
     double xmin = configMap.getFloat("mesh", "xmin", 0.0);
@@ -28,15 +30,14 @@ struct BlastParams {
     double ymax = configMap.getFloat("mesh", "ymax", 1.0);
     double zmax = configMap.getFloat("mesh", "zmax", 1.0);
 
-    blast_radius   = configMap.getFloat("blast","radius", (xmin+xmax)/2.0/10);
-    blast_center_x = configMap.getFloat("blast","center_x", (xmin+xmax)/2);
-    blast_center_y = configMap.getFloat("blast","center_y", (ymin+ymax)/2);
-    blast_center_z = configMap.getFloat("blast","center_z", (zmin+zmax)/2);
-    blast_density_in  = configMap.getFloat("blast","density_in", 1.0);
-    blast_density_out = configMap.getFloat("blast","density_out", 1.2);
-    blast_pressure_in  = configMap.getFloat("blast","pressure_in", 10.0);
-    blast_pressure_out = configMap.getFloat("blast","pressure_out", 0.1);
-
+    blast_radius = configMap.getFloat("blast", "radius", (xmin + xmax) / 2.0 / 10);
+    blast_center_x = configMap.getFloat("blast", "center_x", (xmin + xmax) / 2);
+    blast_center_y = configMap.getFloat("blast", "center_y", (ymin + ymax) / 2);
+    blast_center_z = configMap.getFloat("blast", "center_z", (zmin + zmax) / 2);
+    blast_density_in = configMap.getFloat("blast", "density_in", 1.0);
+    blast_density_out = configMap.getFloat("blast", "density_out", 1.2);
+    blast_pressure_in = configMap.getFloat("blast", "pressure_in", 10.0);
+    blast_pressure_out = configMap.getFloat("blast", "pressure_out", 0.1);
   }
 
 }; // struct BlastParams

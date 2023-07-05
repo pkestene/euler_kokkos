@@ -6,7 +6,10 @@
 #include "shared/HydroParams.h"
 #include "shared/HydroState.h"
 
-namespace euler_kokkos { namespace muscl {
+namespace euler_kokkos
+{
+namespace muscl
+{
 
 /**
  * Base class to derive actual kokkos functor for hydro 3D.
@@ -16,20 +19,21 @@ class HydroBaseFunctor3D
 {
 
 public:
-
   using HydroState = HydroState3d;
-  using DataArray  = DataArray3d;
+  using DataArray = DataArray3d;
 
-HydroBaseFunctor3D(HydroParams params) : params(params) {};
-  virtual ~HydroBaseFunctor3D() {};
+  HydroBaseFunctor3D(HydroParams params)
+    : params(params){};
+  virtual ~HydroBaseFunctor3D(){};
 
   HydroParams params;
-  const int nbvar = params.nbvar;
+  const int   nbvar = params.nbvar;
 
   // utility routines used in various computational kernels
 
   KOKKOS_INLINE_FUNCTION
-  void swapValues(real_t *a, real_t *b) const
+  void
+  swapValues(real_t * a, real_t * b) const
   {
 
     real_t tmp = *a;
@@ -53,10 +57,8 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
    * @param[out] c    speed of sound
    */
   KOKKOS_INLINE_FUNCTION
-  void eos(real_t rho,
-	   real_t eint,
-	   real_t* p,
-	   real_t* c) const
+  void
+  eos(real_t rho, real_t eint, real_t * p, real_t * c) const
   {
     real_t gamma0 = params.settings.gamma0;
     real_t smallp = params.settings.smallp;
@@ -70,13 +72,13 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
    * Convert conservative variables (rho, rho*u, rho*v, e) to
    * primitive variables (rho,u,v,p)
    * @param[in]  u  conservative variables array
-   * @param[out] q  primitive    variables array (allocated in calling routine, size is constant nbvar)
+   * @param[out] q  primitive    variables array (allocated in calling routine, size is constant
+   * nbvar)
    * @param[out] c  local speed of sound
    */
   KOKKOS_INLINE_FUNCTION
-  void computePrimitives(const HydroState& u,
-			 real_t* c,
-			 HydroState& q) const
+  void
+  computePrimitives(const HydroState & u, real_t * c, HydroState & q) const
   {
     real_t gamma0 = params.settings.gamma0;
     real_t smallr = params.settings.smallr;
@@ -89,7 +91,7 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     uy = u[IV] / d;
     uz = u[IW] / d;
 
-    real_t eken = HALF_F * (ux*ux + uy*uy + uz*uz);
+    real_t eken = HALF_F * (ux * ux + uy * uy + uz * uz);
     real_t e = u[IP] / d - eken;
 
     // compute pressure and speed of sound
@@ -116,23 +118,24 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
    * \param[out] qp        : qp state (one per dimension)
    */
   KOKKOS_INLINE_FUNCTION
-  void trace_unsplit_3d(const HydroState& q,
-			const HydroState& qNeighbors_0,
-			const HydroState& qNeighbors_1,
-			const HydroState& qNeighbors_2,
-			const HydroState& qNeighbors_3,
-			const HydroState& qNeighbors_4,
-			const HydroState& qNeighbors_5,
-			real_t c,
-			real_t dtdx,
-			real_t dtdy,
-			real_t dtdz,
-			HydroState& qm_x,
-			HydroState& qm_y,
-			HydroState& qm_z,
-			HydroState& qp_x,
-			HydroState& qp_y,
-			HydroState& qp_z) const
+  void
+  trace_unsplit_3d(const HydroState & q,
+                   const HydroState & qNeighbors_0,
+                   const HydroState & qNeighbors_1,
+                   const HydroState & qNeighbors_2,
+                   const HydroState & qNeighbors_3,
+                   const HydroState & qNeighbors_4,
+                   const HydroState & qNeighbors_5,
+                   real_t             c,
+                   real_t             dtdx,
+                   real_t             dtdy,
+                   real_t             dtdz,
+                   HydroState &       qm_x,
+                   HydroState &       qm_y,
+                   HydroState &       qm_z,
+                   HydroState &       qp_x,
+                   HydroState &       qp_y,
+                   HydroState &       qp_z) const
   {
 
     real_t gamma0 = params.settings.gamma0;
@@ -159,17 +162,22 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     dqZ[IW] = 0.0;
 
     slope_unsplit_hydro_3d(q,
-			   qNeighbors_0, qNeighbors_1,
-			   qNeighbors_2, qNeighbors_3,
-			   qNeighbors_4, qNeighbors_5,
-			   dqX, dqY, dqZ);
+                           qNeighbors_0,
+                           qNeighbors_1,
+                           qNeighbors_2,
+                           qNeighbors_3,
+                           qNeighbors_4,
+                           qNeighbors_5,
+                           dqX,
+                           dqY,
+                           dqZ);
 
     // Cell centered values
-    real_t r =  q[ID];
-    real_t p =  q[IP];
-    real_t u =  q[IU];
-    real_t v =  q[IV];
-    real_t w =  q[IW];
+    real_t r = q[ID];
+    real_t p = q[IP];
+    real_t u = q[IU];
+    real_t v = q[IV];
+    real_t w = q[IW];
 
     // TVD slopes in all directions
     real_t drx = dqX[ID];
@@ -191,62 +199,63 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     real_t dwz = dqZ[IW];
 
     // source terms (with transverse derivatives)
-    real_t sr0 = (-u*drx-dux*r)*dtdx + (-v*dry-dvy*r)*dtdy + (-w*drz-dwz*r)*dtdz;
-    real_t su0 = (-u*dux-dpx/r)*dtdx + (-v*duy      )*dtdy + (-w*duz      )*dtdz;
-    real_t sv0 = (-u*dvx      )*dtdx + (-v*dvy-dpy/r)*dtdy + (-w*dvz      )*dtdz;
-    real_t sw0 = (-u*dwx      )*dtdx + (-v*dwy      )*dtdy + (-w*dwz-dpz/r)*dtdz;
-    real_t sp0 = (-u*dpx-dux*gamma0*p)*dtdx + (-v*dpy-dvy*gamma0*p)*dtdy + (-w*dpz-dwz*gamma0*p)*dtdz;
+    real_t sr0 =
+      (-u * drx - dux * r) * dtdx + (-v * dry - dvy * r) * dtdy + (-w * drz - dwz * r) * dtdz;
+    real_t su0 = (-u * dux - dpx / r) * dtdx + (-v * duy) * dtdy + (-w * duz) * dtdz;
+    real_t sv0 = (-u * dvx) * dtdx + (-v * dvy - dpy / r) * dtdy + (-w * dvz) * dtdz;
+    real_t sw0 = (-u * dwx) * dtdx + (-v * dwy) * dtdy + (-w * dwz - dpz / r) * dtdz;
+    real_t sp0 = (-u * dpx - dux * gamma0 * p) * dtdx + (-v * dpy - dvy * gamma0 * p) * dtdy +
+                 (-w * dpz - dwz * gamma0 * p) * dtdz;
 
     // Right state at left interface
-    qp_x[ID] = r - HALF_F*drx + sr0*HALF_F;
-    qp_x[IP] = p - HALF_F*dpx + sp0*HALF_F;
-    qp_x[IU] = u - HALF_F*dux + su0*HALF_F;
-    qp_x[IV] = v - HALF_F*dvx + sv0*HALF_F;
-    qp_x[IW] = w - HALF_F*dwx + sw0*HALF_F;
+    qp_x[ID] = r - HALF_F * drx + sr0 * HALF_F;
+    qp_x[IP] = p - HALF_F * dpx + sp0 * HALF_F;
+    qp_x[IU] = u - HALF_F * dux + su0 * HALF_F;
+    qp_x[IV] = v - HALF_F * dvx + sv0 * HALF_F;
+    qp_x[IW] = w - HALF_F * dwx + sw0 * HALF_F;
     qp_x[ID] = fmax(smallr, qp_x[ID]);
 
     // Left state at right interface
-    qm_x[ID] = r + HALF_F*drx + sr0*HALF_F;
-    qm_x[IP] = p + HALF_F*dpx + sp0*HALF_F;
-    qm_x[IU] = u + HALF_F*dux + su0*HALF_F;
-    qm_x[IV] = v + HALF_F*dvx + sv0*HALF_F;
-    qm_x[IW] = w + HALF_F*dwx + sw0*HALF_F;
+    qm_x[ID] = r + HALF_F * drx + sr0 * HALF_F;
+    qm_x[IP] = p + HALF_F * dpx + sp0 * HALF_F;
+    qm_x[IU] = u + HALF_F * dux + su0 * HALF_F;
+    qm_x[IV] = v + HALF_F * dvx + sv0 * HALF_F;
+    qm_x[IW] = w + HALF_F * dwx + sw0 * HALF_F;
     qm_x[ID] = fmax(smallr, qm_x[ID]);
 
     // Top state at bottom interface
-    qp_y[ID] = r - HALF_F*dry + sr0*HALF_F;
-    qp_y[IP] = p - HALF_F*dpy + sp0*HALF_F;
-    qp_y[IU] = u - HALF_F*duy + su0*HALF_F;
-    qp_y[IV] = v - HALF_F*dvy + sv0*HALF_F;
-    qp_y[IW] = w - HALF_F*dwy + sw0*HALF_F;
+    qp_y[ID] = r - HALF_F * dry + sr0 * HALF_F;
+    qp_y[IP] = p - HALF_F * dpy + sp0 * HALF_F;
+    qp_y[IU] = u - HALF_F * duy + su0 * HALF_F;
+    qp_y[IV] = v - HALF_F * dvy + sv0 * HALF_F;
+    qp_y[IW] = w - HALF_F * dwy + sw0 * HALF_F;
     qp_y[ID] = fmax(smallr, qp_y[ID]);
 
     // Bottom state at top interface
-    qm_y[ID] = r + HALF_F*dry + sr0*HALF_F;
-    qm_y[IP] = p + HALF_F*dpy + sp0*HALF_F;
-    qm_y[IU] = u + HALF_F*duy + su0*HALF_F;
-    qm_y[IV] = v + HALF_F*dvy + sv0*HALF_F;
-    qm_y[IW] = w + HALF_F*dwy + sw0*HALF_F;
+    qm_y[ID] = r + HALF_F * dry + sr0 * HALF_F;
+    qm_y[IP] = p + HALF_F * dpy + sp0 * HALF_F;
+    qm_y[IU] = u + HALF_F * duy + su0 * HALF_F;
+    qm_y[IV] = v + HALF_F * dvy + sv0 * HALF_F;
+    qm_y[IW] = w + HALF_F * dwy + sw0 * HALF_F;
     qm_y[ID] = fmax(smallr, qm_y[ID]);
 
     // Back state at bottom interface
-    qp_z[ID] = r - HALF_F*drz + sr0*HALF_F;
-    qp_z[IP] = p - HALF_F*dpz + sp0*HALF_F;
-    qp_z[IU] = u - HALF_F*duz + su0*HALF_F;
-    qp_z[IV] = v - HALF_F*dvz + sv0*HALF_F;
-    qp_z[IW] = w - HALF_F*dwz + sw0*HALF_F;
+    qp_z[ID] = r - HALF_F * drz + sr0 * HALF_F;
+    qp_z[IP] = p - HALF_F * dpz + sp0 * HALF_F;
+    qp_z[IU] = u - HALF_F * duz + su0 * HALF_F;
+    qp_z[IV] = v - HALF_F * dvz + sv0 * HALF_F;
+    qp_z[IW] = w - HALF_F * dwz + sw0 * HALF_F;
     qp_z[ID] = fmax(smallr, qp_z[ID]);
 
     // Front state at top interface
-    qm_z[ID] = r + HALF_F*drz + sr0*HALF_F;
-    qm_z[IP] = p + HALF_F*dpz + sp0*HALF_F;
-    qm_z[IU] = u + HALF_F*duz + su0*HALF_F;
-    qm_z[IV] = v + HALF_F*dvz + sv0*HALF_F;
-    qm_z[IW] = w + HALF_F*dwz + sw0*HALF_F;
+    qm_z[ID] = r + HALF_F * drz + sr0 * HALF_F;
+    qm_z[IP] = p + HALF_F * dpz + sp0 * HALF_F;
+    qm_z[IU] = u + HALF_F * duz + su0 * HALF_F;
+    qm_z[IV] = v + HALF_F * dvz + sv0 * HALF_F;
+    qm_z[IW] = w + HALF_F * dwz + sw0 * HALF_F;
     qm_z[ID] = fmax(smallr, qm_z[ID]);
 
   } // trace_unsplit_3d
-
 
 
   /**
@@ -264,26 +273,27 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
    * \param[out] qface     : q reconstructed state at cell interface
    */
   KOKKOS_INLINE_FUNCTION
-  void trace_unsplit_3d_along_dir(const HydroState& q,
-				  const HydroState& dqX,
-				  const HydroState& dqY,
-				  const HydroState& dqZ,
-				  real_t dtdx,
-				  real_t dtdy,
-				  real_t dtdz,
-				  int    faceId,
-				  HydroState& qface) const
+  void
+  trace_unsplit_3d_along_dir(const HydroState & q,
+                             const HydroState & dqX,
+                             const HydroState & dqY,
+                             const HydroState & dqZ,
+                             real_t             dtdx,
+                             real_t             dtdy,
+                             real_t             dtdz,
+                             int                faceId,
+                             HydroState &       qface) const
   {
 
     real_t gamma0 = params.settings.gamma0;
     real_t smallr = params.settings.smallr;
 
     // Cell centered values
-    real_t r =  q[ID];
-    real_t p =  q[IP];
-    real_t u =  q[IU];
-    real_t v =  q[IV];
-    real_t w =  q[IW];
+    real_t r = q[ID];
+    real_t p = q[IP];
+    real_t u = q[IU];
+    real_t v = q[IV];
+    real_t w = q[IW];
 
     // TVD slopes in all directions
     real_t drx = dqX[ID];
@@ -305,69 +315,75 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
     real_t dwz = dqZ[IW];
 
     // source terms (with transverse derivatives)
-    real_t sr0 = -u*drx-v*dry-w*drz - (dux+dvy+dwz)*r;
-    real_t sp0 = -u*dpx-v*dpy-w*dpz - (dux+dvy+dwz)*gamma0*p;
-    real_t su0 = -u*dux-v*duy-w*duz - (dpx        )/r;
-    real_t sv0 = -u*dvx-v*dvy-w*dvz - (dpy        )/r;
-    real_t sw0 = -u*dwx-v*dwy-w*dwz - (dpz        )/r;
+    real_t sr0 = -u * drx - v * dry - w * drz - (dux + dvy + dwz) * r;
+    real_t sp0 = -u * dpx - v * dpy - w * dpz - (dux + dvy + dwz) * gamma0 * p;
+    real_t su0 = -u * dux - v * duy - w * duz - (dpx) / r;
+    real_t sv0 = -u * dvx - v * dvy - w * dvz - (dpy) / r;
+    real_t sw0 = -u * dwx - v * dwy - w * dwz - (dpz) / r;
 
-    if (faceId == FACE_XMIN) {
+    if (faceId == FACE_XMIN)
+    {
       // Right state at left interface
-      qface[ID] = r - HALF_F*drx + sr0*dtdx*HALF_F;
-      qface[IP] = p - HALF_F*dpx + sp0*dtdx*HALF_F;
-      qface[IU] = u - HALF_F*dux + su0*dtdx*HALF_F;
-      qface[IV] = v - HALF_F*dvx + sv0*dtdx*HALF_F;
-      qface[IW] = w - HALF_F*dwx + sw0*dtdx*HALF_F;
+      qface[ID] = r - HALF_F * drx + sr0 * dtdx * HALF_F;
+      qface[IP] = p - HALF_F * dpx + sp0 * dtdx * HALF_F;
+      qface[IU] = u - HALF_F * dux + su0 * dtdx * HALF_F;
+      qface[IV] = v - HALF_F * dvx + sv0 * dtdx * HALF_F;
+      qface[IW] = w - HALF_F * dwx + sw0 * dtdx * HALF_F;
       qface[ID] = fmax(smallr, qface[ID]);
     }
 
-    if (faceId == FACE_XMAX) {
+    if (faceId == FACE_XMAX)
+    {
       // Left state at right interface
-      qface[ID] = r + HALF_F*drx + sr0*dtdx*HALF_F;
-      qface[IP] = p + HALF_F*dpx + sp0*dtdx*HALF_F;
-      qface[IU] = u + HALF_F*dux + su0*dtdx*HALF_F;
-      qface[IV] = v + HALF_F*dvx + sv0*dtdx*HALF_F;
-      qface[IW] = w + HALF_F*dwx + sw0*dtdx*HALF_F;
+      qface[ID] = r + HALF_F * drx + sr0 * dtdx * HALF_F;
+      qface[IP] = p + HALF_F * dpx + sp0 * dtdx * HALF_F;
+      qface[IU] = u + HALF_F * dux + su0 * dtdx * HALF_F;
+      qface[IV] = v + HALF_F * dvx + sv0 * dtdx * HALF_F;
+      qface[IW] = w + HALF_F * dwx + sw0 * dtdx * HALF_F;
       qface[ID] = fmax(smallr, qface[ID]);
     }
 
-    if (faceId == FACE_YMIN) {
+    if (faceId == FACE_YMIN)
+    {
       // Top state at bottom interface
-      qface[ID] = r - HALF_F*dry + sr0*dtdy*HALF_F;
-      qface[IP] = p - HALF_F*dpy + sp0*dtdy*HALF_F;
-      qface[IU] = u - HALF_F*duy + su0*dtdy*HALF_F;
-      qface[IV] = v - HALF_F*dvy + sv0*dtdy*HALF_F;
-      qface[IW] = w - HALF_F*dwy + sw0*dtdy*HALF_F;
+      qface[ID] = r - HALF_F * dry + sr0 * dtdy * HALF_F;
+      qface[IP] = p - HALF_F * dpy + sp0 * dtdy * HALF_F;
+      qface[IU] = u - HALF_F * duy + su0 * dtdy * HALF_F;
+      qface[IV] = v - HALF_F * dvy + sv0 * dtdy * HALF_F;
+      qface[IW] = w - HALF_F * dwy + sw0 * dtdy * HALF_F;
       qface[ID] = fmax(smallr, qface[ID]);
     }
 
-    if (faceId == FACE_YMAX) {
+    if (faceId == FACE_YMAX)
+    {
       // Bottom state at top interface
-      qface[ID] = r + HALF_F*dry + sr0*dtdy*HALF_F;
-      qface[IP] = p + HALF_F*dpy + sp0*dtdy*HALF_F;
-      qface[IU] = u + HALF_F*duy + su0*dtdy*HALF_F;
-      qface[IV] = v + HALF_F*dvy + sv0*dtdy*HALF_F;
-      qface[IW] = w + HALF_F*dwy + sw0*dtdy*HALF_F;
+      qface[ID] = r + HALF_F * dry + sr0 * dtdy * HALF_F;
+      qface[IP] = p + HALF_F * dpy + sp0 * dtdy * HALF_F;
+      qface[IU] = u + HALF_F * duy + su0 * dtdy * HALF_F;
+      qface[IV] = v + HALF_F * dvy + sv0 * dtdy * HALF_F;
+      qface[IW] = w + HALF_F * dwy + sw0 * dtdy * HALF_F;
       qface[ID] = fmax(smallr, qface[ID]);
     }
 
-    if (faceId == FACE_ZMIN) {
+    if (faceId == FACE_ZMIN)
+    {
       // Top state at bottom interface
-      qface[ID] = r - HALF_F*drz + sr0*dtdz*HALF_F;
-      qface[IP] = p - HALF_F*dpz + sp0*dtdz*HALF_F;
-      qface[IU] = u - HALF_F*duz + su0*dtdz*HALF_F;
-      qface[IV] = v - HALF_F*dvz + sv0*dtdz*HALF_F;
-      qface[IW] = w - HALF_F*dwz + sw0*dtdz*HALF_F;
+      qface[ID] = r - HALF_F * drz + sr0 * dtdz * HALF_F;
+      qface[IP] = p - HALF_F * dpz + sp0 * dtdz * HALF_F;
+      qface[IU] = u - HALF_F * duz + su0 * dtdz * HALF_F;
+      qface[IV] = v - HALF_F * dvz + sv0 * dtdz * HALF_F;
+      qface[IW] = w - HALF_F * dwz + sw0 * dtdz * HALF_F;
       qface[ID] = fmax(smallr, qface[ID]);
     }
 
-    if (faceId == FACE_ZMAX) {
+    if (faceId == FACE_ZMAX)
+    {
       // Top state at bottom interface
-      qface[ID] = r + HALF_F*drz + sr0*dtdz*HALF_F;
-      qface[IP] = p + HALF_F*dpz + sp0*dtdz*HALF_F;
-      qface[IU] = u + HALF_F*duz + su0*dtdz*HALF_F;
-      qface[IV] = v + HALF_F*dvz + sv0*dtdz*HALF_F;
-      qface[IW] = w + HALF_F*dwz + sw0*dtdz*HALF_F;
+      qface[ID] = r + HALF_F * drz + sr0 * dtdz * HALF_F;
+      qface[IP] = p + HALF_F * dpz + sp0 * dtdz * HALF_F;
+      qface[IU] = u + HALF_F * duz + su0 * dtdz * HALF_F;
+      qface[IV] = v + HALF_F * dvz + sv0 * dtdz * HALF_F;
+      qface[IW] = w + HALF_F * dwz + sw0 * dtdz * HALF_F;
       qface[ID] = fmax(smallr, qface[ID]);
     }
 
@@ -394,56 +410,56 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
    *
    */
   KOKKOS_INLINE_FUNCTION
-  void slope_unsplit_hydro_3d_scalar(real_t q,
-				     real_t qPlusX,
-				     real_t qMinusX,
-				     real_t qPlusY,
-				     real_t qMinusY,
-				     real_t qPlusZ,
-				     real_t qMinusZ,
-				     real_t *dqX,
-				     real_t *dqY,
-				     real_t *dqZ) const
+  void
+  slope_unsplit_hydro_3d_scalar(real_t   q,
+                                real_t   qPlusX,
+                                real_t   qMinusX,
+                                real_t   qPlusY,
+                                real_t   qMinusY,
+                                real_t   qPlusZ,
+                                real_t   qMinusZ,
+                                real_t * dqX,
+                                real_t * dqY,
+                                real_t * dqZ) const
   {
     real_t slope_type = params.settings.slope_type;
 
     real_t dlft, drgt, dcen, dsgn, slop, dlim;
 
     // slopes in first coordinate direction
-    dlft = slope_type*(q      - qMinusX);
-    drgt = slope_type*(qPlusX - q      );
+    dlft = slope_type * (q - qMinusX);
+    drgt = slope_type * (qPlusX - q);
     dcen = HALF_F * (qPlusX - qMinusX);
     dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
-    slop = fmin( fabs(dlft), fabs(drgt) );
+    slop = fmin(fabs(dlft), fabs(drgt));
     dlim = slop;
-    if ( (dlft*drgt) <= ZERO_F )
+    if ((dlft * drgt) <= ZERO_F)
       dlim = ZERO_F;
-    *dqX = dsgn * fmin( dlim, fabs(dcen) );
+    *dqX = dsgn * fmin(dlim, fabs(dcen));
 
     // slopes in second coordinate direction
-    dlft = slope_type*(q      - qMinusY);
-    drgt = slope_type*(qPlusY - q      );
+    dlft = slope_type * (q - qMinusY);
+    drgt = slope_type * (qPlusY - q);
     dcen = HALF_F * (qPlusY - qMinusY);
     dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
-    slop = fmin( fabs(dlft), fabs(drgt) );
+    slop = fmin(fabs(dlft), fabs(drgt));
     dlim = slop;
-    if ( (dlft*drgt) <= ZERO_F )
+    if ((dlft * drgt) <= ZERO_F)
       dlim = ZERO_F;
-    *dqY = dsgn * fmin( dlim, fabs(dcen) );
+    *dqY = dsgn * fmin(dlim, fabs(dcen));
 
     // slopes in third coordinate direction
-    dlft = slope_type*(q      - qMinusZ);
-    drgt = slope_type*(qPlusZ - q      );
+    dlft = slope_type * (q - qMinusZ);
+    drgt = slope_type * (qPlusZ - q);
     dcen = HALF_F * (qPlusZ - qMinusZ);
     dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
-    slop = fmin( fabs(dlft), fabs(drgt) );
+    slop = fmin(fabs(dlft), fabs(drgt));
     dlim = slop;
-    if ( (dlft*drgt) <= ZERO_F )
+    if ((dlft * drgt) <= ZERO_F)
       dlim = ZERO_F;
-    *dqZ = dsgn * fmin( dlim, fabs(dcen) );
+    *dqZ = dsgn * fmin(dlim, fabs(dcen));
 
   } // slope_unsplit_hydro_3d_scalar
-
 
 
   /**
@@ -465,21 +481,23 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
    *
    */
   KOKKOS_INLINE_FUNCTION
-  void slope_unsplit_hydro_3d(const HydroState& q,
-			      const HydroState& qPlusX,
-			      const HydroState& qMinusX,
-			      const HydroState& qPlusY,
-			      const HydroState& qMinusY,
-			      const HydroState& qPlusZ,
-			      const HydroState& qMinusZ,
-			      HydroState& dqX,
-			      HydroState& dqY,
-			      HydroState& dqZ) const
+  void
+  slope_unsplit_hydro_3d(const HydroState & q,
+                         const HydroState & qPlusX,
+                         const HydroState & qMinusX,
+                         const HydroState & qPlusY,
+                         const HydroState & qMinusY,
+                         const HydroState & qPlusZ,
+                         const HydroState & qMinusZ,
+                         HydroState &       dqX,
+                         HydroState &       dqY,
+                         HydroState &       dqZ) const
   {
 
     real_t slope_type = params.settings.slope_type;
 
-    if (slope_type==0) {
+    if (slope_type == 0)
+    {
 
       dqX[ID] = ZERO_F;
       dqX[IP] = ZERO_F;
@@ -502,18 +520,59 @@ HydroBaseFunctor3D(HydroParams params) : params(params) {};
       return;
     }
 
-    if (slope_type==1 || slope_type==2) {  // minmod or average
+    if (slope_type == 1 || slope_type == 2)
+    { // minmod or average
 
-      slope_unsplit_hydro_3d_scalar( q[ID], qPlusX[ID], qMinusX[ID], qPlusY[ID], qMinusY[ID], qPlusZ[ID], qMinusZ[ID],
-				     &(dqX[ID]), &(dqY[ID]), &(dqZ[ID]));
-      slope_unsplit_hydro_3d_scalar( q[IP], qPlusX[IP], qMinusX[IP], qPlusY[IP], qMinusY[IP], qPlusZ[IP], qMinusZ[IP],
-				     &(dqX[IP]), &(dqY[IP]), &(dqZ[IP]));
-      slope_unsplit_hydro_3d_scalar( q[IU], qPlusX[IU], qMinusX[IU], qPlusY[IU], qMinusY[IU], qPlusZ[IU], qMinusZ[IU],
-				     &(dqX[IU]), &(dqY[IU]), &(dqZ[IU]));
-      slope_unsplit_hydro_3d_scalar( q[IV], qPlusX[IV], qMinusX[IV], qPlusY[IV], qMinusY[IV], qPlusZ[IV], qMinusZ[IV],
-				     &(dqX[IV]), &(dqY[IV]), &(dqZ[IV]));
-      slope_unsplit_hydro_3d_scalar( q[IW], qPlusX[IW], qMinusX[IW], qPlusY[IW], qMinusY[IW], qPlusZ[IW], qMinusZ[IW],
-				     &(dqX[IW]), &(dqY[IW]), &(dqZ[IW]));
+      slope_unsplit_hydro_3d_scalar(q[ID],
+                                    qPlusX[ID],
+                                    qMinusX[ID],
+                                    qPlusY[ID],
+                                    qMinusY[ID],
+                                    qPlusZ[ID],
+                                    qMinusZ[ID],
+                                    &(dqX[ID]),
+                                    &(dqY[ID]),
+                                    &(dqZ[ID]));
+      slope_unsplit_hydro_3d_scalar(q[IP],
+                                    qPlusX[IP],
+                                    qMinusX[IP],
+                                    qPlusY[IP],
+                                    qMinusY[IP],
+                                    qPlusZ[IP],
+                                    qMinusZ[IP],
+                                    &(dqX[IP]),
+                                    &(dqY[IP]),
+                                    &(dqZ[IP]));
+      slope_unsplit_hydro_3d_scalar(q[IU],
+                                    qPlusX[IU],
+                                    qMinusX[IU],
+                                    qPlusY[IU],
+                                    qMinusY[IU],
+                                    qPlusZ[IU],
+                                    qMinusZ[IU],
+                                    &(dqX[IU]),
+                                    &(dqY[IU]),
+                                    &(dqZ[IU]));
+      slope_unsplit_hydro_3d_scalar(q[IV],
+                                    qPlusX[IV],
+                                    qMinusX[IV],
+                                    qPlusY[IV],
+                                    qMinusY[IV],
+                                    qPlusZ[IV],
+                                    qMinusZ[IV],
+                                    &(dqX[IV]),
+                                    &(dqY[IV]),
+                                    &(dqZ[IV]));
+      slope_unsplit_hydro_3d_scalar(q[IW],
+                                    qPlusX[IW],
+                                    qMinusX[IW],
+                                    qPlusY[IW],
+                                    qMinusY[IW],
+                                    qPlusZ[IW],
+                                    qMinusZ[IW],
+                                    &(dqX[IW]),
+                                    &(dqY[IW]),
+                                    &(dqZ[IW]));
 
     } // end slope_type == 1 or 2
 

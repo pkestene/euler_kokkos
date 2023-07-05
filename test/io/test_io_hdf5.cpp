@@ -9,41 +9,42 @@
 // minimal kokkos support
 #include "shared/kokkos_shared.h"
 
-#include "shared/HydroState.h" // for constants
+#include "shared/HydroState.h"  // for constants
 #include "shared/real_type.h"   // choose between single and double precision
 #include "shared/HydroParams.h" // read parameter file
 
 // MPI support
 #ifdef USE_MPI
-#include "utils/mpiUtils/GlobalMpiSession.h"
-#include <mpi.h>
+#  include "utils/mpiUtils/GlobalMpiSession.h"
+#  include <mpi.h>
 #endif // USE_MPI
 
 // HDF5 IO implementation (to be tested)
 #include "utils/io/IO_HDF5.h"
 
-namespace euler_kokkos {
+namespace euler_kokkos
+{
 
 // ===========================================================
 // ===========================================================
 // create some fake data
-template<unsigned int dim>
+template <unsigned int dim>
 class InitData
 {
 
 public:
   //! Decide at compile-time which data array type to use
-  using DataArray  = typename std::conditional<dim==2,DataArray2d,DataArray3d>::type;
+  using DataArray = typename std::conditional<dim == 2, DataArray2d, DataArray3d>::type;
 
-  InitData(HydroParams params, DataArray data) :
-    params(params),
-    data(data) {};
-  ~InitData() {};
+  InitData(HydroParams params, DataArray data)
+    : params(params)
+    , data(data){};
+  ~InitData(){};
 
   //! functor for 2d
-  template<unsigned int dim_ = dim>
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const typename std::enable_if<dim_==2, int>::type& index)  const
+  template <unsigned int dim_ = dim>
+  KOKKOS_INLINE_FUNCTION void
+  operator()(const typename std::enable_if<dim_ == 2, int>::type & index) const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
@@ -56,8 +57,8 @@ public:
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IY];
 #else
-    const int i_mpi = 0;
-    const int j_mpi = 0;
+    const int            i_mpi = 0;
+    const int            j_mpi = 0;
 #endif // USE_MPI
 
     const real_t xmin = params.xmin;
@@ -65,23 +66,22 @@ public:
     const real_t dx = params.dx;
     const real_t dy = params.dy;
 
-    int i,j;
-    index2coord(index,i,j,isize,jsize);
+    int i, j;
+    index2coord(index, i, j, isize, jsize);
 
-    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
-    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
+    real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
+    real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
 
-    data(i,j,ID) =   x+y;
-    data(i,j,IE) = 2*x+y;
-    data(i,j,IU) = 3*x+y;
-    data(i,j,IV) = 4*x+y;
-
+    data(i, j, ID) = x + y;
+    data(i, j, IE) = 2 * x + y;
+    data(i, j, IU) = 3 * x + y;
+    data(i, j, IV) = 4 * x + y;
   }
 
   //! functor for 3d
-  template<unsigned int dim_ = dim>
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const typename std::enable_if<dim_==3, int>::type& index)  const
+  template <unsigned int dim_ = dim>
+  KOKKOS_INLINE_FUNCTION void
+  operator()(const typename std::enable_if<dim_ == 3, int>::type & index) const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
@@ -97,9 +97,9 @@ public:
     const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
-    const int i_mpi = 0;
-    const int j_mpi = 0;
-    const int k_mpi = 0;
+    const int            i_mpi = 0;
+    const int            j_mpi = 0;
+    const int            k_mpi = 0;
 #endif // USE_MPI
 
     const real_t xmin = params.xmin;
@@ -110,18 +110,18 @@ public:
     const real_t dy = params.dy;
     const real_t dz = params.dz;
 
-    int i,j,k;
-    index2coord(index,i,j,k,isize,jsize,ksize);
+    int i, j, k;
+    index2coord(index, i, j, k, isize, jsize, ksize);
 
-    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
-    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
-    real_t z = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
+    real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
+    real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
+    real_t z = zmin + dz / 2 + (k + nz * k_mpi - ghostWidth) * dz;
 
-    data(i,j,k,ID) =   x+y+z;
-    data(i,j,k,IE) = 2*x+y+z;
-    data(i,j,k,IU) = 3*x+y+z;
-    data(i,j,k,IV) = 4*x+y+z;
-    data(i,j,k,IW) = 5*x+y+z;
+    data(i, j, k, ID) = x + y + z;
+    data(i, j, k, IE) = 2 * x + y + z;
+    data(i, j, k, IU) = 3 * x + y + z;
+    data(i, j, k, IV) = 4 * x + y + z;
+    data(i, j, k, IW) = 5 * x + y + z;
 
     // data(i,j,k,ID) = index + 0*isize*jsize*ksize;//  x+y+z;
     // data(i,j,k,IE) = index + 1*isize*jsize*ksize;//2*x+y+z;
@@ -131,13 +131,14 @@ public:
   }
 
   HydroParams params;
-  DataArray data;
+  DataArray   data;
 
 }; // class InitData
 
 // ===========================================================
 // ===========================================================
-void run_test_hdf5(const std::string input_filename)
+void
+run_test_hdf5(const std::string input_filename)
 {
 
   ConfigMap configMap(input_filename);
@@ -154,23 +155,23 @@ void run_test_hdf5(const std::string input_filename)
   // for upscale test
   ConfigMap configMapUp(configMap);
   {
-    int nx = configMap.getInteger("mesh","nx",0);
-    configMapUp.setInteger("mesh","nx",2*nx);
+    int nx = configMap.getInteger("mesh", "nx", 0);
+    configMapUp.setInteger("mesh", "nx", 2 * nx);
 
-    int ny = configMap.getInteger("mesh","ny",0);
-    configMapUp.setInteger("mesh","ny",2*ny);
+    int ny = configMap.getInteger("mesh", "ny", 0);
+    configMapUp.setInteger("mesh", "ny", 2 * ny);
 
-    if (params.nz > 1) {
-      int nz = configMap.getInteger("mesh","nz",0);
-      configMapUp.setInteger("mesh","nz",2*nz);
+    if (params.nz > 1)
+    {
+      int nz = configMap.getInteger("mesh", "nz", 0);
+      configMapUp.setInteger("mesh", "nz", 2 * nz);
     }
 
     // enable upscale upon reading
-    configMapUp.setBool("run","restart_upscale",true);
-
+    configMapUp.setBool("run", "restart_upscale", true);
   }
-  //if (rank==0)
-  //std::cout << configMapUp << std::endl;
+  // if (rank==0)
+  // std::cout << configMapUp << std::endl;
 
   HydroParams paramsUp = HydroParams();
   paramsUp.setup(configMapUp);
@@ -186,60 +187,65 @@ void run_test_hdf5(const std::string input_filename)
   // =================
   // ==== 2D test ====
   // =================
-  if (params.nz == 1) {
+  if (params.nz == 1)
+  {
 
-    if (rank==0)
+    if (rank == 0)
       std::cout << "2D test - create data\n";
 
-    DataArray2d     data("data",params.isize,params.jsize,HYDRO_2D_NBVAR);
+    DataArray2d     data("data", params.isize, params.jsize, HYDRO_2D_NBVAR);
     DataArray2dHost data_host = Kokkos::create_mirror(data);
 
-    DataArray2d     data2("data2",params.isize,params.jsize,HYDRO_2D_NBVAR);
+    DataArray2d     data2("data2", params.isize, params.jsize, HYDRO_2D_NBVAR);
     DataArray2dHost data2_host = Kokkos::create_mirror(data2);
 
     // create fake data
     InitData<2> functor(params, data);
-    Kokkos::parallel_for(params.isize*params.jsize, functor);
+    Kokkos::parallel_for(params.isize * params.jsize, functor);
 
     // save to file
-    if (rank==0)
+    if (rank == 0)
       std::cout << "2D test -- save data\n";
 
 #ifdef USE_MPI
-    io::Save_HDF5_mpi<TWO_D> writer(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
+    io::Save_HDF5_mpi<TWO_D> writer(
+      data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
     io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
 #else
-    io::Save_HDF5<TWO_D> writer(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
+    io::Save_HDF5<TWO_D> writer(
+      data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
     io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
 #endif
 
     // try to reload file
     {
-      if (rank==0)
-	std::cout << "2D test -- reload and save data for comparison\n";
+      if (rank == 0)
+        std::cout << "2D test -- reload and save data for comparison\n";
 
 #ifdef USE_MPI
       io::Load_HDF5_mpi<TWO_D> reader(data2, params, configMap, HYDRO_2D_NBVAR, var_names);
       reader.load("output2d_0000000.h5");
 
-      configMap.setString("output","outputPrefix","output2d_save");
+      configMap.setString("output", "outputPrefix", "output2d_save");
       {
-	io::Save_HDF5_mpi<TWO_D> writer(data2, data2_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
-	writer.save();
-	io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
+        io::Save_HDF5_mpi<TWO_D> writer(
+          data2, data2_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
+        writer.save();
+        io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
       }
       // the two files should contain the same data
 #else
       io::Load_HDF5<TWO_D> reader(data2, params, configMap, HYDRO_2D_NBVAR, var_names);
       reader.load("output2d_0000000.h5");
 
-      configMap.setString("output","outputPrefix","output2d_save");
+      configMap.setString("output", "outputPrefix", "output2d_save");
       {
-	io::Save_HDF5<TWO_D> writer(data2, data2_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
-	writer.save();
-	io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
+        io::Save_HDF5<TWO_D> writer(
+          data2, data2_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
+        writer.save();
+        io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
       }
       // the two files should contain the same data
 #endif
@@ -247,37 +253,39 @@ void run_test_hdf5(const std::string input_filename)
 
     // reload and upscale test
     {
-      DataArray2d     data2up("data2up",paramsUp.isize,paramsUp.jsize,HYDRO_2D_NBVAR);
+      DataArray2d     data2up("data2up", paramsUp.isize, paramsUp.jsize, HYDRO_2D_NBVAR);
       DataArray2dHost data2up_host = Kokkos::create_mirror(data2up);
 
-      if (rank==0)
-	std::cout << "2D test -- reload, upscale and save data\n";
+      if (rank == 0)
+        std::cout << "2D test -- reload, upscale and save data\n";
 
       // set restart filename
-      configMapUp.setString("run","restart_filename","output2d_0000000.h5");
+      configMapUp.setString("run", "restart_filename", "output2d_0000000.h5");
 
 #ifdef USE_MPI
-       io::Load_HDF5_mpi<TWO_D> reader(data2up, paramsUp, configMapUp, HYDRO_2D_NBVAR, var_names);
-       reader.load("output2d_0000000.h5");
+      io::Load_HDF5_mpi<TWO_D> reader(data2up, paramsUp, configMapUp, HYDRO_2D_NBVAR, var_names);
+      reader.load("output2d_0000000.h5");
 
-       configMapUp.setString("output","outputPrefix","output2d_upscale_save");
-       {
-	 io::Save_HDF5_mpi<TWO_D> writer(data2up, data2up_host, paramsUp, configMapUp, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
-	 writer.save();
-	 io::writeXdmfForHdf5Wrapper(paramsUp, configMapUp, var_names, 1, false);
-       }
-       // the two files should contain the same data
+      configMapUp.setString("output", "outputPrefix", "output2d_upscale_save");
+      {
+        io::Save_HDF5_mpi<TWO_D> writer(
+          data2up, data2up_host, paramsUp, configMapUp, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
+        writer.save();
+        io::writeXdmfForHdf5Wrapper(paramsUp, configMapUp, var_names, 1, false);
+      }
+      // the two files should contain the same data
 #else
-       io::Load_HDF5<TWO_D> reader(data2up, paramsUp, configMapUp, HYDRO_2D_NBVAR, var_names);
-       reader.load("output2d_0000000.h5");
+      io::Load_HDF5<TWO_D> reader(data2up, paramsUp, configMapUp, HYDRO_2D_NBVAR, var_names);
+      reader.load("output2d_0000000.h5");
 
-       configMapUp.setString("output","outputPrefix","output2d_upscale_save");
-       {
-	 io::Save_HDF5<TWO_D> writer(data2up, data2up_host, paramsUp, configMapUp, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
-	 writer.save();
-	 io::writeXdmfForHdf5Wrapper(paramsUp, configMapUp, var_names, 1, false);
-       }
-       // the two files should contain the same data
+      configMapUp.setString("output", "outputPrefix", "output2d_upscale_save");
+      {
+        io::Save_HDF5<TWO_D> writer(
+          data2up, data2up_host, paramsUp, configMapUp, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
+        writer.save();
+        io::writeXdmfForHdf5Wrapper(paramsUp, configMapUp, var_names, 1, false);
+      }
+      // the two files should contain the same data
 #endif
     } // end reload and upscale test
 
@@ -290,69 +298,66 @@ void run_test_hdf5(const std::string input_filename)
   // =================
   // ==== 3D test ====
   // =================
-  if (params.nz > 1) {
+  if (params.nz > 1)
+  {
 
-    if (rank==0)
+    if (rank == 0)
       std::cout << "3D test -- create data\n";
 
-    DataArray3d     data("data",
-                             params.isize,
-                             params.jsize,
-                             params.ksize,
-                             HYDRO_3D_NBVAR);
+    DataArray3d     data("data", params.isize, params.jsize, params.ksize, HYDRO_3D_NBVAR);
     DataArray3dHost data_host = Kokkos::create_mirror(data);
 
-    DataArray3d     data2("data2",
-                              params.isize,
-                              params.jsize,
-                              params.ksize,
-                              HYDRO_3D_NBVAR);
+    DataArray3d     data2("data2", params.isize, params.jsize, params.ksize, HYDRO_3D_NBVAR);
     DataArray3dHost data2_host = Kokkos::create_mirror(data2);
 
     // create fake data
     InitData<3> functor(params, data);
-    Kokkos::parallel_for(params.isize*params.jsize*params.ksize, functor);
+    Kokkos::parallel_for(params.isize * params.jsize * params.ksize, functor);
 
     // ================ save to file =======================
     // save to file
-    if (rank==0)
+    if (rank == 0)
       std::cout << "3D test -- save data\n";
 
 #ifdef USE_MPI
-    io::Save_HDF5_mpi<THREE_D> writer(data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
+    io::Save_HDF5_mpi<THREE_D> writer(
+      data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
     io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
 #else
-    io::Save_HDF5<THREE_D> writer(data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
+    io::Save_HDF5<THREE_D> writer(
+      data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
     io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
 #endif // USE_MPI
 
     // try to reload file
     {
-      if (rank==0)
-	std::cout << "3D test -- reload and save data for comparison\n";
+      if (rank == 0)
+        std::cout << "3D test -- reload and save data for comparison\n";
 
 #ifdef USE_MPI
       io::Load_HDF5_mpi<THREE_D> reader(data2, params, configMap, HYDRO_3D_NBVAR, var_names);
       reader.load("output3d_0000000.h5");
 
-      configMap.setString("output","outputPrefix","output3d_save");
+      configMap.setString("output", "outputPrefix", "output3d_save");
       {
-	io::Save_HDF5_mpi<THREE_D> writer(data2, data2_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
-	writer.save();
-	io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
+        io::Save_HDF5_mpi<THREE_D> writer(
+          data2, data2_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
+        writer.save();
+        io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
       }
       // the two files should contain the same data
 #else
       io::Load_HDF5<THREE_D> reader(data2, params, configMap, HYDRO_3D_NBVAR, var_names);
       reader.load("output3d_0000000.h5");
 
-      configMap.setString("output","outputPrefix","output3d_save");
+      configMap.setString("output", "outputPrefix", "output3d_save");
       {
-	io::Save_HDF5<THREE_D> writer(data2, data2_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
-	writer.save();
-	io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
+        io::Save_HDF5<THREE_D> writer(
+          data2, data2_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
+        writer.save();
+        io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
       }
       // the two files should contain the same data
 #endif // USE_MPI
@@ -361,39 +366,38 @@ void run_test_hdf5(const std::string input_filename)
 
     // reload and upscale test
     {
-      DataArray3d     data2up("data2up",
-			      paramsUp.isize,
-			      paramsUp.jsize,
-			      paramsUp.ksize,
-			      HYDRO_3D_NBVAR);
+      DataArray3d data2up(
+        "data2up", paramsUp.isize, paramsUp.jsize, paramsUp.ksize, HYDRO_3D_NBVAR);
       DataArray3dHost data2up_host = Kokkos::create_mirror(data2up);
 
-      if (rank==0)
-	std::cout << "3D test -- reload, upscale and save data\n";
+      if (rank == 0)
+        std::cout << "3D test -- reload, upscale and save data\n";
 
       // set restart filename
-      configMapUp.setString("run","restart_filename","output3d_0000000.h5");
+      configMapUp.setString("run", "restart_filename", "output3d_0000000.h5");
 
 #ifdef USE_MPI
       io::Load_HDF5_mpi<THREE_D> reader(data2up, paramsUp, configMapUp, HYDRO_3D_NBVAR, var_names);
       reader.load("output3d_0000000.h5");
 
-      configMapUp.setString("output","outputPrefix","output3d_upscale_save");
+      configMapUp.setString("output", "outputPrefix", "output3d_upscale_save");
       {
-	io::Save_HDF5_mpi<THREE_D> writer(data2up, data2up_host, paramsUp, configMapUp, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
-	writer.save();
-	io::writeXdmfForHdf5Wrapper(paramsUp, configMapUp, var_names, 1, false);
+        io::Save_HDF5_mpi<THREE_D> writer(
+          data2up, data2up_host, paramsUp, configMapUp, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
+        writer.save();
+        io::writeXdmfForHdf5Wrapper(paramsUp, configMapUp, var_names, 1, false);
       }
       // the two files should contain the same data
 #else
       io::Load_HDF5<THREE_D> reader(data2up, paramsUp, configMapUp, HYDRO_3D_NBVAR, var_names);
       reader.load("output3d_0000000.h5");
 
-      configMapUp.setString("output","outputPrefix","output3d_upscale_save");
+      configMapUp.setString("output", "outputPrefix", "output3d_upscale_save");
       {
-	io::Save_HDF5<THREE_D> writer(data2up, data2up_host, paramsUp, configMapUp, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
-	writer.save();
-	io::writeXdmfForHdf5Wrapper(paramsUp, configMapUp, var_names, 1, false);
+        io::Save_HDF5<THREE_D> writer(
+          data2up, data2up_host, paramsUp, configMapUp, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
+        writer.save();
+        io::writeXdmfForHdf5Wrapper(paramsUp, configMapUp, var_names, 1, false);
       }
       // the two files should contain the same data
 #endif

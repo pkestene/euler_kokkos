@@ -39,32 +39,35 @@
 #include "shared/problems/ImplodeParams.h"
 #include "shared/problems/RotorParams.h"
 
-namespace euler_kokkos { namespace muscl {
+namespace euler_kokkos
+{
+namespace muscl
+{
 
 /**
  * Main magnehydrodynamics data structure for 2D/3D MUSCL-Hancock scheme.
  */
-template<int dim>
+template <int dim>
 class SolverMHDMuscl : public euler_kokkos::SolverBase
 {
 
 public:
-
   //! Decide at compile-time which data array to use for 2d or 3d
-  using DataArray  = typename std::conditional<dim==2,DataArray2d,DataArray3d>::type;
+  using DataArray = typename std::conditional<dim == 2, DataArray2d, DataArray3d>::type;
 
   //! Data array typedef for host memory space
-  using DataArrayHost = typename std::conditional<dim==2,DataArray2dHost,DataArray3dHost>::type;
+  using DataArrayHost = typename std::conditional<dim == 2, DataArray2dHost, DataArray3dHost>::type;
 
-  SolverMHDMuscl(HydroParams& params, ConfigMap& configMap);
+  SolverMHDMuscl(HydroParams & params, ConfigMap & configMap);
   virtual ~SolverMHDMuscl();
 
   /**
    * Static creation method called by the solver factory.
    */
-  static SolverBase* create(HydroParams& params, ConfigMap& configMap)
+  static SolverBase *
+  create(HydroParams & params, ConfigMap & configMap)
   {
-    SolverMHDMuscl<dim>* solver = new SolverMHDMuscl<dim>(params, configMap);
+    SolverMHDMuscl<dim> * solver = new SolverMHDMuscl<dim>(params, configMap);
 
     return solver;
   }
@@ -116,47 +119,65 @@ public:
    */
 
   // fill boundaries / ghost 2d / 3d
-  void make_boundaries(DataArray Udata);
+  void
+  make_boundaries(DataArray Udata);
 
   // host routines (initialization)
-  void init_blast(DataArray Udata);
-  void init_implode(DataArray Udata);
-  void init_orszag_tang(DataArray Udata);
-  void init_kelvin_helmholtz(DataArray Udata); // 2d and 3d
-  void init_rotor(DataArray Udata);
-  void init_field_loop(DataArray Udata);
+  void
+  init_blast(DataArray Udata);
+  void
+  init_implode(DataArray Udata);
+  void
+  init_orszag_tang(DataArray Udata);
+  void
+  init_kelvin_helmholtz(DataArray Udata); // 2d and 3d
+  void
+  init_rotor(DataArray Udata);
+  void
+  init_field_loop(DataArray Udata);
 
   //! init restart (load data from file)
-  void init_restart(DataArray Udata);
+  void
+  init_restart(DataArray Udata);
 
   //! init wrapper (actual initialization)
-  void init(DataArray Udata);
+  void
+  init(DataArray Udata);
 
   //! compute time step inside an MPI process, at shared memory level.
-  double compute_dt_local();
+  double
+  compute_dt_local();
 
   //! perform 1 time step (time integration).
-  void next_iteration_impl();
+  void
+  next_iteration_impl();
 
   //! numerical scheme
-  void godunov_unsplit(real_t dt);
+  void
+  godunov_unsplit(real_t dt);
 
-  void godunov_unsplit_impl(DataArray data_in,
-			    DataArray data_out,
-			    real_t dt);
+  void
+  godunov_unsplit_impl(DataArray data_in, DataArray data_out, real_t dt);
 
-  void convertToPrimitives(DataArray Udata);
+  void
+  convertToPrimitives(DataArray Udata);
 
-  void computeElectricField(DataArray Udata);
-  void computeMagSlopes(DataArray Udata);
+  void
+  computeElectricField(DataArray Udata);
+  void
+  computeMagSlopes(DataArray Udata);
 
-  void computeTrace(DataArray Udata, real_t dt);
+  void
+  computeTrace(DataArray Udata, real_t dt);
 
-  void computeFluxesAndStore(real_t dt);
-  void computeEmfAndStore(real_t dt);
+  void
+  computeFluxesAndStore(real_t dt);
+  void
+  computeEmfAndStore(real_t dt);
 
   // output
-  void save_solution_impl();
+  void
+  save_solution_impl();
 
   int isize, jsize, ksize;
   int nbCells;
@@ -172,30 +193,49 @@ public:
 /**
  *
  */
-template<int dim>
-SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams& params,
-				    ConfigMap& configMap) :
-  SolverBase(params, configMap),
-  U(), U2(), Q(),
-  Qm_x(), Qm_y(), Qm_z(),
-  Qp_x(), Qp_y(), Qp_z(),
-  QEdge_RT(),  QEdge_RB(),  QEdge_LT(),  QEdge_LB(),
-  QEdge_RT2(), QEdge_RB2(), QEdge_LT2(), QEdge_LB2(),
-  QEdge_RT3(), QEdge_RB3(), QEdge_LT3(), QEdge_LB3(),
-  Fluxes_x(), Fluxes_y(), Fluxes_z(),
-  Emf1(),  Emf(),
-  ElecField(),
-  DeltaA(), DeltaB(), DeltaC(),
-  isize(params.isize),
-  jsize(params.jsize),
-  ksize(params.ksize),
-  nbCells(params.isize*params.jsize)
+template <int dim>
+SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
+  : SolverBase(params, configMap)
+  , U()
+  , U2()
+  , Q()
+  , Qm_x()
+  , Qm_y()
+  , Qm_z()
+  , Qp_x()
+  , Qp_y()
+  , Qp_z()
+  , QEdge_RT()
+  , QEdge_RB()
+  , QEdge_LT()
+  , QEdge_LB()
+  , QEdge_RT2()
+  , QEdge_RB2()
+  , QEdge_LT2()
+  , QEdge_LB2()
+  , QEdge_RT3()
+  , QEdge_RB3()
+  , QEdge_LT3()
+  , QEdge_LB3()
+  , Fluxes_x()
+  , Fluxes_y()
+  , Fluxes_z()
+  , Emf1()
+  , Emf()
+  , ElecField()
+  , DeltaA()
+  , DeltaB()
+  , DeltaC()
+  , isize(params.isize)
+  , jsize(params.jsize)
+  , ksize(params.ksize)
+  , nbCells(params.isize * params.jsize)
 {
 
   solver_type = SOLVER_MUSCL_HANCOCK;
 
-  if (dim==3)
-    nbCells = params.isize*params.jsize*params.ksize;
+  if (dim == 3)
+    nbCells = params.isize * params.jsize * params.ksize;
 
   m_nCells = nbCells;
   m_nDofsPerCell = 1;
@@ -211,88 +251,88 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams& params,
    * to save data from multiple other device array.
    * That's why we didn't use create_mirror_view to initialize Uhost.
    */
-  if (dim==2) {
+  if (dim == 2)
+  {
 
-    U     = DataArray("U", isize, jsize, nbvar);
+    U = DataArray("U", isize, jsize, nbvar);
     Uhost = Kokkos::create_mirror(U);
-    U2    = DataArray("U2",isize, jsize, nbvar);
-    Q     = DataArray("Q", isize, jsize, nbvar);
+    U2 = DataArray("U2", isize, jsize, nbvar);
+    Q = DataArray("Q", isize, jsize, nbvar);
 
-    total_mem_size += isize*jsize*nbvar * sizeof(real_t) * 3;// 1+1+1 for U+U2+Q
+    total_mem_size += isize * jsize * nbvar * sizeof(real_t) * 3; // 1+1+1 for U+U2+Q
 
-    if (params.implementationVersion == 0) {
+    if (params.implementationVersion == 0)
+    {
 
-      Qm_x = DataArray("Qm_x", isize,jsize, nbvar);
-      Qm_y = DataArray("Qm_y", isize,jsize, nbvar);
-      Qp_x = DataArray("Qp_x", isize,jsize, nbvar);
-      Qp_y = DataArray("Qp_y", isize,jsize, nbvar);
+      Qm_x = DataArray("Qm_x", isize, jsize, nbvar);
+      Qm_y = DataArray("Qm_y", isize, jsize, nbvar);
+      Qp_x = DataArray("Qp_x", isize, jsize, nbvar);
+      Qp_y = DataArray("Qp_y", isize, jsize, nbvar);
 
-      QEdge_RT = DataArray("QEdge_RT", isize,jsize, nbvar);
-      QEdge_RB = DataArray("QEdge_RB", isize,jsize, nbvar);
-      QEdge_LT = DataArray("QEdge_LT", isize,jsize, nbvar);
-      QEdge_LB = DataArray("QEdge_LB", isize,jsize, nbvar);
+      QEdge_RT = DataArray("QEdge_RT", isize, jsize, nbvar);
+      QEdge_RB = DataArray("QEdge_RB", isize, jsize, nbvar);
+      QEdge_LT = DataArray("QEdge_LT", isize, jsize, nbvar);
+      QEdge_LB = DataArray("QEdge_LB", isize, jsize, nbvar);
 
-      Fluxes_x = DataArray("Fluxes_x", isize,jsize, nbvar);
-      Fluxes_y = DataArray("Fluxes_y", isize,jsize, nbvar);
+      Fluxes_x = DataArray("Fluxes_x", isize, jsize, nbvar);
+      Fluxes_y = DataArray("Fluxes_y", isize, jsize, nbvar);
 
-      Emf1 = DataArrayScalar("Emf", isize,jsize);
+      Emf1 = DataArrayScalar("Emf", isize, jsize);
 
       total_mem_size +=
-	isize*jsize* nbvar * sizeof(real_t) * 10 +
-	isize*jsize*     1 * sizeof(real_t);
-
+        isize * jsize * nbvar * sizeof(real_t) * 10 + isize * jsize * 1 * sizeof(real_t);
     }
+  }
+  else
+  {
 
-  } else {
-
-    U     = DataArray("U", isize,jsize,ksize, nbvar);
+    U = DataArray("U", isize, jsize, ksize, nbvar);
     Uhost = Kokkos::create_mirror(U);
-    U2    = DataArray("U2",isize,jsize,ksize, nbvar);
-    Q     = DataArray("Q", isize,jsize,ksize, nbvar);
+    U2 = DataArray("U2", isize, jsize, ksize, nbvar);
+    Q = DataArray("Q", isize, jsize, ksize, nbvar);
 
-    total_mem_size += isize*jsize*ksize*nbvar*sizeof(real_t)*3;// 1+1+1=3 for U+U2+Q
+    total_mem_size += isize * jsize * ksize * nbvar * sizeof(real_t) * 3; // 1+1+1=3 for U+U2+Q
 
-    if (params.implementationVersion == 0) {
+    if (params.implementationVersion == 0)
+    {
 
-      Qm_x = DataArray("Qm_x", isize,jsize,ksize, nbvar);
-      Qm_y = DataArray("Qm_y", isize,jsize,ksize, nbvar);
-      Qm_z = DataArray("Qm_z", isize,jsize,ksize, nbvar);
+      Qm_x = DataArray("Qm_x", isize, jsize, ksize, nbvar);
+      Qm_y = DataArray("Qm_y", isize, jsize, ksize, nbvar);
+      Qm_z = DataArray("Qm_z", isize, jsize, ksize, nbvar);
 
-      Qp_x = DataArray("Qp_x", isize,jsize,ksize, nbvar);
-      Qp_y = DataArray("Qp_y", isize,jsize,ksize, nbvar);
-      Qp_z = DataArray("Qp_z", isize,jsize,ksize, nbvar);
+      Qp_x = DataArray("Qp_x", isize, jsize, ksize, nbvar);
+      Qp_y = DataArray("Qp_y", isize, jsize, ksize, nbvar);
+      Qp_z = DataArray("Qp_z", isize, jsize, ksize, nbvar);
 
-      QEdge_RT  = DataArray("QEdge_RT", isize,jsize,ksize, nbvar);
-      QEdge_RB  = DataArray("QEdge_RB", isize,jsize,ksize, nbvar);
-      QEdge_LT  = DataArray("QEdge_LT", isize,jsize,ksize, nbvar);
-      QEdge_LB  = DataArray("QEdge_LB", isize,jsize,ksize, nbvar);
+      QEdge_RT = DataArray("QEdge_RT", isize, jsize, ksize, nbvar);
+      QEdge_RB = DataArray("QEdge_RB", isize, jsize, ksize, nbvar);
+      QEdge_LT = DataArray("QEdge_LT", isize, jsize, ksize, nbvar);
+      QEdge_LB = DataArray("QEdge_LB", isize, jsize, ksize, nbvar);
 
-      QEdge_RT2 = DataArray("QEdge_RT2", isize,jsize,ksize, nbvar);
-      QEdge_RB2 = DataArray("QEdge_RB2", isize,jsize,ksize, nbvar);
-      QEdge_LT2 = DataArray("QEdge_LT2", isize,jsize,ksize, nbvar);
-      QEdge_LB2 = DataArray("QEdge_LB2", isize,jsize,ksize, nbvar);
+      QEdge_RT2 = DataArray("QEdge_RT2", isize, jsize, ksize, nbvar);
+      QEdge_RB2 = DataArray("QEdge_RB2", isize, jsize, ksize, nbvar);
+      QEdge_LT2 = DataArray("QEdge_LT2", isize, jsize, ksize, nbvar);
+      QEdge_LB2 = DataArray("QEdge_LB2", isize, jsize, ksize, nbvar);
 
-      QEdge_RT3 = DataArray("QEdge_RT3", isize,jsize,ksize, nbvar);
-      QEdge_RB3 = DataArray("QEdge_RB3", isize,jsize,ksize, nbvar);
-      QEdge_LT3 = DataArray("QEdge_LT3", isize,jsize,ksize, nbvar);
-      QEdge_LB3 = DataArray("QEdge_LB3", isize,jsize,ksize, nbvar);
+      QEdge_RT3 = DataArray("QEdge_RT3", isize, jsize, ksize, nbvar);
+      QEdge_RB3 = DataArray("QEdge_RB3", isize, jsize, ksize, nbvar);
+      QEdge_LT3 = DataArray("QEdge_LT3", isize, jsize, ksize, nbvar);
+      QEdge_LB3 = DataArray("QEdge_LB3", isize, jsize, ksize, nbvar);
 
-      Fluxes_x  = DataArray("Fluxes_x", isize,jsize,ksize, nbvar);
-      Fluxes_y  = DataArray("Fluxes_y", isize,jsize,ksize, nbvar);
-      Fluxes_z  = DataArray("Fluxes_z", isize,jsize,ksize, nbvar);
+      Fluxes_x = DataArray("Fluxes_x", isize, jsize, ksize, nbvar);
+      Fluxes_y = DataArray("Fluxes_y", isize, jsize, ksize, nbvar);
+      Fluxes_z = DataArray("Fluxes_z", isize, jsize, ksize, nbvar);
 
-      Emf       = DataArrayVector3("Emf", isize,jsize,ksize);
+      Emf = DataArrayVector3("Emf", isize, jsize, ksize);
 
-      ElecField = DataArrayVector3("ElecField", isize,jsize,ksize);
+      ElecField = DataArrayVector3("ElecField", isize, jsize, ksize);
 
-      DeltaA    = DataArrayVector3("DeltaA", isize,jsize,ksize);
-      DeltaB    = DataArrayVector3("DeltaB", isize,jsize,ksize);
-      DeltaC    = DataArrayVector3("DeltaC", isize,jsize,ksize);
+      DeltaA = DataArrayVector3("DeltaA", isize, jsize, ksize);
+      DeltaB = DataArrayVector3("DeltaB", isize, jsize, ksize);
+      DeltaC = DataArrayVector3("DeltaC", isize, jsize, ksize);
 
-      total_mem_size +=
-	isize*jsize*ksize*nbvar*sizeof(real_t)*21 +
-	isize*jsize*ksize*    3*sizeof(real_t)*5;
-
+      total_mem_size += isize * jsize * ksize * nbvar * sizeof(real_t) * 21 +
+                        isize * jsize * ksize * 3 * sizeof(real_t) * 5;
     }
 
   } // dim == 2 / 3
@@ -304,27 +344,32 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams& params,
   make_boundaries(U);
 
   // copy U into U2
-  Kokkos::deep_copy(U2,U);
+  Kokkos::deep_copy(U2, U);
 
   // compute initialize time step
   compute_dt();
 
-  int myRank=0;
+  int myRank = 0;
 #ifdef USE_MPI
   myRank = params.myRank;
 #endif // USE_MPI
 
-  if (myRank==0) {
-    std::cout << "##########################" << "\n";
+  if (myRank == 0)
+  {
+    std::cout << "##########################"
+              << "\n";
     std::cout << "Solver is " << m_solver_name << "\n";
     std::cout << "Problem (init condition) is " << m_problem_name << "\n";
-    std::cout << "##########################" << "\n";
+    std::cout << "##########################"
+              << "\n";
 
     // print parameters on screen
     params.print();
-    std::cout << "##########################" << "\n";
+    std::cout << "##########################"
+              << "\n";
     std::cout << "Memory requested : " << (total_mem_size / 1e6) << " MBytes\n";
-    std::cout << "##########################" << "\n";
+    std::cout << "##########################"
+              << "\n";
   }
 
 } // SolverMHDMuscl::SolverMHDMuscl
@@ -334,27 +379,28 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams& params,
 /**
  *
  */
-template<int dim>
+template <int dim>
 SolverMHDMuscl<dim>::~SolverMHDMuscl()
-{
-
-} // SolverMHDMuscl::~SolverMHDMuscl
+{} // SolverMHDMuscl::~SolverMHDMuscl
 
 // =======================================================
 // =======================================================
-template<int dim>
-void SolverMHDMuscl<dim>::make_boundaries(DataArray Udata)
+template <int dim>
+void
+SolverMHDMuscl<dim>::make_boundaries(DataArray Udata)
 {
 
   // this routine is specialized for 2d / 3d
 
 } // SolverMHDMuscl<dim>::make_boundaries
 
-template<>
-void SolverMHDMuscl<2>::make_boundaries(DataArray Udata);
+template <>
+void
+SolverMHDMuscl<2>::make_boundaries(DataArray Udata);
 
-template<>
-void SolverMHDMuscl<3>::make_boundaries(DataArray Udata);
+template <>
+void
+SolverMHDMuscl<3>::make_boundaries(DataArray Udata);
 
 // =======================================================
 // =======================================================
@@ -362,17 +408,16 @@ void SolverMHDMuscl<3>::make_boundaries(DataArray Udata);
  * Hydrodynamical blast Test.
  * http://www.astro.princeton.edu/~jstone/Athena/tests/blast/blast.html
  */
-template<int dim>
-void SolverMHDMuscl<dim>::init_blast(DataArray Udata)
+template <int dim>
+void
+SolverMHDMuscl<dim>::init_blast(DataArray Udata)
 {
 
   BlastParams blastParams = BlastParams(configMap);
 
   // alias to actual device functor
   using InitBlastFunctor =
-    typename std::conditional<dim==2,
-			      InitBlastFunctor2D_MHD,
-			      InitBlastFunctor3D_MHD>::type;
+    typename std::conditional<dim == 2, InitBlastFunctor2D_MHD, InitBlastFunctor3D_MHD>::type;
 
   // perform init
   InitBlastFunctor::apply(params, blastParams, Udata, nbCells);
@@ -385,17 +430,16 @@ void SolverMHDMuscl<dim>::init_blast(DataArray Udata)
  * Orszag-Tang vortex test.
  * http://www.astro.princeton.edu/~jstone/Athena/tests/orszag-tang/pagesource.html
  */
-template<int dim>
-void SolverMHDMuscl<dim>::init_orszag_tang(DataArray Udata)
+template <int dim>
+void
+SolverMHDMuscl<dim>::init_orszag_tang(DataArray Udata)
 {
 
   OrszagTangParams otParams = OrszagTangParams(configMap);
 
   // alias to actual device functor
   using InitOrszagTangFunctor =
-    typename std::conditional<dim==2,
-			      InitOrszagTangFunctor2D,
-			      InitOrszagTangFunctor3D>::type;
+    typename std::conditional<dim == 2, InitOrszagTangFunctor2D, InitOrszagTangFunctor3D>::type;
 
   InitOrszagTangFunctor::apply(params, otParams, Udata, nbCells);
 
@@ -413,17 +457,16 @@ void SolverMHDMuscl<dim>::init_orszag_tang(DataArray Udata)
  * B.E. Robertson et al, Mon. Not. R. Astron. Soc., 401, 2463-2476, (2010).
  *
  */
-template<int dim>
-void SolverMHDMuscl<dim>::init_kelvin_helmholtz(DataArray Udata)
+template <int dim>
+void
+SolverMHDMuscl<dim>::init_kelvin_helmholtz(DataArray Udata)
 {
 
   KHParams khParams = KHParams(configMap);
 
   // alias to actual device functor
-  using InitKelvinHelmholtzFunctor =
-    typename std::conditional<dim==2,
-			      InitKelvinHelmholtzFunctor2D_MHD,
-			      InitKelvinHelmholtzFunctor3D_MHD>::type;
+  using InitKelvinHelmholtzFunctor = typename std::
+    conditional<dim == 2, InitKelvinHelmholtzFunctor2D_MHD, InitKelvinHelmholtzFunctor3D_MHD>::type;
 
   // perform init
   InitKelvinHelmholtzFunctor::apply(params, khParams, Udata, nbCells);
@@ -436,17 +479,16 @@ void SolverMHDMuscl<dim>::init_kelvin_helmholtz(DataArray Udata)
  * Implosion test.
  *
  */
-template<int dim>
-void SolverMHDMuscl<dim>::init_implode(DataArray Udata)
+template <int dim>
+void
+SolverMHDMuscl<dim>::init_implode(DataArray Udata)
 {
 
   ImplodeParams implodeParams = ImplodeParams(configMap);
 
   // alias to actual device functor
   using InitImplodeFunctor =
-    typename std::conditional<dim==2,
-			      InitImplodeFunctor2D_MHD,
-			      InitImplodeFunctor3D_MHD>::type;
+    typename std::conditional<dim == 2, InitImplodeFunctor2D_MHD, InitImplodeFunctor3D_MHD>::type;
 
   // perform init
   InitImplodeFunctor::apply(params, implodeParams, Udata, nbCells);
@@ -459,17 +501,16 @@ void SolverMHDMuscl<dim>::init_implode(DataArray Udata)
  * Rotor test.
  *
  */
-template<int dim>
-void SolverMHDMuscl<dim>::init_rotor(DataArray Udata)
+template <int dim>
+void
+SolverMHDMuscl<dim>::init_rotor(DataArray Udata)
 {
 
   RotorParams rotorParams = RotorParams(configMap);
 
   // alias to actual device functor
   using InitRotorFunctor =
-    typename std::conditional<dim==2,
-			      InitRotorFunctor2D_MHD,
-			      InitRotorFunctor3D_MHD>::type;
+    typename std::conditional<dim == 2, InitRotorFunctor2D_MHD, InitRotorFunctor3D_MHD>::type;
 
   // perform init
   InitRotorFunctor::apply(params, rotorParams, Udata, nbCells);
@@ -482,17 +523,16 @@ void SolverMHDMuscl<dim>::init_rotor(DataArray Udata)
  * Field loop test.
  *
  */
-template<int dim>
-void SolverMHDMuscl<dim>::init_field_loop(DataArray Udata)
+template <int dim>
+void
+SolverMHDMuscl<dim>::init_field_loop(DataArray Udata)
 {
 
   FieldLoopParams flParams = FieldLoopParams(configMap);
 
   // alias to actual device functor
-  using InitFieldLoopFunctor =
-    typename std::conditional<dim==2,
-			      InitFieldLoopFunctor2D_MHD,
-			      InitFieldLoopFunctor3D_MHD>::type;
+  using InitFieldLoopFunctor = typename std::
+    conditional<dim == 2, InitFieldLoopFunctor2D_MHD, InitFieldLoopFunctor3D_MHD>::type;
 
   // perform init
   InitFieldLoopFunctor::apply(params, flParams, Udata, nbCells);
@@ -501,11 +541,12 @@ void SolverMHDMuscl<dim>::init_field_loop(DataArray Udata)
 
 // =======================================================
 // =======================================================
-template<int dim>
-void SolverMHDMuscl<dim>::init_restart(DataArray Udata)
+template <int dim>
+void
+SolverMHDMuscl<dim>::init_restart(DataArray Udata)
 {
 
-  int myRank=0;
+  int myRank = 0;
 #ifdef USE_MPI
   myRank = params.myRank;
 #endif // USE_MPI
@@ -518,14 +559,15 @@ void SolverMHDMuscl<dim>::init_restart(DataArray Udata)
   reader->load_data(Udata, Uhost, m_times_saved, m_t);
 
   // increment to avoid overriding last output (?)
-  //m_times_saved++;
+  // m_times_saved++;
 
   // do we force total time to be zero ?
-  bool resetTotalTime = configMap.getBool("run","restart_reset_totaltime",false);
+  bool resetTotalTime = configMap.getBool("run", "restart_reset_totaltime", false);
   if (resetTotalTime)
-    m_t=0;
+    m_t = 0;
 
-  if (myRank == 0) {
+  if (myRank == 0)
+  {
     std::cout << "### This is a restarted run ! Current time is " << m_t << " ###\n";
   }
 
@@ -533,56 +575,63 @@ void SolverMHDMuscl<dim>::init_restart(DataArray Udata)
 
 // =======================================================
 // =======================================================
-template<int dim>
-void SolverMHDMuscl<dim>::init(DataArray Udata)
+template <int dim>
+void
+SolverMHDMuscl<dim>::init(DataArray Udata)
 {
 
   // test if we are performing a re-start run (default : false)
-  bool restartEnabled = configMap.getBool("run","restart_enabled",false);
+  bool restartEnabled = configMap.getBool("run", "restart_enabled", false);
 
-  if (restartEnabled) { // load data from input data file
+  if (restartEnabled)
+  { // load data from input data file
 
     init_restart(Udata);
-
-  } else { // regular initialization
+  }
+  else
+  { // regular initialization
 
     /*
      * initialize hydro array at t=0
      */
-    if ( !m_problem_name.compare("blast") ) {
+    if (!m_problem_name.compare("blast"))
+    {
 
       init_blast(Udata);
-
-    } else if ( !m_problem_name.compare("implode") ) {
+    }
+    else if (!m_problem_name.compare("implode"))
+    {
 
       init_implode(U);
-
-    } else if ( !m_problem_name.compare("orszag_tang") ) {
+    }
+    else if (!m_problem_name.compare("orszag_tang"))
+    {
 
       init_orszag_tang(U);
-
-    } else if ( !m_problem_name.compare("kelvin_helmholtz") ) {
+    }
+    else if (!m_problem_name.compare("kelvin_helmholtz"))
+    {
 
       init_kelvin_helmholtz(U);
-
-    } else if ( !m_problem_name.compare("rotor") ) {
+    }
+    else if (!m_problem_name.compare("rotor"))
+    {
 
       init_rotor(U);
-
-    } else if ( !m_problem_name.compare("field_loop") ||
-		!m_problem_name.compare("field loop")) {
+    }
+    else if (!m_problem_name.compare("field_loop") || !m_problem_name.compare("field loop"))
+    {
 
       init_field_loop(U);
+    }
+    else
+    {
 
-    } else {
-
-      std::cout << "Problem : " << m_problem_name
-		<< " is not recognized / implemented."
-		<< std::endl;
-      std::cout <<  "Use default - Orszag-Tang vortex" << std::endl;
+      std::cout << "Problem : " << m_problem_name << " is not recognized / implemented."
+                << std::endl;
+      std::cout << "Use default - Orszag-Tang vortex" << std::endl;
       m_problem_name = "orszag_tang";
       init_orszag_tang(Udata);
-
     }
 
   } // end regular initialization
@@ -596,12 +645,13 @@ void SolverMHDMuscl<dim>::init(DataArray Udata)
  *
  * \return dt time step
  */
-template<int dim>
-double SolverMHDMuscl<dim>::compute_dt_local()
+template <int dim>
+double
+SolverMHDMuscl<dim>::compute_dt_local()
 {
 
-  real_t dt;
-  real_t invDt = ZERO_F;
+  real_t    dt;
+  real_t    invDt = ZERO_F;
   DataArray Udata;
 
   // which array is the current one ?
@@ -612,14 +662,12 @@ double SolverMHDMuscl<dim>::compute_dt_local()
 
   // alias to actual device functor
   using ComputeDtFunctor =
-    typename std::conditional<dim==2,
-			      ComputeDtFunctor2D_MHD,
-			      ComputeDtFunctor3D_MHD>::type;
+    typename std::conditional<dim == 2, ComputeDtFunctor2D_MHD, ComputeDtFunctor3D_MHD>::type;
 
   // call device functor
   ComputeDtFunctor::apply(params, Udata, nbCells, invDt);
 
-  dt = params.settings.cfl/invDt;
+  dt = params.settings.cfl / invDt;
 
   return dt;
 
@@ -627,36 +675,41 @@ double SolverMHDMuscl<dim>::compute_dt_local()
 
 // =======================================================
 // =======================================================
-template<int dim>
-void SolverMHDMuscl<dim>::next_iteration_impl()
+template <int dim>
+void
+SolverMHDMuscl<dim>::next_iteration_impl()
 {
 
-  int myRank=0;
+  int myRank = 0;
 
 #ifdef USE_MPI
   myRank = params.myRank;
 #endif // USE_MPI
 
-  if (m_iteration % m_nlog == 0) {
-    if (myRank==0) {
-      printf("time step=%7d (dt=% 10.8f t=% 10.8f)\n",m_iteration,m_dt, m_t);
+  if (m_iteration % m_nlog == 0)
+  {
+    if (myRank == 0)
+    {
+      printf("time step=%7d (dt=% 10.8f t=% 10.8f)\n", m_iteration, m_dt, m_t);
     }
   }
 
   // output
-  if (params.enableOutput) {
-    if ( should_save_solution() ) {
+  if (params.enableOutput)
+  {
+    if (should_save_solution())
+    {
 
-      if (myRank==0) {
-	std::cout << "Output results at time t=" << m_t
-		  << " step " << m_iteration
-		  << " dt=" << m_dt << std::endl;
+      if (myRank == 0)
+      {
+        std::cout << "Output results at time t=" << m_t << " step " << m_iteration << " dt=" << m_dt
+                  << std::endl;
       }
 
       save_solution();
 
     } // end output
-  } // end enable output
+  }   // end enable output
 
   // compute new dt
   timers[TIMER_DT]->start();
@@ -673,14 +726,18 @@ void SolverMHDMuscl<dim>::next_iteration_impl()
 // ///////////////////////////////////////////
 // Wrapper to the actual computation routine
 // ///////////////////////////////////////////
-template<int dim>
-void SolverMHDMuscl<dim>::godunov_unsplit(real_t dt)
+template <int dim>
+void
+SolverMHDMuscl<dim>::godunov_unsplit(real_t dt)
 {
 
-  if ( m_iteration % 2 == 0 ) {
-    godunov_unsplit_impl(U , U2, dt);
-  } else {
-    godunov_unsplit_impl(U2, U , dt);
+  if (m_iteration % 2 == 0)
+  {
+    godunov_unsplit_impl(U, U2, dt);
+  }
+  else
+  {
+    godunov_unsplit_impl(U2, U, dt);
   }
 
 } // SolverMHDMuscl::godunov_unsplit
@@ -690,10 +747,9 @@ void SolverMHDMuscl<dim>::godunov_unsplit(real_t dt)
 // ///////////////////////////////////////////
 // Actual CPU computation of Godunov scheme
 // ///////////////////////////////////////////
-template<int dim>
-void SolverMHDMuscl<dim>::godunov_unsplit_impl(DataArray data_in,
-						 DataArray data_out,
-						 real_t dt)
+template <int dim>
+void
+SolverMHDMuscl<dim>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, real_t dt)
 {
 
   // 2d / 3d implementation are specialized
@@ -701,16 +757,14 @@ void SolverMHDMuscl<dim>::godunov_unsplit_impl(DataArray data_in,
 } // SolverMHDMuscl<dim>::godunov_unsplit_impl
 
 // 2d
-template<>
-void SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in,
-					     DataArray data_out,
-					     real_t dt);
+template <>
+void
+SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, real_t dt);
 
 // 3d
-template<>
-void SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in,
-					     DataArray data_out,
-					     real_t dt);
+template <>
+void
+SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, real_t dt);
 
 
 // =======================================================
@@ -718,15 +772,14 @@ void SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in,
 // ///////////////////////////////////////////////////////////////////
 // Convert conservative variables array U into primitive var array Q
 // ///////////////////////////////////////////////////////////////////
-template<int dim>
-void SolverMHDMuscl<dim>::convertToPrimitives(DataArray Udata)
+template <int dim>
+void
+SolverMHDMuscl<dim>::convertToPrimitives(DataArray Udata)
 {
 
   // alias to actual device functor
-  using ConvertToPrimitivesFunctor =
-    typename std::conditional<dim==2,
-			      ConvertToPrimitivesFunctor2D_MHD,
-			      ConvertToPrimitivesFunctor3D_MHD>::type;
+  using ConvertToPrimitivesFunctor = typename std::
+    conditional<dim == 2, ConvertToPrimitivesFunctor2D_MHD, ConvertToPrimitivesFunctor3D_MHD>::type;
 
   // call device functor
   ConvertToPrimitivesFunctor::apply(params, Udata, Q, nbCells);
@@ -735,8 +788,9 @@ void SolverMHDMuscl<dim>::convertToPrimitives(DataArray Udata)
 
 // =======================================================
 // =======================================================
-template<int dim>
-void SolverMHDMuscl<dim>::computeElectricField(DataArray Udata)
+template <int dim>
+void
+SolverMHDMuscl<dim>::computeElectricField(DataArray Udata)
 {
 
   // NA, 3D only
@@ -744,16 +798,18 @@ void SolverMHDMuscl<dim>::computeElectricField(DataArray Udata)
 } // SolverMHDMuscl<dim>::computeElectricField
 
 // 3d
-template<>
-void SolverMHDMuscl<3>::computeElectricField(DataArray Udata);
+template <>
+void
+SolverMHDMuscl<3>::computeElectricField(DataArray Udata);
 
 // =======================================================
 // =======================================================
 // ///////////////////////////////////////////////////////////////////
 // Compute magnetic slopes
 // ///////////////////////////////////////////////////////////////////
-template<int dim>
-void SolverMHDMuscl<dim>::computeMagSlopes(DataArray Udata)
+template <int dim>
+void
+SolverMHDMuscl<dim>::computeMagSlopes(DataArray Udata)
 {
 
   // NA, 3D only
@@ -761,19 +817,21 @@ void SolverMHDMuscl<dim>::computeMagSlopes(DataArray Udata)
 } // SolverMHDMuscl<dim>::computeMagSlopes
 
 // 3d
-template<>
-void SolverMHDMuscl<3>::computeMagSlopes(DataArray Udata);
+template <>
+void
+SolverMHDMuscl<3>::computeMagSlopes(DataArray Udata);
 
 
 // =======================================================
 // =======================================================
-template<int dim>
-void SolverMHDMuscl<dim>::save_solution_impl()
+template <int dim>
+void
+SolverMHDMuscl<dim>::save_solution_impl()
 {
 
   timers[TIMER_IO]->start();
   if (m_iteration % 2 == 0)
-    save_data(U,  Uhost, m_times_saved, m_t);
+    save_data(U, Uhost, m_times_saved, m_t);
   else
     save_data(U2, Uhost, m_times_saved, m_t);
 

@@ -9,7 +9,7 @@
 // minimal kokkos support
 #include "shared/kokkos_shared.h"
 
-#include "shared/HydroState.h" // for constants
+#include "shared/HydroState.h"  // for constants
 #include "shared/real_type.h"   // choose between single and double precision
 #include "shared/HydroParams.h" // read parameter file
 
@@ -20,28 +20,29 @@
 // PNETCDF IO implementation (to be tested)
 #include "utils/io/IO_PNETCDF.h"
 
-namespace euler_kokkos {
+namespace euler_kokkos
+{
 
 // ===========================================================
 // ===========================================================
 // create some fake data
-template<unsigned int dim>
+template <unsigned int dim>
 class InitData
 {
 
 public:
   //! Decide at compile-time which data array type to use
-  using DataArray  = typename std::conditional<dim==2,DataArray2d,DataArray3d>::type;
+  using DataArray = typename std::conditional<dim == 2, DataArray2d, DataArray3d>::type;
 
-  InitData(HydroParams params, DataArray data) :
-    params(params),
-    data(data) {};
-  ~InitData() {};
+  InitData(HydroParams params, DataArray data)
+    : params(params)
+    , data(data){};
+  ~InitData(){};
 
   //! functor for 2d
-  template<unsigned int dim_ = dim>
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const typename std::enable_if<dim_==2, int>::type& index)  const
+  template <unsigned int dim_ = dim>
+  KOKKOS_INLINE_FUNCTION void
+  operator()(const typename std::enable_if<dim_ == 2, int>::type & index) const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
@@ -58,23 +59,22 @@ public:
     const real_t dx = params.dx;
     const real_t dy = params.dy;
 
-    int i,j;
-    index2coord(index,i,j,isize,jsize);
+    int i, j;
+    index2coord(index, i, j, isize, jsize);
 
-    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
-    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
+    real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
+    real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
 
-    data(i,j,ID) =   x+y;
-    data(i,j,IE) = 2*x+y;
-    data(i,j,IU) = 3*x+y;
-    data(i,j,IV) = 4*x+y;
-
+    data(i, j, ID) = x + y;
+    data(i, j, IE) = 2 * x + y;
+    data(i, j, IU) = 3 * x + y;
+    data(i, j, IV) = 4 * x + y;
   }
 
   //! functor for 3d
-  template<unsigned int dim_ = dim>
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const typename std::enable_if<dim_==3, int>::type& index)  const
+  template <unsigned int dim_ = dim>
+  KOKKOS_INLINE_FUNCTION void
+  operator()(const typename std::enable_if<dim_ == 3, int>::type & index) const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
@@ -97,18 +97,18 @@ public:
     const real_t dy = params.dy;
     const real_t dz = params.dz;
 
-    int i,j,k;
-    index2coord(index,i,j,k,isize,jsize,ksize);
+    int i, j, k;
+    index2coord(index, i, j, k, isize, jsize, ksize);
 
-    real_t x = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
-    real_t y = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
-    real_t z = zmin + dz/2 + (k+nz*k_mpi-ghostWidth)*dz;
+    real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
+    real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
+    real_t z = zmin + dz / 2 + (k + nz * k_mpi - ghostWidth) * dz;
 
-    data(i,j,k,ID) =   x+y+z;
-    data(i,j,k,IE) = 2*x+y+z;
-    data(i,j,k,IU) = 3*x+y+z;
-    data(i,j,k,IV) = 4*x+y+z;
-    data(i,j,k,IW) = 5*x+y+z;
+    data(i, j, k, ID) = x + y + z;
+    data(i, j, k, IE) = 2 * x + y + z;
+    data(i, j, k, IU) = 3 * x + y + z;
+    data(i, j, k, IV) = 4 * x + y + z;
+    data(i, j, k, IW) = 5 * x + y + z;
 
     // data(i,j,k,ID) = index + 0*isize*jsize*ksize;//  x+y+z;
     // data(i,j,k,IE) = index + 1*isize*jsize*ksize;//2*x+y+z;
@@ -118,13 +118,15 @@ public:
   }
 
   HydroParams params;
-  DataArray data;
+  DataArray   data;
 
 }; // class InitData
 
 // ===========================================================
 // ===========================================================
-void run_test_pnetcdf(const std::string input_filename) {
+void
+run_test_pnetcdf(const std::string input_filename)
+{
 
   int mpi_rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -145,43 +147,45 @@ void run_test_pnetcdf(const std::string input_filename) {
   // =================
   // ==== 2D test ====
   // =================
-  if (params.nz == 1) {
+  if (params.nz == 1)
+  {
 
-    if (mpi_rank==0)
+    if (mpi_rank == 0)
       std::cout << "2D test\n";
 
-    DataArray2d     data("data",params.isize,params.jsize,HYDRO_2D_NBVAR);
+    DataArray2d     data("data", params.isize, params.jsize, HYDRO_2D_NBVAR);
     DataArray2dHost data_host = Kokkos::create_mirror(data);
 
     // create fake data
     InitData<2> functor(params, data);
-    Kokkos::parallel_for(params.isize*params.jsize, functor);
+    Kokkos::parallel_for(params.isize * params.jsize, functor);
 
     // save to file
-    io::Save_PNETCDF<TWO_D> writer(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
+    io::Save_PNETCDF<TWO_D> writer(
+      data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
-
   }
 
   // =================
   // ==== 3D test ====
   // =================
-  if (params.nz > 1) {
+  if (params.nz > 1)
+  {
 
-    if (mpi_rank==0)
+    if (mpi_rank == 0)
       std::cout << "3D test\n";
 
-    DataArray3d     data("data",params.isize,params.jsize,params.ksize,HYDRO_3D_NBVAR);
+    DataArray3d     data("data", params.isize, params.jsize, params.ksize, HYDRO_3D_NBVAR);
     DataArray3dHost data_host = Kokkos::create_mirror(data);
 
     // create fake data
     InitData<3> functor(params, data);
-    Kokkos::parallel_for(params.isize*params.jsize*params.ksize, functor);
+    Kokkos::parallel_for(params.isize * params.jsize * params.ksize, functor);
 
     // save to file
-    io::Save_PNETCDF<THREE_D> writer(data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
+    io::Save_PNETCDF<THREE_D> writer(
+      data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
-
   }
 
 } // run_test_pnetcdf

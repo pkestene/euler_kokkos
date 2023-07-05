@@ -5,7 +5,8 @@
 
 #include <math.h> // for M_PI
 
-namespace euler_kokkos {
+namespace euler_kokkos
+{
 
 /**
  * A small structure to hold parameters passed to a Kokkos functor,
@@ -15,7 +16,8 @@ namespace euler_kokkos {
  *
  * This border condition is time-dependent.
  */
-struct WedgeParams {
+struct WedgeParams
+{
 
   real_t x_f;     //! initial shock front position
   real_t angle_f; //! angle in radian of the shock front with x-axis
@@ -31,33 +33,32 @@ struct WedgeParams {
   //! conservative variable in the pre-shock region
   real_t rho2, e_tot2, rho_u2, rho_v2, rho_w2;
 
-  WedgeParams (ConfigMap& configMap, real_t t)
+  WedgeParams(ConfigMap & configMap, real_t t)
   {
-    real_t gamma0 = configMap.getFloat("hydro","gamma0", 1.4);
+    real_t gamma0 = configMap.getFloat("hydro", "gamma0", 1.4);
 
-    x_f     = configMap.getFloat("wedge", "front_x", 0.1);
-    angle_f = configMap.getFloat("wedge", "front_angle", M_PI/3.0);
+    x_f = configMap.getFloat("wedge", "front_x", 0.1);
+    angle_f = configMap.getFloat("wedge", "front_angle", M_PI / 3.0);
     slope_f = tan(angle_f);
 
     shock_speed = configMap.getFloat("wedge", "shock_speed", 10.0);
-    shock_speed /= cos(M_PI/2.0-angle_f);
+    shock_speed /= cos(M_PI / 2.0 - angle_f);
 
-    delta_x = shock_speed*t;
+    delta_x = shock_speed * t;
 
     // post-shock region
     rho1 = configMap.getFloat("wedge", "rho1", 8.0);
 
     real_t p1 = configMap.getFloat("wedge", "p1", 116.5);
-    real_t u1 = configMap.getFloat("wedge", "u1", 8.25*cos(angle_f-M_PI/2.0));
-    real_t v1 = configMap.getFloat("wedge", "v1", 8.25*sin(angle_f-M_PI/2.0));
-    real_t w1 = configMap.getFloat("wedge", "w1",  0.0);
+    real_t u1 = configMap.getFloat("wedge", "u1", 8.25 * cos(angle_f - M_PI / 2.0));
+    real_t v1 = configMap.getFloat("wedge", "v1", 8.25 * sin(angle_f - M_PI / 2.0));
+    real_t w1 = configMap.getFloat("wedge", "w1", 0.0);
 
     rho_u1 = rho1 * u1;
     rho_v1 = rho1 * v1;
     rho_w1 = rho1 * w1;
 
-    e_tot1 = p1 / (gamma0-1.0) +
-      0.5 * rho1 * ( u1*u1 + v1*v1 + w1*w1 );
+    e_tot1 = p1 / (gamma0 - 1.0) + 0.5 * rho1 * (u1 * u1 + v1 * v1 + w1 * w1);
 
     // pre-shock region
     rho2 = configMap.getFloat("wedge", "rho2", 1.4);
@@ -71,8 +72,7 @@ struct WedgeParams {
     rho_v2 = rho2 * v2;
     rho_w2 = rho2 * w2;
 
-    e_tot2 = p2 / (gamma0-1.0) +
-      0.5 * rho2 * ( u2*u2 + v2*v2 + w2*w2 );
+    e_tot2 = p2 / (gamma0 - 1.0) + 0.5 * rho2 * (u2 * u2 + v2 * v2 + w2 * w2);
 
   } // WedgeParams constructor
 

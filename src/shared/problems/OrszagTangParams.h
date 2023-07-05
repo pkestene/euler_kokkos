@@ -5,19 +5,16 @@
 
 #include "utils/config/ConfigMap.h"
 
-namespace euler_kokkos {
+namespace euler_kokkos
+{
 
-struct OrszagTangParams {
+struct OrszagTangParams
+{
 
   // transverse wave vector
   real_t kt;
 
-  OrszagTangParams(ConfigMap& configMap)
-  {
-
-    kt = configMap.getFloat  ("OrszagTang", "kt",  0.0);
-
-  }
+  OrszagTangParams(ConfigMap & configMap) { kt = configMap.getFloat("OrszagTang", "kt", 0.0); }
 
 }; // struct OrszagTangParams
 

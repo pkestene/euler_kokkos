@@ -5,7 +5,8 @@
 #include "muscl/SolverHydroMuscl.h"
 #include "muscl/SolverMHDMuscl.h"
 
-namespace euler_kokkos {
+namespace euler_kokkos
+{
 
 // The main solver creation routine
 SolverFactory::SolverFactory()
@@ -17,8 +18,8 @@ SolverFactory::SolverFactory()
   registerSolver("Hydro_Muscl_2D", &muscl::SolverHydroMuscl<2>::create);
   registerSolver("Hydro_Muscl_3D", &muscl::SolverHydroMuscl<3>::create);
 
-  registerSolver("MHD_Muscl_2D",   &muscl::SolverMHDMuscl<2>::create);
-  registerSolver("MHD_Muscl_3D",   &muscl::SolverMHDMuscl<3>::create);
+  registerSolver("MHD_Muscl_2D", &muscl::SolverMHDMuscl<2>::create);
+  registerSolver("MHD_Muscl_3D", &muscl::SolverMHDMuscl<3>::create);
 
 } // SolverFactory::SolverFactory
 

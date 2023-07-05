@@ -2,7 +2,8 @@
 #define HYDRO_SHARED_H_
 
 //! numerical scheme ID
-enum NumericalSchemeId {
+enum NumericalSchemeId
+{
   HYDRO_2D,
   HYDRO_3D,
   MHD_2D,
