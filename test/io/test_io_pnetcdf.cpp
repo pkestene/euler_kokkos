@@ -158,7 +158,8 @@ run_test_pnetcdf(const std::string input_filename)
 
     // create fake data
     InitData<2> functor(params, data);
-    Kokkos::parallel_for(params.isize * params.jsize, functor);
+    Kokkos::parallel_for(
+      "InitData<2>", Kokkos::RangePolicy<>(0, params.isize * params.jsize), functor);
 
     // save to file
     io::Save_PNETCDF<TWO_D> writer(
@@ -180,7 +181,8 @@ run_test_pnetcdf(const std::string input_filename)
 
     // create fake data
     InitData<3> functor(params, data);
-    Kokkos::parallel_for(params.isize * params.jsize * params.ksize, functor);
+    Kokkos::parallel_for(
+      "InitData<3>", Kokkos::RangePolicy<>(0, params.isize * params.jsize * params.ksize), functor);
 
     // save to file
     io::Save_PNETCDF<THREE_D> writer(

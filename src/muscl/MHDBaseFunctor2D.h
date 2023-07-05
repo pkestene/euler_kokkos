@@ -2,7 +2,6 @@
 #define MHD_BASE_FUNCTOR_2D_H_
 
 #include "shared/kokkos_shared.h"
-
 #include "shared/HydroParams.h"
 #include "shared/HydroState.h"
 

@@ -37,23 +37,10 @@ public:
   apply(HydroParams params, DataArray3d Udata, int nbCells, real_t & invDt)
   {
     ComputeDtFunctor3D functor(params, Udata);
-    Kokkos::parallel_reduce(nbCells, functor, invDt);
+    Kokkos::Max<real_t> reducer(invDt);
+    Kokkos::parallel_reduce(
+      "ComputeDtFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor, reducer);
   }
-
-  // Tell each thread how to initialize its reduction result.
-  KOKKOS_INLINE_FUNCTION
-  void
-  init(real_t & dst) const
-  {
-    // The identity under max is -Inf.
-    // Kokkos does not come with a portable way to access
-    // floating-point Inf and NaN.
-#ifdef __CUDA_ARCH__
-    dst = -CUDART_INF;
-#else
-    dst = std::numeric_limits<real_t>::min();
-#endif // __CUDA_ARCH__
-  }    // init
 
   /* this is a reduce (max) functor */
   KOKKOS_INLINE_FUNCTION
@@ -100,26 +87,6 @@ public:
   } // operator ()
 
 
-  // "Join" intermediate results from different threads.
-  // This should normally implement the same reduction
-  // operation as operator() above. Note that both input
-  // arguments MUST be declared volatile.
-  KOKKOS_INLINE_FUNCTION
-#if KOKKOS_VERSION_MAJOR > 3
-  void
-  join(real_t & dst, const real_t & src) const
-#else
-  void
-  join(volatile real_t & dst, const volatile real_t & src) const
-#endif
-  {
-    // max reduce
-    if (dst < src)
-    {
-      dst = src;
-    }
-  } // join
-
   DataArray3d Udata;
 
 }; // ComputeDtFunctor3D
@@ -160,23 +127,10 @@ public:
         real_t &      invDt)
   {
     ComputeDtGravityFunctor3D functor(params, cfl, gravity, Udata);
-    Kokkos::parallel_reduce(nbCells, functor, invDt);
+    Kokkos::Max<real_t>       reducer(invDt);
+    Kokkos::parallel_reduce(
+      "ComputeDtGravityFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor, reducer);
   }
-
-  // Tell each thread how to initialize its reduction result.
-  KOKKOS_INLINE_FUNCTION
-  void
-  init(real_t & dst) const
-  {
-    // The identity under max is -Inf.
-    // Kokkos does not come with a portable way to access
-    // floating-point Inf and NaN.
-#ifdef __CUDA_ARCH__
-    dst = -CUDART_INF;
-#else
-    dst = std::numeric_limits<real_t>::min();
-#endif // __CUDA_ARCH__
-  }    // init
 
   /* this is a reduce (max) functor */
   KOKKOS_INLINE_FUNCTION
@@ -240,27 +194,6 @@ public:
 
   } // operator ()
 
-
-  // "Join" intermediate results from different threads.
-  // This should normally implement the same reduction
-  // operation as operator() above. Note that both input
-  // arguments MUST be declared volatile.
-  KOKKOS_INLINE_FUNCTION
-#if KOKKOS_VERSION_MAJOR > 3
-  void
-  join(real_t & dst, const real_t & src) const
-#else
-  void
-  join(volatile real_t & dst, const volatile real_t & src) const
-#endif
-  {
-    // max reduce
-    if (dst < src)
-    {
-      dst = src;
-    }
-  } // join
-
   real_t        cfl;
   VectorField3d gravity;
   DataArray3d   Udata;
@@ -292,7 +225,8 @@ public:
   {
     int                          nbCells = params.isize * params.jsize * params.ksize;
     ConvertToPrimitivesFunctor3D functor(params, Udata, Qdata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "ConvertToPrimitivesFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -393,7 +327,8 @@ public:
     int                            nbCells = params.isize * params.jsize * params.ksize;
     ComputeAndStoreFluxesFunctor3D functor(
       params, Qdata, FluxData_x, FluxData_y, FluxData_z, dt, gravity_enabled, gravity);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "ComputeAndStoreFluxesFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -829,7 +764,7 @@ public:
   {
     int             nbCells = params.isize * params.jsize * params.ksize;
     UpdateFunctor3D functor(params, Udata, FluxData_x, FluxData_y, FluxData_z);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("UpdateFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -922,7 +857,7 @@ public:
   {
     int                     nbCells = params.isize * params.jsize * params.ksize;
     UpdateDirFunctor3D<dir> functor(params, Udata, FluxData);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("UpdateDirFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -1033,7 +968,7 @@ public:
   {
     int                    nbCells = params.isize * params.jsize * params.ksize;
     ComputeSlopesFunctor3D functor(params, Qdata, Slopes_x, Slopes_y, Slopes_z);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("ComputeSlopesFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -1206,7 +1141,8 @@ public:
     int                                  nbCells = params.isize * params.jsize * params.ksize;
     ComputeTraceAndFluxes_Functor3D<dir> functor(
       params, Qdata, Slopes_x, Slopes_y, Slopes_z, Fluxes, dt, gravity_enabled, gravity);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "ComputeTraceAndFluxes_Functor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -1538,7 +1474,7 @@ public:
   {
     int                        nbCells = params.isize * params.jsize * params.ksize;
     GravitySourceTermFunctor3D functor(params, Udata_in, Udata_out, gravity, dt);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("GravitySourceTermFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION

@@ -46,7 +46,7 @@ public:
   apply(HydroParams params, ImplodeParams iparams, DataArray2d Udata, int nbCells)
   {
     InitImplodeFunctor2D_MHD functor(params, iparams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitImplodeFunctor2D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -156,7 +156,7 @@ public:
   apply(HydroParams params, BlastParams bParams, DataArray2d Udata, int nbCells)
   {
     InitBlastFunctor2D_MHD functor(params, bParams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitBlastFunctor2D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -266,10 +266,14 @@ public:
     InitOrszagTangFunctor2D functor(params, otParams, Udata);
 
     functor.phase = INIT_ALL_VAR_BUT_ENERGY;
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitOrszagTangFunctor2D INIT_ALL_VAR_BUT_ENERGY",
+                         Kokkos::RangePolicy<>(0, nbCells),
+                         functor);
 
     functor.phase = INIT_ENERGY;
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitOrszagTangFunctor2D INIT_ENERGY            ",
+                         Kokkos::RangePolicy<>(0, nbCells),
+                         functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -412,7 +416,8 @@ public:
   apply(HydroParams params, KHParams khParams, DataArray2d Udata, int nbCells)
   {
     InitKelvinHelmholtzFunctor2D_MHD functor(params, khParams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "InitKelvinHelmholtzFunctor2D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -606,7 +611,7 @@ public:
   apply(HydroParams params, RotorParams rParams, DataArray2d Udata, int nbCells)
   {
     InitRotorFunctor2D_MHD functor(params, rParams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitRotorFunctor2D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -758,13 +763,19 @@ public:
     InitFieldLoopFunctor2D_MHD functor(params, flParams, Udata, nbCells);
 
     functor.phase = COMPUTE_VECTOR_POTENTIAL;
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitFieldLoopFunctor2D_MHD COMPUTE_VECTOR_POTENTIAL",
+                         Kokkos::RangePolicy<>(0, nbCells),
+                         functor);
 
     functor.phase = DO_INIT_CONDITION;
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitFieldLoopFunctor2D_MHD DO_INIT_CONDITION       ",
+                         Kokkos::RangePolicy<>(0, nbCells),
+                         functor);
 
     functor.phase = DO_INIT_ENERGY;
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitFieldLoopFunctor2D_MHD DO_INIT_ENERGY          ",
+                         Kokkos::RangePolicy<>(0, nbCells),
+                         functor);
 
   } // apply
 

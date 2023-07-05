@@ -43,7 +43,7 @@ public:
   apply(HydroParams params, ImplodeParams iparams, DataArray2d Udata, int nbCells)
   {
     InitImplodeFunctor2D functor(params, iparams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitImplodeFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -139,7 +139,7 @@ public:
   apply(HydroParams params, BlastParams bParams, DataArray2d Udata, int nbCells)
   {
     InitBlastFunctor2D functor(params, bParams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitBlastFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -228,7 +228,8 @@ public:
   apply(HydroParams params, KHParams khParams, DataArray2d Udata, int nbCells)
   {
     InitKelvinHelmholtzFunctor2D functor(params, khParams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "InitKelvinHelmholtzFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -365,7 +366,7 @@ public:
   apply(HydroParams params, GreshoParams gvParams, DataArray2d Udata, int nbCells)
   {
     InitGreshoVortexFunctor2D functor(params, gvParams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitGreshoVortexFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -490,7 +491,7 @@ public:
         int         nbCells)
   {
     InitFourQuadrantFunctor2D functor(params, Udata, configNumber, U0, U1, U2, U3, xt, yt);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitFourQuadrantFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -590,7 +591,8 @@ public:
   apply(HydroParams params, IsentropicVortexParams iparams, DataArray2d Udata, int nbCells)
   {
     InitIsentropicVortexFunctor2D functor(params, iparams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "InitIsentropicVortexFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -696,7 +698,8 @@ public:
   {
     uint64_t                           nbCells = params.isize * params.jsize;
     RayleighTaylorInstabilityFunctor2D functor(params, rtiparams, Udata, gravity);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "RayleighTaylorInstabilityFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION

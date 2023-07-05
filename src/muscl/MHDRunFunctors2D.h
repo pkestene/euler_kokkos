@@ -1,18 +1,9 @@
 #ifndef MHD_RUN_FUNCTORS_2D_H_
 #define MHD_RUN_FUNCTORS_2D_H_
 
-#include <limits> // for std::numeric_limits
-#ifdef __CUDA_ARCH__
-#  include <math_constants.h>
-#endif // __CUDA_ARCH__
-
 #include "shared/kokkos_shared.h"
 #include "MHDBaseFunctor2D.h"
 #include "shared/RiemannSolvers_MHD.h"
-
-#ifndef SQR
-#  define SQR(x) ((x) * (x))
-#endif
 
 namespace euler_kokkos
 {
@@ -35,23 +26,10 @@ public:
   apply(HydroParams params, DataArray2d Udata, int nbCells, real_t & invDt)
   {
     ComputeDtFunctor2D_MHD functor(params, Udata);
-    Kokkos::parallel_reduce(nbCells, functor, invDt);
+    Kokkos::Max<real_t>    reducer(invDt);
+    Kokkos::parallel_reduce(
+      "ComputeDtFunctor2D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor, reducer);
   }
-
-  // Tell each thread how to initialize its reduction result.
-  KOKKOS_INLINE_FUNCTION
-  void
-  init(real_t & dst) const
-  {
-    // The identity under max is -Inf.
-    // Kokkos does not come with a portable way to access
-    // floating-point Inf and NaN.
-#ifdef __CUDA_ARCH__
-    dst = -CUDART_INF;
-#else
-    dst = std::numeric_limits<real_t>::min();
-#endif // __CUDA_ARCH__
-  }    // init
 
   /* this is a reduce (max) functor */
   KOKKOS_INLINE_FUNCTION
@@ -94,27 +72,6 @@ public:
 
   } // operator ()
 
-
-  // "Join" intermediate results from different threads.
-  // This should normally implement the same reduction
-  // operation as operator() above. Note that both input
-  // arguments MUST be declared volatile.
-  KOKKOS_INLINE_FUNCTION
-#if KOKKOS_VERSION_MAJOR > 3
-  void
-  join(real_t & dst, const real_t & src) const
-#else
-  void
-  join(volatile real_t & dst, const volatile real_t & src) const
-#endif
-  {
-    // max reduce
-    if (dst < src)
-    {
-      dst = src;
-    }
-  } // join
-
   DataArray2d Qdata;
 
 }; // ComputeDtFunctor2D_MHD
@@ -136,7 +93,8 @@ public:
   apply(HydroParams params, DataArray2d Udata, DataArray2d Qdata, int nbCells)
   {
     ConvertToPrimitivesFunctor2D_MHD functor(params, Udata, Qdata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "ConvertToPrimitivesFunctor2D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -236,7 +194,8 @@ public:
   {
     ComputeFluxesAndStoreFunctor2D_MHD functor(
       params, Qm_x, Qm_y, Qp_x, Qp_y, Flux_x, Flux_y, dtdx, dtdy);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "ComputeFluxesAndStoreFunctor2D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -332,7 +291,7 @@ public:
   {
     ComputeEmfAndStoreFunctor2D functor(
       params, QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB, Emf, dtdx, dtdy);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("ComputeEmfAndStoreFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -440,7 +399,7 @@ public:
                                       QEdge_LB,
                                       dtdx,
                                       dtdy);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("ComputeTraceFunctor2D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -541,7 +500,7 @@ public:
         int         nbCells)
   {
     UpdateFunctor2D_MHD functor(params, Udata, FluxData_x, FluxData_y, dtdx, dtdy);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("UpdateFunctor2D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -646,7 +605,7 @@ public:
         int             nbCells)
   {
     UpdateEmfFunctor2D functor(params, Udata, Emf, dtdx, dtdy);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("UpdateEmfFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION

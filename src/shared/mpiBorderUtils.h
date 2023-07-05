@@ -52,7 +52,9 @@ public:
   apply(DataArray U, DataArray b, int ghostWidth, int nbIter)
   {
     CopyBorderBuf_To_DataArray<boundaryLoc, dimType> functor(U, b, ghostWidth);
-    Kokkos::parallel_for(nbIter, functor);
+    Kokkos::parallel_for("CopyBorderBuf_To_DataArray<boundaryLoc, dimType>",
+                         Kokkos::RangePolicy<>(0, nbIter),
+                         functor);
   }
 
 
@@ -197,7 +199,9 @@ public:
   apply(DataArray b, DataArray U, int ghostWidth, int nbIter)
   {
     CopyDataArray_To_BorderBuf<boundaryLoc, dimType> functor(b, U, ghostWidth);
-    Kokkos::parallel_for(nbIter, functor);
+    Kokkos::parallel_for("CopyDataArray_To_BorderBuf<boundaryLoc, dimType>",
+                         Kokkos::RangePolicy<>(0, nbIter),
+                         functor);
   }
 
   template <DimensionType dimType_ = dimType>

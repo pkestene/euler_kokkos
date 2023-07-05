@@ -38,7 +38,7 @@ public:
   apply(HydroParams params, DataArray3d Udata, int nbCells)
   {
     InitFakeFunctor3D functor(params, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitFakeFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -83,7 +83,7 @@ public:
   apply(HydroParams params, ImplodeParams iparams, DataArray3d Udata, int nbCells)
   {
     InitImplodeFunctor3D functor(params, iparams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitImplodeFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -191,7 +191,7 @@ public:
   apply(HydroParams params, BlastParams bParams, DataArray3d Udata, int nbCells)
   {
     InitBlastFunctor3D functor(params, bParams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitBlastFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -293,7 +293,8 @@ public:
   apply(HydroParams params, KHParams khParams, DataArray3d Udata, int nbCells)
   {
     InitKelvinHelmholtzFunctor3D functor(params, khParams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "InitKelvinHelmholtzFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -453,7 +454,7 @@ public:
   apply(HydroParams params, GreshoParams gvParams, DataArray3d Udata, int nbCells)
   {
     InitGreshoVortexFunctor3D functor(params, gvParams, Udata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("InitGreshoVortexFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -583,7 +584,8 @@ public:
   {
     uint64_t                           nbCells = params.isize * params.jsize * params.ksize;
     RayleighTaylorInstabilityFunctor3D functor(params, rtiparams, Udata, gravity);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "RayleighTaylorInstabilityFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION

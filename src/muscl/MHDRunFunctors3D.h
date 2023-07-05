@@ -1,18 +1,9 @@
 #ifndef MHD_RUN_FUNCTORS_3D_H_
 #define MHD_RUN_FUNCTORS_3D_H_
 
-#include <limits> // for std::numeric_limits
-#ifdef __CUDA_ARCH__
-#  include <math_constants.h>
-#endif // __CUDA_ARCH__
-
 #include "shared/kokkos_shared.h"
 #include "MHDBaseFunctor3D.h"
 #include "shared/RiemannSolvers_MHD.h"
-
-#ifndef SQR
-#  define SQR(x) ((x) * (x))
-#endif
 
 namespace euler_kokkos
 {
@@ -35,23 +26,10 @@ public:
   apply(HydroParams params, DataArray3d Udata, int nbCells, real_t & invDt)
   {
     ComputeDtFunctor3D_MHD functor(params, Udata);
-    Kokkos::parallel_reduce(nbCells, functor, invDt);
+    Kokkos::Max<real_t>    reducer(invDt);
+    Kokkos::parallel_reduce(
+      "ComputeDtFunctor3D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor, reducer);
   }
-
-  // Tell each thread how to initialize its reduction result.
-  KOKKOS_INLINE_FUNCTION
-  void
-  init(real_t & dst) const
-  {
-    // The identity under max is -Inf.
-    // Kokkos does not come with a portable way to access
-    // floating-point Inf and NaN.
-#ifdef __CUDA_ARCH__
-    dst = -CUDART_INF;
-#else
-    dst = std::numeric_limits<real_t>::min();
-#endif // __CUDA_ARCH__
-  }    // init
 
   /* this is a reduce (max) functor */
   KOKKOS_INLINE_FUNCTION
@@ -98,27 +76,6 @@ public:
 
   } // operator ()
 
-
-  // "Join" intermediate results from different threads.
-  // This should normally implement the same reduction
-  // operation as operator() above. Note that both input
-  // arguments MUST be declared volatile.
-  KOKKOS_INLINE_FUNCTION
-#if KOKKOS_VERSION_MAJOR > 3
-  void
-  join(real_t & dst, const real_t & src) const
-#else
-  void
-  join(volatile real_t & dst, const volatile real_t & src) const
-#endif
-  {
-    // max reduce
-    if (dst < src)
-    {
-      dst = src;
-    }
-  } // join
-
   DataArray3d Qdata;
 
 }; // ComputeDtFunctor3D_MHD
@@ -140,7 +97,8 @@ public:
   apply(HydroParams params, DataArray3d Udata, DataArray3d Qdata, int nbCells)
   {
     ConvertToPrimitivesFunctor3D_MHD functor(params, Udata, Qdata);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "ConvertToPrimitivesFunctor3D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -225,7 +183,7 @@ public:
         int              nbCells)
   {
     ComputeElecFieldFunctor3D functor(params, Udata, Qdata, ElecField);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("ComputeElecFieldFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -320,7 +278,7 @@ public:
         int              nbCells)
   {
     ComputeMagSlopesFunctor3D functor(params, Udata, DeltaA, DeltaB, DeltaC);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("ComputeMagSlopesFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -513,7 +471,7 @@ public:
                                       dtdx,
                                       dtdy,
                                       dtdz);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("ComputeTraceFunctor3D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -754,7 +712,8 @@ public:
   {
     ComputeFluxesAndStoreFunctor3D_MHD functor(
       params, Qm_x, Qm_y, Qm_z, Qp_x, Qp_y, Qp_z, Flux_x, Flux_y, Flux_z, dtdx, dtdy, dtdz);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for(
+      "ComputeFluxesAndStoreFunctor3D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -911,7 +870,7 @@ public:
                                         dtdx,
                                         dtdy,
                                         dtdz);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("ComputeEmfAndStoreFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -1012,7 +971,7 @@ public:
   {
     UpdateFunctor3D_MHD functor(
       params, Udata, FluxData_x, FluxData_y, FluxData_z, dtdx, dtdy, dtdz);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("UpdateFunctor3D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -1123,7 +1082,7 @@ public:
         int              nbCells)
   {
     UpdateEmfFunctor3D functor(params, Udata, Emf, dtdx, dtdy, dtdz);
-    Kokkos::parallel_for(nbCells, functor);
+    Kokkos::parallel_for("UpdateEmfFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
   }
 
   KOKKOS_INLINE_FUNCTION

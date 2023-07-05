@@ -28,7 +28,8 @@ public:
   apply(HydroParams params, DataArray2d Udata, int nbIter)
   {
     MakeBoundariesFunctor2D<faceId> functor(params, Udata);
-    Kokkos::parallel_for(nbIter, functor);
+    Kokkos::parallel_for(
+      "MakeBoundariesFunctor2D<faceId>", Kokkos::RangePolicy<>(0, nbIter), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -236,7 +237,8 @@ public:
   apply(HydroParams params, DataArray3d Udata, int nbIter)
   {
     MakeBoundariesFunctor3D<faceId> functor(params, Udata);
-    Kokkos::parallel_for(nbIter, functor);
+    Kokkos::parallel_for(
+      "MakeBoundariesFunctor3D<faceId>", Kokkos::RangePolicy<>(0, nbIter), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -543,7 +545,8 @@ public:
   apply(HydroParams params, DataArray2d Udata, int nbIter)
   {
     MakeBoundariesFunctor2D_MHD<faceId> functor(params, Udata);
-    Kokkos::parallel_for(nbIter, functor);
+    Kokkos::parallel_for(
+      "MakeBoundariesFunctor2D_MHD<faceId>", Kokkos::RangePolicy<>(0, nbIter), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -757,7 +760,8 @@ public:
   apply(HydroParams params, DataArray3d Udata, int nbIter)
   {
     MakeBoundariesFunctor3D_MHD<faceId> functor(params, Udata);
-    Kokkos::parallel_for(nbIter, functor);
+    Kokkos::parallel_for(
+      "MakeBoundariesFunctor3D_MHD<faceId>", Kokkos::RangePolicy<>(0, nbIter), functor);
   }
 
   KOKKOS_INLINE_FUNCTION
