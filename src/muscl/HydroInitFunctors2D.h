@@ -40,19 +40,20 @@ public:
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams params, ImplodeParams iparams, DataArray2d Udata, int nbCells)
+  apply(HydroParams params, ImplodeParams iparams, DataArray2d Udata)
   {
     InitImplodeFunctor2D functor(params, iparams, Udata);
-    Kokkos::parallel_for("InitImplodeFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
+    Kokkos::parallel_for(
+      "InitImplodeFunctor2D",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j) const
   {
 
-    const int isize = params.isize;
-    const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
 #ifdef USE_MPI
@@ -73,9 +74,6 @@ public:
     const real_t dy = params.dy;
 
     const real_t gamma0 = params.settings.gamma0;
-
-    int i, j;
-    index2coord(index, i, j, isize, jsize);
 
     real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
     real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
@@ -136,19 +134,20 @@ public:
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams params, BlastParams bParams, DataArray2d Udata, int nbCells)
+  apply(HydroParams params, BlastParams bParams, DataArray2d Udata)
   {
     InitBlastFunctor2D functor(params, bParams, Udata);
-    Kokkos::parallel_for("InitBlastFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
+    Kokkos::parallel_for(
+      "InitBlastFunctor2D",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j) const
   {
 
-    const int isize = params.isize;
-    const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
 #ifdef USE_MPI
@@ -164,6 +163,7 @@ public:
 
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
+
     const real_t dx = params.dx;
     const real_t dy = params.dy;
 
@@ -178,9 +178,6 @@ public:
     const real_t blast_density_out = bParams.blast_density_out;
     const real_t blast_pressure_in = bParams.blast_pressure_in;
     const real_t blast_pressure_out = bParams.blast_pressure_out;
-
-    int i, j;
-    index2coord(index, i, j, isize, jsize);
 
     real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
     real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
@@ -225,20 +222,20 @@ public:
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams params, KHParams khParams, DataArray2d Udata, int nbCells)
+  apply(HydroParams params, KHParams khParams, DataArray2d Udata)
   {
     InitKelvinHelmholtzFunctor2D functor(params, khParams, Udata);
     Kokkos::parallel_for(
-      "InitKelvinHelmholtzFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
+      "InitKelvinHelmholtzFunctor2D",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j) const
   {
 
-    const int isize = params.isize;
-    const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
 #ifdef USE_MPI
@@ -267,9 +264,6 @@ public:
     const real_t vflow_out = khParams.vflow_out;
     const real_t ampl = khParams.amplitude;
     const real_t pressure = khParams.pressure;
-
-    int i, j;
-    index2coord(index, i, j, isize, jsize);
 
     real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
     real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
@@ -363,19 +357,20 @@ public:
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams params, GreshoParams gvParams, DataArray2d Udata, int nbCells)
+  apply(HydroParams params, GreshoParams gvParams, DataArray2d Udata)
   {
     InitGreshoVortexFunctor2D functor(params, gvParams, Udata);
-    Kokkos::parallel_for("InitGreshoVortexFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
+    Kokkos::parallel_for(
+      "InitGreshoVortexFunctor2D",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j) const
   {
 
-    const int isize = params.isize;
-    const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
 #ifdef USE_MPI
@@ -402,9 +397,6 @@ public:
     const real_t Ma = gvParams.Ma;
 
     const real_t p0 = rho0 / (gamma0 * Ma * Ma);
-
-    int i, j;
-    index2coord(index, i, j, isize, jsize);
 
     real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
     real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
@@ -487,20 +479,20 @@ public:
         HydroState  U2,
         HydroState  U3,
         real_t      xt,
-        real_t      yt,
-        int         nbCells)
+        real_t      yt)
   {
     InitFourQuadrantFunctor2D functor(params, Udata, configNumber, U0, U1, U2, U3, xt, yt);
-    Kokkos::parallel_for("InitFourQuadrantFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
+    Kokkos::parallel_for(
+      "InitFourQuadrantFunctor2D",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j) const
   {
 
-    const int isize = params.isize;
-    const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
 #ifdef USE_MPI
@@ -518,9 +510,6 @@ public:
     const real_t ymin = params.ymin;
     const real_t dx = params.dx;
     const real_t dy = params.dy;
-
-    int i, j;
-    index2coord(index, i, j, isize, jsize);
 
     real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
     real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
@@ -588,20 +577,20 @@ public:
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams params, IsentropicVortexParams iparams, DataArray2d Udata, int nbCells)
+  apply(HydroParams params, IsentropicVortexParams iparams, DataArray2d Udata)
   {
     InitIsentropicVortexFunctor2D functor(params, iparams, Udata);
     Kokkos::parallel_for(
-      "InitIsentropicVortexFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
+      "InitIsentropicVortexFunctor2D",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j) const
   {
 
-    const int isize = params.isize;
-    const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
 #ifdef USE_MPI
@@ -621,9 +610,6 @@ public:
     const real_t dy = params.dy;
 
     const real_t gamma0 = params.settings.gamma0;
-
-    int i, j;
-    index2coord(index, i, j, isize, jsize);
 
     real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
     real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
@@ -696,19 +682,18 @@ public:
         DataArray2d                     Udata,
         VectorField2d                   gravity)
   {
-    uint64_t                           nbCells = params.isize * params.jsize;
     RayleighTaylorInstabilityFunctor2D functor(params, rtiparams, Udata, gravity);
     Kokkos::parallel_for(
-      "RayleighTaylorInstabilityFunctor2D", Kokkos::RangePolicy<>(0, nbCells), functor);
+      "RayleighTaylorInstabilityFunctor2D",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j) const
   {
 
-    const int isize = params.isize;
-    const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
 #ifdef USE_MPI
@@ -735,9 +720,6 @@ public:
     const real_t dy = params.dy;
 
     const real_t gamma0 = params.settings.gamma0;
-
-    int i, j;
-    index2coord(index, i, j, isize, jsize);
 
     real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
     real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;

@@ -265,7 +265,6 @@ public:
    * \param[in] dqX        : slope along X
    * \param[in] dqY        : slope along Y
    * \param[in] dqZ        : slope along Z
-   * \param[in] c          : local sound speed.
    * \param[in] dtdx       : dt over dx
    * \param[in] dtdy       : dt over dy
    * \param[in] dtdz       : dt over dz

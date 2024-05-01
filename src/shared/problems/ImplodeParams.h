@@ -7,7 +7,7 @@ namespace euler_kokkos
 {
 
 /**
- * isentropic vortex advection test parameters.
+ * Implode test parameters.
  */
 struct ImplodeParams
 {

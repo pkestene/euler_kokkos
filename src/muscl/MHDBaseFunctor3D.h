@@ -403,7 +403,6 @@ public:
 
   } // slope_unsplit_hydro_3d
 
-
   /**
    * slope_unsplit_mhd_3d computes only magnetic field slopes in 3D; hydro
    * slopes are always computed in slope_unsplit_hydro_3d.

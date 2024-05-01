@@ -180,7 +180,6 @@ public:
   save_solution_impl();
 
   int isize, jsize, ksize;
-  int nbCells;
 
 }; // class SolverMHDMuscl
 
@@ -229,15 +228,11 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
   , isize(params.isize)
   , jsize(params.jsize)
   , ksize(params.ksize)
-  , nbCells(params.isize * params.jsize)
 {
 
   solver_type = SOLVER_MUSCL_HANCOCK;
 
-  if (dim == 3)
-    nbCells = params.isize * params.jsize * params.ksize;
-
-  m_nCells = nbCells;
+  m_nCells = dim == 2 ? params.isize * params.jsize : params.isize * params.jsize * params.ksize;
   m_nDofsPerCell = 1;
 
   int nbvar = params.nbvar;
@@ -420,7 +415,7 @@ SolverMHDMuscl<dim>::init_blast(DataArray Udata)
     typename std::conditional<dim == 2, InitBlastFunctor2D_MHD, InitBlastFunctor3D_MHD>::type;
 
   // perform init
-  InitBlastFunctor::apply(params, blastParams, Udata, nbCells);
+  InitBlastFunctor::apply(params, blastParams, Udata);
 
 } // SolverMHDMuscl::init_blast
 
@@ -441,7 +436,7 @@ SolverMHDMuscl<dim>::init_orszag_tang(DataArray Udata)
   using InitOrszagTangFunctor =
     typename std::conditional<dim == 2, InitOrszagTangFunctor2D, InitOrszagTangFunctor3D>::type;
 
-  InitOrszagTangFunctor::apply(params, otParams, Udata, nbCells);
+  InitOrszagTangFunctor::apply(params, otParams, Udata);
 
 } // init_orszag_tang
 
@@ -469,7 +464,7 @@ SolverMHDMuscl<dim>::init_kelvin_helmholtz(DataArray Udata)
     conditional<dim == 2, InitKelvinHelmholtzFunctor2D_MHD, InitKelvinHelmholtzFunctor3D_MHD>::type;
 
   // perform init
-  InitKelvinHelmholtzFunctor::apply(params, khParams, Udata, nbCells);
+  InitKelvinHelmholtzFunctor::apply(params, khParams, Udata);
 
 } // init_kelvin_helmholtz
 
@@ -491,7 +486,7 @@ SolverMHDMuscl<dim>::init_implode(DataArray Udata)
     typename std::conditional<dim == 2, InitImplodeFunctor2D_MHD, InitImplodeFunctor3D_MHD>::type;
 
   // perform init
-  InitImplodeFunctor::apply(params, implodeParams, Udata, nbCells);
+  InitImplodeFunctor::apply(params, implodeParams, Udata);
 
 } // SolverMHDMuscl::init_implode
 
@@ -513,7 +508,7 @@ SolverMHDMuscl<dim>::init_rotor(DataArray Udata)
     typename std::conditional<dim == 2, InitRotorFunctor2D_MHD, InitRotorFunctor3D_MHD>::type;
 
   // perform init
-  InitRotorFunctor::apply(params, rotorParams, Udata, nbCells);
+  InitRotorFunctor::apply(params, rotorParams, Udata);
 
 } // SolverMHDMuscl::init_rotor
 
@@ -535,7 +530,7 @@ SolverMHDMuscl<dim>::init_field_loop(DataArray Udata)
     conditional<dim == 2, InitFieldLoopFunctor2D_MHD, InitFieldLoopFunctor3D_MHD>::type;
 
   // perform init
-  InitFieldLoopFunctor::apply(params, flParams, Udata, nbCells);
+  InitFieldLoopFunctor::apply(params, flParams, Udata);
 
 } // SolverMHDMuscl::init_field_loop
 
@@ -665,7 +660,7 @@ SolverMHDMuscl<dim>::compute_dt_local()
     typename std::conditional<dim == 2, ComputeDtFunctor2D_MHD, ComputeDtFunctor3D_MHD>::type;
 
   // call device functor
-  ComputeDtFunctor::apply(params, Udata, nbCells, invDt);
+  ComputeDtFunctor::apply(params, Udata, invDt);
 
   dt = params.settings.cfl / invDt;
 
@@ -782,7 +777,7 @@ SolverMHDMuscl<dim>::convertToPrimitives(DataArray Udata)
     conditional<dim == 2, ConvertToPrimitivesFunctor2D_MHD, ConvertToPrimitivesFunctor3D_MHD>::type;
 
   // call device functor
-  ConvertToPrimitivesFunctor::apply(params, Udata, Q, nbCells);
+  ConvertToPrimitivesFunctor::apply(params, Udata, Q);
 
 } // SolverMHDMuscl::convertToPrimitives
 

@@ -30,13 +30,12 @@ using real_t = float;
 
 #if KOKKOS_VERSION_MAJOR > 3
 using Kokkos::exp;
+using Kokkos::fabs;
 using Kokkos::fmax;
 using Kokkos::fmin;
-using Kokkos::sqrt;
-using Kokkos::fabs;
 using Kokkos::fmod;
 using Kokkos::isnan;
-using Kokkos::fmod;
+using Kokkos::sqrt;
 #else
 using Kokkos::Experimental::exp;
 using Kokkos::Experimental::fmax;
@@ -49,13 +48,15 @@ using Kokkos::Experimental::fmod;
 #endif
 
 #if defined(KOKKOS_ENABLE_CXX17)
-#  define KOKKOS_IMPL_MATH_CONSTANT(TRAIT, VALUE) \
-    template <class T>                            \
-    inline constexpr auto TRAIT##_v = std::enable_if_t<std::is_floating_point_v<T>, T>(VALUE)
+#define KOKKOS_IMPL_MATH_CONSTANT(TRAIT, VALUE) \
+  template <class T>                            \
+  inline constexpr auto TRAIT##_v =             \
+      std::enable_if_t<std::is_floating_point_v<T>, T>(VALUE)
 #else
-#  define KOKKOS_IMPL_MATH_CONSTANT(TRAIT, VALUE) \
-    template <class T>                            \
-    constexpr auto TRAIT##_v = std::enable_if_t<std::is_floating_point<T>::value, T>(VALUE)
+#define KOKKOS_IMPL_MATH_CONSTANT(TRAIT, VALUE) \
+  template <class T>                            \
+  constexpr auto TRAIT##_v =                    \
+      std::enable_if_t<std::is_floating_point<T>::value, T>(VALUE)
 #endif
 
 KOKKOS_IMPL_MATH_CONSTANT(ZERO, 0.000000000000000000000000000000000000L);
@@ -63,14 +64,17 @@ KOKKOS_IMPL_MATH_CONSTANT(HALF, 0.500000000000000000000000000000000000L);
 KOKKOS_IMPL_MATH_CONSTANT(ONE, 1.000000000000000000000000000000000000L);
 KOKKOS_IMPL_MATH_CONSTANT(TWO, 2.000000000000000000000000000000000000L);
 KOKKOS_IMPL_MATH_CONSTANT(ONE_FOURTH, 0.250000000000000000000000000000000000L);
+KOKKOS_IMPL_MATH_CONSTANT(PI, 3.141592653589793238462643383279502884L);
 
 #undef KOKKOS_IMPL_MATH_CONSTANT
 
 constexpr auto ZERO_F = ZERO_v<real_t>;
 constexpr auto HALF_F = HALF_v<real_t>;
-constexpr auto ONE_F = ONE_v<real_t>;
-constexpr auto TWO_F = TWO_v<real_t>;
-constexpr auto ONE_FOURTH_F = ONE_FOURTH_v<real_t>;
+constexpr auto ONE_F  = ONE_v<real_t>;
+constexpr auto TWO_F  = TWO_v<real_t>;
+constexpr auto ONE_FOURTH_F  = ONE_FOURTH_v<real_t>;
+constexpr auto PI_F = PI_v<real_t>;
+constexpr auto TWOPI_F = 2 * PI_v<real_t>;
 
 // math function
 #if defined(USE_DOUBLE) || defined(USE_MIXED_PRECISION)

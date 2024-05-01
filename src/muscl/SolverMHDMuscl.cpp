@@ -74,7 +74,7 @@ SolverMHDMuscl<3>::computeElectricField(DataArray Udata)
 {
 
   // call device functor
-  ComputeElecFieldFunctor3D::apply(params, Udata, Q, ElecField, nbCells);
+  ComputeElecFieldFunctor3D::apply(params, Udata, Q, ElecField);
 
 } // SolverMHDMuscl<3>::computeElectricField
 
@@ -90,7 +90,7 @@ SolverMHDMuscl<3>::computeMagSlopes(DataArray Udata)
 {
 
   // call device functor
-  ComputeMagSlopesFunctor3D::apply(params, Udata, DeltaA, DeltaB, DeltaC, nbCells);
+  ComputeMagSlopesFunctor3D::apply(params, Udata, DeltaA, DeltaB, DeltaC);
 
 } // SolverMHDMuscl3D::computeMagSlopes
 
@@ -113,20 +113,8 @@ SolverMHDMuscl<2>::computeTrace(DataArray Udata, real_t dt)
   dtdy = dt / params.dy;
 
   // call device functor
-  ComputeTraceFunctor2D_MHD::apply(params,
-                                   Udata,
-                                   Q,
-                                   Qm_x,
-                                   Qm_y,
-                                   Qp_x,
-                                   Qp_y,
-                                   QEdge_RT,
-                                   QEdge_RB,
-                                   QEdge_LT,
-                                   QEdge_LB,
-                                   dtdx,
-                                   dtdy,
-                                   nbCells);
+  ComputeTraceFunctor2D_MHD::apply(
+    params, Udata, Q, Qm_x, Qm_y, Qp_x, Qp_y, QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB, dtdx, dtdy);
 
 } // SolverMHDMuscl<2>::computeTrace
 
@@ -178,8 +166,7 @@ SolverMHDMuscl<3>::computeTrace(DataArray Udata, real_t dt)
                                    QEdge_LB3,
                                    dtdx,
                                    dtdy,
-                                   dtdz,
-                                   nbCells);
+                                   dtdz);
 
 } // SolverMHDMuscl<3>::computeTrace
 
@@ -198,7 +185,7 @@ SolverMHDMuscl<2>::computeFluxesAndStore(real_t dt)
 
   // call device functor
   ComputeFluxesAndStoreFunctor2D_MHD::apply(
-    params, Qm_x, Qm_y, Qp_x, Qp_y, Fluxes_x, Fluxes_y, dtdx, dtdy, nbCells);
+    params, Qm_x, Qm_y, Qp_x, Qp_y, Fluxes_x, Fluxes_y, dtdx, dtdy);
 
 } // SolverMHDMuscl<2>::computeFluxesAndStore
 
@@ -217,20 +204,8 @@ SolverMHDMuscl<3>::computeFluxesAndStore(real_t dt)
   real_t dtdz = dt / params.dz;
 
   // call device functor
-  ComputeFluxesAndStoreFunctor3D_MHD::apply(params,
-                                            Qm_x,
-                                            Qm_y,
-                                            Qm_z,
-                                            Qp_x,
-                                            Qp_y,
-                                            Qp_z,
-                                            Fluxes_x,
-                                            Fluxes_y,
-                                            Fluxes_z,
-                                            dtdx,
-                                            dtdy,
-                                            dtdz,
-                                            nbCells);
+  ComputeFluxesAndStoreFunctor3D_MHD::apply(
+    params, Qm_x, Qm_y, Qm_z, Qp_x, Qp_y, Qp_z, Fluxes_x, Fluxes_y, Fluxes_z, dtdx, dtdy, dtdz);
 
 } // SolverMHDMuscl<3>::computeFluxesAndStore
 
@@ -249,7 +224,7 @@ SolverMHDMuscl<2>::computeEmfAndStore(real_t dt)
 
   // call device functor
   ComputeEmfAndStoreFunctor2D::apply(
-    params, QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB, Emf1, dtdx, dtdy, nbCells);
+    params, QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB, Emf1, dtdx, dtdy);
 
 } // SolverMHSMuscl<2>::computeEmfAndStore
 
@@ -284,8 +259,7 @@ SolverMHDMuscl<3>::computeEmfAndStore(real_t dt)
                                      Emf,
                                      dtdx,
                                      dtdy,
-                                     dtdz,
-                                     nbCells);
+                                     dtdz);
 
 } // SolverMHDMuscl<3>::computeEmfAndStore
 
@@ -333,10 +307,10 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
     computeEmfAndStore(dt);
 
     // actual update with fluxes
-    UpdateFunctor2D_MHD::apply(params, data_out, Fluxes_x, Fluxes_y, dtdx, dtdy, nbCells);
+    UpdateFunctor2D_MHD::apply(params, data_out, Fluxes_x, Fluxes_y, dtdx, dtdy);
 
     // actual update with emf
-    UpdateEmfFunctor2D::apply(params, data_out, Emf1, dtdx, dtdy, nbCells);
+    UpdateEmfFunctor2D::apply(params, data_out, Emf1, dtdx, dtdy);
   }
   timers[TIMER_NUM_SCHEME]->stop();
 
@@ -394,11 +368,10 @@ SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
     computeEmfAndStore(dt);
 
     // actual update with fluxes
-    UpdateFunctor3D_MHD::apply(
-      params, data_out, Fluxes_x, Fluxes_y, Fluxes_z, dtdx, dtdy, dtdz, nbCells);
+    UpdateFunctor3D_MHD::apply(params, data_out, Fluxes_x, Fluxes_y, Fluxes_z, dtdx, dtdy, dtdz);
 
     // actual update with emf
-    UpdateEmfFunctor3D::apply(params, data_out, Emf, dtdx, dtdy, dtdz, nbCells);
+    UpdateEmfFunctor3D::apply(params, data_out, Emf, dtdx, dtdy, dtdz);
   }
   timers[TIMER_NUM_SCHEME]->stop();
 

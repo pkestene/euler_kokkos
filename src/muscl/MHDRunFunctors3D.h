@@ -23,18 +23,20 @@ public:
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams params, DataArray3d Udata, int nbCells, real_t & invDt)
+  apply(HydroParams params, DataArray3d Udata, real_t & invDt)
   {
     ComputeDtFunctor3D_MHD functor(params, Udata);
     Kokkos::Max<real_t>    reducer(invDt);
-    Kokkos::parallel_reduce(
-      "ComputeDtFunctor3D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor, reducer);
+    Kokkos::parallel_reduce(Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                              { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                            functor,
+                            reducer);
   }
 
   /* this is a reduce (max) functor */
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index, real_t & invDt) const
+  operator()(const int & i, const int & j, const int & k, real_t & invDt) const
   {
     const int    isize = params.isize;
     const int    jsize = params.jsize;
@@ -44,11 +46,8 @@ public:
     const real_t dy = params.dy;
     const real_t dz = params.dz;
 
-    int i, j, k;
-    index2coord(index, i, j, k, isize, jsize, ksize);
-
-    if (k >= ghostWidth && k < ksize - ghostWidth && j >= ghostWidth && j < jsize - ghostWidth &&
-        i >= ghostWidth && i < isize - ghostWidth)
+    if (k >= ghostWidth and k < ksize - ghostWidth and j >= ghostWidth and
+        j < jsize - ghostWidth and i >= ghostWidth and i < isize - ghostWidth)
     {
 
       MHDState qLoc; // primitive    variables in current cell
@@ -94,29 +93,27 @@ public:
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams params, DataArray3d Udata, DataArray3d Qdata, int nbCells)
+  apply(HydroParams params, DataArray3d Udata, DataArray3d Qdata)
   {
     ConvertToPrimitivesFunctor3D_MHD functor(params, Udata, Qdata);
-    Kokkos::parallel_for(
-      "ConvertToPrimitivesFunctor3D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
+    Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j, const int & k) const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     // const int ghostWidth = params.ghostWidth;
 
-    int i, j, k;
-    index2coord(index, i, j, k, isize, jsize, ksize);
-
     // magnetic field in neighbor cells
     real_t magFieldNeighbors[3];
 
-    if (k >= 0 && k < ksize - 1 && j >= 0 && j < jsize - 1 && i >= 0 && i < isize - 1)
+    if (k >= 0 and k < ksize - 1 and j >= 0 and j < jsize - 1 and i >= 0 and i < isize - 1)
     {
 
       MHDState uLoc; // conservative    variables in current cell
@@ -176,29 +173,24 @@ public:
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams      params,
-        DataArray3d      Udata,
-        DataArray3d      Qdata,
-        DataArrayVector3 ElecField,
-        int              nbCells)
+  apply(HydroParams params, DataArray3d Udata, DataArray3d Qdata, DataArrayVector3 ElecField)
   {
     ComputeElecFieldFunctor3D functor(params, Udata, Qdata, ElecField);
-    Kokkos::parallel_for("ComputeElecFieldFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
+    Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j, const int & k) const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     // const int ghostWidth = params.ghostWidth;
 
-    int i, j, k;
-    index2coord(index, i, j, k, isize, jsize, ksize);
-
-    if (k > 0 && k < ksize - 1 && j > 0 && j < jsize - 1 && i > 0 && i < isize - 1)
+    if (k > 0 and k < ksize - 1 and j > 0 and j < jsize - 1 and i > 0 and i < isize - 1)
     {
 
       real_t u, v, w, A, B, C;
@@ -274,26 +266,24 @@ public:
         DataArray3d      Udata,
         DataArrayVector3 DeltaA,
         DataArrayVector3 DeltaB,
-        DataArrayVector3 DeltaC,
-        int              nbCells)
+        DataArrayVector3 DeltaC)
   {
     ComputeMagSlopesFunctor3D functor(params, Udata, DeltaA, DeltaB, DeltaC);
-    Kokkos::parallel_for("ComputeMagSlopesFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
+    Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j, const int & k) const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     // const int ghostWidth = params.ghostWidth;
 
-    int i, j, k;
-    index2coord(index, i, j, k, isize, jsize, ksize);
-
-    if (k > 0 && k < ksize - 1 && j > 0 && j < jsize - 1 && i > 0 && i < isize - 1)
+    if (k > 0 and k < ksize - 1 and j > 0 and j < jsize - 1 and i > 0 and i < isize - 1)
     {
 
       real_t bfSlopes[15];
@@ -440,8 +430,7 @@ public:
         DataArray3d      QEdge_LB3,
         real_t           dtdx,
         real_t           dtdy,
-        real_t           dtdz,
-        int              nbCells)
+        real_t           dtdz)
   {
     ComputeTraceFunctor3D_MHD functor(params,
                                       Udata,
@@ -471,23 +460,22 @@ public:
                                       dtdx,
                                       dtdy,
                                       dtdz);
-    Kokkos::parallel_for("ComputeTraceFunctor3D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
+    Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j, const int & k) const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
 
-    int i, j, k;
-    index2coord(index, i, j, k, isize, jsize, ksize);
-
-    if (k >= ghostWidth - 2 && k < ksize - ghostWidth + 1 && j >= ghostWidth - 2 &&
-        j < jsize - ghostWidth + 1 && i >= ghostWidth - 2 && i < isize - ghostWidth + 1)
+    if (k >= ghostWidth - 2 and k < ksize - ghostWidth + 1 and j >= ghostWidth - 2 and
+        j < jsize - ghostWidth + 1 and i >= ghostWidth - 2 and i < isize - ghostWidth + 1)
     {
 
       MHDState q;
@@ -707,29 +695,26 @@ public:
         DataArray3d Flux_z,
         real_t      dtdx,
         real_t      dtdy,
-        real_t      dtdz,
-        int         nbCells)
+        real_t      dtdz)
   {
     ComputeFluxesAndStoreFunctor3D_MHD functor(
       params, Qm_x, Qm_y, Qm_z, Qp_x, Qp_y, Qp_z, Flux_x, Flux_y, Flux_z, dtdx, dtdy, dtdz);
-    Kokkos::parallel_for(
-      "ComputeFluxesAndStoreFunctor3D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
+    Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j, const int & k) const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
 
-    int i, j, k;
-    index2coord(index, i, j, k, isize, jsize, ksize);
-
-    if (k >= ghostWidth && k < ksize - ghostWidth + 1 && j >= ghostWidth &&
-        j < jsize - ghostWidth + 1 && i >= ghostWidth && i < isize - ghostWidth + 1)
+    if (k >= ghostWidth and k < ksize - ghostWidth + 1 and j >= ghostWidth and
+        j < jsize - ghostWidth + 1 and i >= ghostWidth and i < isize - ghostWidth + 1)
     {
 
       MHDState qleft, qright;
@@ -850,8 +835,7 @@ public:
         DataArrayVector3 Emf,
         real_t           dtdx,
         real_t           dtdy,
-        real_t           dtdz,
-        int              nbCells)
+        real_t           dtdz)
   {
     ComputeEmfAndStoreFunctor3D functor(params,
                                         QEdge_RT,
@@ -870,23 +854,22 @@ public:
                                         dtdx,
                                         dtdy,
                                         dtdz);
-    Kokkos::parallel_for("ComputeEmfAndStoreFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
+    Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j, const int & k) const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
 
-    int i, j, k;
-    index2coord(index, i, j, k, isize, jsize, ksize);
-
-    if (k >= ghostWidth && k < ksize - ghostWidth + 1 && j >= ghostWidth &&
-        j < jsize - ghostWidth + 1 && i >= ghostWidth && i < isize - ghostWidth + 1)
+    if (k >= ghostWidth and k < ksize - ghostWidth + 1 and j >= ghostWidth and
+        j < jsize - ghostWidth + 1 and i >= ghostWidth and i < isize - ghostWidth + 1)
     {
 
       MHDState qEdge_emf[4];
@@ -966,28 +949,26 @@ public:
         DataArray3d FluxData_z,
         real_t      dtdx,
         real_t      dtdy,
-        real_t      dtdz,
-        int         nbCells)
+        real_t      dtdz)
   {
     UpdateFunctor3D_MHD functor(
       params, Udata, FluxData_x, FluxData_y, FluxData_z, dtdx, dtdy, dtdz);
-    Kokkos::parallel_for("UpdateFunctor3D_MHD", Kokkos::RangePolicy<>(0, nbCells), functor);
+    Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j, const int & k) const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
 
-    int i, j, k;
-    index2coord(index, i, j, k, isize, jsize, ksize);
-
-    if (k >= ghostWidth && k < ksize - ghostWidth && j >= ghostWidth && j < jsize - ghostWidth &&
-        i >= ghostWidth && i < isize - ghostWidth)
+    if (k >= ghostWidth and k < ksize - ghostWidth and j >= ghostWidth and
+        j < jsize - ghostWidth and i >= ghostWidth and i < isize - ghostWidth)
     {
 
       MHDState udata;
@@ -1078,27 +1059,25 @@ public:
         DataArrayVector3 Emf,
         real_t           dtdx,
         real_t           dtdy,
-        real_t           dtdz,
-        int              nbCells)
+        real_t           dtdz)
   {
     UpdateEmfFunctor3D functor(params, Udata, Emf, dtdx, dtdy, dtdz);
-    Kokkos::parallel_for("UpdateEmfFunctor3D", Kokkos::RangePolicy<>(0, nbCells), functor);
+    Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & index) const
+  operator()(const int & i, const int & j, const int & k) const
   {
     const int isize = params.isize;
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
 
-    int i, j, k;
-    index2coord(index, i, j, k, isize, jsize, ksize);
-
-    if (k >= ghostWidth && k < ksize - ghostWidth + 1 && j >= ghostWidth &&
-        j < jsize - ghostWidth + 1 && i >= ghostWidth && i < isize - ghostWidth + 1)
+    if (k >= ghostWidth and k < ksize - ghostWidth + 1 and j >= ghostWidth and
+        j < jsize - ghostWidth + 1 and i >= ghostWidth and i < isize - ghostWidth + 1)
     {
 
       MHDState udata;

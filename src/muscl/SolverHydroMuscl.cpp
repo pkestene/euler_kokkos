@@ -86,7 +86,7 @@ SolverHydroMuscl<2>::init_four_quadrant(DataArray Udata)
   primToCons_2D(U2, params.settings.gamma0);
   primToCons_2D(U3, params.settings.gamma0);
 
-  InitFourQuadrantFunctor2D::apply(params, Udata, configNumber, U0, U1, U2, U3, xt, yt, nbCells);
+  InitFourQuadrantFunctor2D::apply(params, Udata, configNumber, U0, U1, U2, U3, xt, yt);
 
 } // SolverHydroMuscl<2>::init_four_quadrant
 
@@ -99,7 +99,7 @@ SolverHydroMuscl<2>::init_isentropic_vortex(DataArray Udata)
 
   IsentropicVortexParams iparams(configMap);
 
-  InitIsentropicVortexFunctor2D::apply(params, iparams, Udata, nbCells);
+  InitIsentropicVortexFunctor2D::apply(params, iparams, Udata);
 
 } // SolverHydroMuscl<2>::init_isentropic_vortex
 

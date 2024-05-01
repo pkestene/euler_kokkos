@@ -56,7 +56,7 @@ using VectorField3dHost = DataArrayVector3::HostMirror;
 
 KOKKOS_INLINE_FUNCTION
 void
-index2coord(int index, int & i, int & j, int Nx, int Ny)
+index2coord(int64_t index, int & i, int & j, int Nx, int Ny)
 {
   UNUSED(Nx);
   UNUSED(Ny);
@@ -71,23 +71,24 @@ index2coord(int index, int & i, int & j, int Nx, int Ny)
 }
 
 KOKKOS_INLINE_FUNCTION
-int
+int64_t
 coord2index(int i, int j, int Nx, int Ny)
 {
   UNUSED(Nx);
   UNUSED(Ny);
 #ifdef KOKKOS_ENABLE_CUDA
-  return i + Nx * j; // left layout
+  int64_t res = i + Nx * j; // left layout
 #else
-  return j + Ny * i; // right layout
+  int64_t res = j + Ny * i; // right layout
 #endif
+  return res;
 }
 
 /* 3D */
 
 KOKKOS_INLINE_FUNCTION
 void
-index2coord(int index, int & i, int & j, int & k, int Nx, int Ny, int Nz)
+index2coord(int64_t index, int & i, int & j, int & k, int Nx, int Ny, int Nz)
 {
   UNUSED(Nx);
   UNUSED(Nz);
@@ -97,7 +98,7 @@ index2coord(int index, int & i, int & j, int & k, int Nx, int Ny, int Nz)
   j = (index - k * NxNy) / Nx;
   i = index - j * Nx - k * NxNy;
 #else
-  int NyNz = Ny * Nz;
+  int     NyNz = Ny * Nz;
   i = index / NyNz;
   j = (index - i * NyNz) / Nz;
   k = index - j * Nz - i * NyNz;
@@ -105,16 +106,17 @@ index2coord(int index, int & i, int & j, int & k, int Nx, int Ny, int Nz)
 }
 
 KOKKOS_INLINE_FUNCTION
-int
+int64_t
 coord2index(int i, int j, int k, int Nx, int Ny, int Nz)
 {
   UNUSED(Nx);
   UNUSED(Nz);
 #ifdef KOKKOS_ENABLE_CUDA
-  return i + Nx * j + Nx * Ny * k; // left layout
+  int64_t res = i + Nx * j + Nx * Ny * k; // left layout
 #else
-  return k + Nz * j + Nz * Ny * i; // right layout
+  int64_t res = k + Nz * j + Nz * Ny * i; // right layout
 #endif
+  return res;
 }
 
 } // namespace euler_kokkos
