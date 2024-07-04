@@ -777,6 +777,283 @@ public:
 
 }; // ComputeTraceAndFluxes_Functor2D_MHD
 
+/*************************************************/
+/*************************************************/
+/*************************************************/
+class ComputeHydroFluxesAndUpdateFunctor2D : public MHDBaseFunctor2D
+{
+
+public:
+  ComputeHydroFluxesAndUpdateFunctor2D(HydroParams params,
+                                       DataArray2d Qdata,
+                                       DataArray2d Udata,
+                                       real_t      dt)
+    : MHDBaseFunctor2D(params)
+    , Qdata(Qdata)
+    , Udata(Udata)
+    , dt(dt)
+    , dtdx(dt / params.dx)
+    , dtdy(dt / params.dy)
+  {}
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params, DataArray2d Qdata, DataArray2d Udata, real_t dt)
+  {
+    ComputeHydroFluxesAndUpdateFunctor2D functor(params, Qdata, Udata, dt);
+    Kokkos::parallel_for(
+      "ComputeHydroFluxesAndUpdateFunctor2D",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ghostWidth = params.ghostWidth;
+
+    if (j >= ghostWidth and j <= jsize - ghostWidth and i >= ghostWidth and i <= isize - ghostWidth)
+    {
+
+      // // local primitive variables
+      // HydroState qLoc; // local primitive variables
+
+      // // local primitive variables in neighbor cell
+      // HydroState qLocNeighbor;
+
+      // // local primitive variables in neighborbood
+      // HydroState qNeighbors_0;
+      // HydroState qNeighbors_1;
+      // HydroState qNeighbors_2;
+      // HydroState qNeighbors_3;
+
+      // // Local slopes and neighbor slopes
+      // HydroState dqX;
+      // HydroState dqY;
+      // HydroState dqX_neighbor;
+      // HydroState dqY_neighbor;
+
+      // // Local variables for Riemann problems solving
+      // HydroState qleft;
+      // HydroState qright;
+      // HydroState qgdnv;
+      // HydroState flux_x;
+      // HydroState flux_y;
+
+      // //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      // // deal with left interface along X !
+      // //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      // // get primitive variables state vector
+      // // clang-format off
+      // qLoc[ID] = Qdata(i, j, ID);
+      // qNeighbors_0[ID] = Qdata(i + 1, j    , ID);
+      // qNeighbors_1[ID] = Qdata(i - 1, j    , ID);
+      // qNeighbors_2[ID] = Qdata(i    , j + 1, ID);
+      // qNeighbors_3[ID] = Qdata(i    , j - 1, ID);
+
+      // qLoc[IP] = Qdata(i, j, IP);
+      // qNeighbors_0[IP] = Qdata(i + 1, j    , IP);
+      // qNeighbors_1[IP] = Qdata(i - 1, j    , IP);
+      // qNeighbors_2[IP] = Qdata(i    , j + 1, IP);
+      // qNeighbors_3[IP] = Qdata(i    , j - 1, IP);
+
+      // qLoc[IU] = Qdata(i, j, IU);
+      // qNeighbors_0[IU] = Qdata(i + 1, j    , IU);
+      // qNeighbors_1[IU] = Qdata(i - 1, j    , IU);
+      // qNeighbors_2[IU] = Qdata(i    , j + 1, IU);
+      // qNeighbors_3[IU] = Qdata(i    , j - 1, IU);
+
+      // qLoc[IV] = Qdata(i, j, IV);
+      // qNeighbors_0[IV] = Qdata(i + 1, j    , IV);
+      // qNeighbors_1[IV] = Qdata(i - 1, j    , IV);
+      // qNeighbors_2[IV] = Qdata(i    , j + 1, IV);
+      // qNeighbors_3[IV] = Qdata(i    , j - 1, IV);
+      // // clang-format on
+
+      // slope_unsplit_hydro_2d(
+      //   qLoc, qNeighbors_0, qNeighbors_1, qNeighbors_2, qNeighbors_3, dqX, dqY);
+
+      // // slopes at left neighbor along X
+      // // clang-format off
+      // qLocNeighbor[ID] = Qdata(i - 1, j    , ID);
+      // qNeighbors_0[ID] = Qdata(i    , j    , ID);
+      // qNeighbors_1[ID] = Qdata(i - 2, j    , ID);
+      // qNeighbors_2[ID] = Qdata(i - 1, j + 1, ID);
+      // qNeighbors_3[ID] = Qdata(i - 1, j - 1, ID);
+
+      // qLocNeighbor[IP] = Qdata(i - 1, j    , IP);
+      // qNeighbors_0[IP] = Qdata(i    , j    , IP);
+      // qNeighbors_1[IP] = Qdata(i - 2, j    , IP);
+      // qNeighbors_2[IP] = Qdata(i - 1, j + 1, IP);
+      // qNeighbors_3[IP] = Qdata(i - 1, j - 1, IP);
+
+      // qLocNeighbor[IU] = Qdata(i - 1, j    , IU);
+      // qNeighbors_0[IU] = Qdata(i    , j    , IU);
+      // qNeighbors_1[IU] = Qdata(i - 2, j    , IU);
+      // qNeighbors_2[IU] = Qdata(i - 1, j + 1, IU);
+      // qNeighbors_3[IU] = Qdata(i - 1, j - 1, IU);
+
+      // qLocNeighbor[IV] = Qdata(i - 1, j    , IV);
+      // qNeighbors_0[IV] = Qdata(i    , j    , IV);
+      // qNeighbors_1[IV] = Qdata(i - 2, j    , IV);
+      // qNeighbors_2[IV] = Qdata(i - 1, j + 1, IV);
+      // qNeighbors_3[IV] = Qdata(i - 1, j - 1, IV);
+      // // clang-format on
+
+      // slope_unsplit_hydro_2d(qLocNeighbor,
+      //                        qNeighbors_0,
+      //                        qNeighbors_1,
+      //                        qNeighbors_2,
+      //                        qNeighbors_3,
+      //                        dqX_neighbor,
+      //                        dqY_neighbor);
+
+      // //
+      // // compute reconstructed states at left interface along X
+      // //
+
+      // // left interface : right state
+      // trace_unsplit_2d_along_dir(qLoc, dqX, dqY, dtdx, dtdy, FACE_XMIN, qright);
+
+      // // left interface : left state
+      // trace_unsplit_2d_along_dir(
+      //   qLocNeighbor, dqX_neighbor, dqY_neighbor, dtdx, dtdy, FACE_XMAX, qleft);
+
+      // if (gravity_enabled)
+      // {
+      //   // we need to modify input to flux computation with
+      //   // gravity predictor (half time step)
+
+      //   qleft[IU] += 0.5 * dt * gravity(i - 1, j, IX);
+      //   qleft[IV] += 0.5 * dt * gravity(i - 1, j, IY);
+
+      //   qright[IU] += 0.5 * dt * gravity(i, j, IX);
+      //   qright[IV] += 0.5 * dt * gravity(i, j, IY);
+      // }
+
+      // // Solve Riemann problem at X-interfaces and compute X-fluxes
+      // riemann_hydro(qleft, qright, qgdnv, flux_x, params);
+
+      // //
+      // // Update with fluxes along X
+      // //
+      // if (j < jsize - ghostWidth and i < isize - ghostWidth)
+      // {
+      //   Kokkos::atomic_add(&Udata(i, j, ID), flux_x[ID] * dtdx);
+      //   Kokkos::atomic_add(&Udata(i, j, IP), flux_x[IP] * dtdx);
+      //   Kokkos::atomic_add(&Udata(i, j, IU), flux_x[IU] * dtdx);
+      //   Kokkos::atomic_add(&Udata(i, j, IV), flux_x[IV] * dtdx);
+      // }
+
+      // if (j < jsize - ghostWidth and i > ghostWidth)
+      // {
+      //   Kokkos::atomic_sub(&Udata(i - 1, j, ID), flux_x[ID] * dtdx);
+      //   Kokkos::atomic_sub(&Udata(i - 1, j, IP), flux_x[IP] * dtdx);
+      //   Kokkos::atomic_sub(&Udata(i - 1, j, IU), flux_x[IU] * dtdx);
+      //   Kokkos::atomic_sub(&Udata(i - 1, j, IV), flux_x[IV] * dtdx);
+      // }
+
+      // //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      // // deal with left interface along Y !
+      // //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      // // slopes at left neighbor along Y
+      // // clang-format off
+      // qLocNeighbor[ID] = Qdata(i    , j - 1, ID);
+      // qNeighbors_0[ID] = Qdata(i + 1, j - 1, ID);
+      // qNeighbors_1[ID] = Qdata(i - 1, j - 1, ID);
+      // qNeighbors_2[ID] = Qdata(i    , j    , ID);
+      // qNeighbors_3[ID] = Qdata(i    , j - 2, ID);
+
+      // qLocNeighbor[IP] = Qdata(i    , j - 1, IP);
+      // qNeighbors_0[IP] = Qdata(i + 1, j - 1, IP);
+      // qNeighbors_1[IP] = Qdata(i - 1, j - 1, IP);
+      // qNeighbors_2[IP] = Qdata(i    , j    , IP);
+      // qNeighbors_3[IP] = Qdata(i    , j - 2, IP);
+
+      // qLocNeighbor[IU] = Qdata(i    , j - 1, IU);
+      // qNeighbors_0[IU] = Qdata(i + 1, j - 1, IU);
+      // qNeighbors_1[IU] = Qdata(i - 1, j - 1, IU);
+      // qNeighbors_2[IU] = Qdata(i    , j    , IU);
+      // qNeighbors_3[IU] = Qdata(i    , j - 2, IU);
+
+      // qLocNeighbor[IV] = Qdata(i    , j - 1, IV);
+      // qNeighbors_0[IV] = Qdata(i + 1, j - 1, IV);
+      // qNeighbors_1[IV] = Qdata(i - 1, j - 1, IV);
+      // qNeighbors_2[IV] = Qdata(i    , j    , IV);
+      // qNeighbors_3[IV] = Qdata(i    , j - 2, IV);
+      // // clang-format off
+
+      // slope_unsplit_hydro_2d(qLocNeighbor,
+      //                        qNeighbors_0,
+      //                        qNeighbors_1,
+      //                        qNeighbors_2,
+      //                        qNeighbors_3,
+      //                        dqX_neighbor,
+      //                        dqY_neighbor);
+
+      // //
+      // // compute reconstructed states at left interface along Y
+      // //
+
+      // // left interface : right state
+      // trace_unsplit_2d_along_dir(qLoc, dqX, dqY, dtdx, dtdy, FACE_YMIN, qright);
+
+      // // left interface : left state
+      // trace_unsplit_2d_along_dir(
+      //   qLocNeighbor, dqX_neighbor, dqY_neighbor, dtdx, dtdy, FACE_YMAX, qleft);
+
+      // if (gravity_enabled)
+      // {
+      //   // we need to modify input to flux computation with
+      //   // gravity predictor (half time step)
+
+      //   qleft[IU] += 0.5 * dt * gravity(i, j - 1, IX);
+      //   qleft[IV] += 0.5 * dt * gravity(i, j - 1, IY);
+
+      //   qright[IU] += 0.5 * dt * gravity(i, j, IX);
+      //   qright[IV] += 0.5 * dt * gravity(i, j, IY);
+      // }
+
+      // // Solve Riemann problem at Y-interfaces and compute Y-fluxes
+      // swapValues(&(qleft[IU]), &(qleft[IV]));
+      // swapValues(&(qright[IU]), &(qright[IV]));
+      // riemann_hydro(qleft, qright, qgdnv, flux_y, params);
+      // swapValues(&(flux_y[IU]), &(flux_y[IV]));
+
+      // //
+      // // store fluxes Y
+      // //
+      // if (j < jsize - ghostWidth and i < isize - ghostWidth)
+      // {
+      //   Kokkos::atomic_add(&Udata(i, j, ID), flux_y[ID] * dtdy);
+      //   Kokkos::atomic_add(&Udata(i, j, IP), flux_y[IP] * dtdy);
+      //   Kokkos::atomic_add(&Udata(i, j, IU), flux_y[IU] * dtdy);
+      //   Kokkos::atomic_add(&Udata(i, j, IV), flux_y[IV] * dtdy);
+      // }
+      // if (j > ghostWidth and i < isize - ghostWidth)
+      // {
+      //   Kokkos::atomic_sub(&Udata(i, j - 1, ID), flux_y[ID] * dtdy);
+      //   Kokkos::atomic_sub(&Udata(i, j - 1, IP), flux_y[IP] * dtdy);
+      //   Kokkos::atomic_sub(&Udata(i, j - 1, IU), flux_y[IU] * dtdy);
+      //   Kokkos::atomic_sub(&Udata(i, j - 1, IV), flux_y[IV] * dtdy);
+      // }
+
+    } // end if
+
+  } // end operator ()
+
+  DataArray2d Qdata;
+  DataArray2d Udata;
+  real_t      dt, dtdx, dtdy;
+
+}; // ComputeHydroFluxesAndUpdateFunctor2D
+
+
 } // namespace muscl
 } // namespace euler_kokkos
 

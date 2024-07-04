@@ -312,6 +312,11 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
     // actual update with emf
     UpdateEmfFunctor2D::apply(params, data_out, Emf1, dtdx, dtdy);
   }
+  else if (params.implementationVersion == 1)
+  {
+    ComputeHydroFluxesAndUpdateFunctor2D::apply(params, Q, data_out, dt);
+  }
+
   timers[TIMER_NUM_SCHEME]->stop();
 
 } // SolverMHDMuscl2D::godunov_unsplit_impl

@@ -621,11 +621,21 @@ public:
    * computation.
    *
    * \param[in]  qNb        state in neighbor cells (3-by-3 neighborhood indexed as qNb[i][j], for
-   * i,j=0,1,2); current center cell is at index (i=j=1). \param[in]  bfNb       face centered
-   * magnetic field in neighbor cells (4-by-4 neighborhood indexed as bfNb[i][j] for i,j=0,1,2,3);
-   * current cell is located at index (i=j=1) \param[in]  c          local sound speed. \param[in]
-   * dtdx       dt over dx \param[in]  dtdy       dt over dy \param[in]  xPos       x location of
-   * current cell (needed for shear computation) \param[out] qm         qm state (one per dimension)
+   * i,j=0,1,2); current center cell is at index (i=j=1).
+   *
+   * \param[in]  bfNb       face centered
+   * magnetic field in neighbor cells (4-by-4 neighborhood indexed as bfNb[i][j]
+   * for i,j=0,1,2,3); current cell is located at index (i=j=1)
+   *
+   * \param[in]  c          local sound speed.
+   *
+   * \param[in]  dtdx       dt over dx
+   *
+   * \param[in]  dtdy       dt over dy
+   *
+   * \param[in]  xPos       x location of current cell (needed for shear computation)
+   *
+   * \param[out] qm         qm state (one per dimension)
    * \param[out] qp         qp state (one per dimension)
    * \param[out] qEdge      q state on cell edges (qRT, qRB, qLT, qLB)
    */
@@ -781,24 +791,28 @@ public:
     real_t dBLx = 0.5 * dbfX[IY];
 
     // change neighbors to i+1, j and recompute dbf
-    bfNeighbors[0] = bfNb[CENTER + 1][CENTER][IBFX];
+    // clang-format off
+    bfNeighbors[0] = bfNb[CENTER + 1][CENTER    ][IBFX];
     bfNeighbors[1] = bfNb[CENTER + 1][CENTER + 1][IBFX];
     bfNeighbors[2] = bfNb[CENTER + 1][CENTER - 1][IBFX];
-    bfNeighbors[3] = bfNb[CENTER + 1][CENTER][IBFY];
-    bfNeighbors[4] = bfNb[CENTER + 2][CENTER][IBFY];
-    bfNeighbors[5] = bfNb[CENTER][CENTER][IBFY];
+    bfNeighbors[3] = bfNb[CENTER + 1][CENTER    ][IBFY];
+    bfNeighbors[4] = bfNb[CENTER + 2][CENTER    ][IBFY];
+    bfNeighbors[5] = bfNb[CENTER    ][CENTER    ][IBFY];
+    // clang-format on
 
     slope_unsplit_mhd_2d(bfNeighbors, dbf);
 
     real_t dARy = 0.5 * dbfY[IX];
 
     // change neighbors to i, j+1 and recompute dbf
-    bfNeighbors[0] = bfNb[CENTER][CENTER + 1][IBFX];
-    bfNeighbors[1] = bfNb[CENTER][CENTER + 2][IBFX];
-    bfNeighbors[2] = bfNb[CENTER][CENTER][IBFX];
-    bfNeighbors[3] = bfNb[CENTER][CENTER + 1][IBFY];
+    // clang-format off
+    bfNeighbors[0] = bfNb[CENTER    ][CENTER + 1][IBFX];
+    bfNeighbors[1] = bfNb[CENTER    ][CENTER + 2][IBFX];
+    bfNeighbors[2] = bfNb[CENTER    ][CENTER    ][IBFX];
+    bfNeighbors[3] = bfNb[CENTER    ][CENTER + 1][IBFY];
     bfNeighbors[4] = bfNb[CENTER + 1][CENTER + 1][IBFY];
     bfNeighbors[5] = bfNb[CENTER - 1][CENTER + 1][IBFY];
+    // clang-format on
 
     slope_unsplit_mhd_2d(bfNeighbors, dbf);
 
