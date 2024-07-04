@@ -271,7 +271,7 @@ SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out,
     {
       GravitySourceTermFunctor2D::apply(params, data_in, data_out, gravity, dt);
     }
-  }
+  } // end params.implementationVersion == 0
   else if (params.implementationVersion == 1)
   {
 
@@ -299,6 +299,19 @@ SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out,
     }
 
   } // end params.implementationVersion == 1
+  else if (params.implementationVersion == 2)
+  {
+
+    // compute fluxes and update
+    ComputeAllFluxesAndUpdateFunctor2D::apply(params, Q, data_out, dt, m_gravity_enabled, gravity);
+
+    // gravity source term
+    if (m_gravity_enabled)
+    {
+      GravitySourceTermFunctor2D::apply(params, data_in, data_out, gravity, dt);
+    }
+
+  } // end params.implementationVersion == 2
 
   timers[TIMER_NUM_SCHEME]->stop();
 
@@ -379,6 +392,19 @@ SolverHydroMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out,
     }
 
   } // end params.implementationVersion == 1
+  else if (params.implementationVersion == 2)
+  {
+
+    // compute fluxes and update
+    ComputeAllFluxesAndUpdateFunctor3D::apply(params, Q, data_out, dt, m_gravity_enabled, gravity);
+
+    // gravity source term
+    if (m_gravity_enabled)
+    {
+      GravitySourceTermFunctor3D::apply(params, data_in, data_out, gravity, dt);
+    }
+
+  } // end params.implementationVersion == 2
 
   timers[TIMER_NUM_SCHEME]->stop();
 

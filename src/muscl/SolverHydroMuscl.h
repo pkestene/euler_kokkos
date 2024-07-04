@@ -83,7 +83,7 @@ public:
   DataArray     U2;    /*!< hydrodynamics conservative variables arrays */
   DataArray     Q;     /*!< hydrodynamics primitive    variables array  */
 
-  /* implementation 0 */
+  /* implementation 0 and 1 */
   DataArray Fluxes_x; /*!< implementation 0 */
   DataArray Fluxes_y; /*!< implementation 0 */
   DataArray Fluxes_z; /*!< implementation 0 */
@@ -92,7 +92,6 @@ public:
   DataArray Slopes_x; /*!< implementation 1 only */
   DataArray Slopes_y; /*!< implementation 1 only */
   DataArray Slopes_z; /*!< implementation 1 only */
-
 
   /* Gravity field */
   VectorField gravity;
