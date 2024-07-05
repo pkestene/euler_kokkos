@@ -251,6 +251,141 @@ public:
 /*************************************************/
 /*************************************************/
 /*************************************************/
+class ComputeFluxesAndUpdateFunctor2D_MHD : public MHDBaseFunctor2D
+{
+
+public:
+  ComputeFluxesAndUpdateFunctor2D_MHD(HydroParams params,
+                                      DataArray2d Qm_x,
+                                      DataArray2d Qm_y,
+                                      DataArray2d Qp_x,
+                                      DataArray2d Qp_y,
+                                      DataArray2d Udata,
+                                      real_t      dtdx,
+                                      real_t      dtdy)
+    : MHDBaseFunctor2D(params)
+    , Qm_x(Qm_x)
+    , Qm_y(Qm_y)
+    , Qp_x(Qp_x)
+    , Qp_y(Qp_y)
+    , Udata(Udata)
+    , dtdx(dtdx)
+    , dtdy(dtdy){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params,
+        DataArray2d Qm_x,
+        DataArray2d Qm_y,
+        DataArray2d Qp_x,
+        DataArray2d Qp_y,
+        DataArray2d Udata,
+        real_t      dtdx,
+        real_t      dtdy)
+  {
+    ComputeFluxesAndUpdateFunctor2D_MHD functor(params, Qm_x, Qm_y, Qp_x, Qp_y, Udata, dtdx, dtdy);
+    Kokkos::parallel_for(
+      "ComputeFluxesAndUpdateFunctor2D_MHD",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ghostWidth = params.ghostWidth;
+
+    if (j >= ghostWidth and j < jsize - ghostWidth + 1 and i >= ghostWidth and
+        i < isize - ghostWidth + 1)
+    {
+
+      MHDState qleft, qright;
+      MHDState flux;
+
+      //
+      // Solve Riemann problem at X-interfaces and compute X-fluxes
+      //
+      get_state(Qm_x, i - 1, j, qleft);
+      get_state(Qp_x, i, j, qright);
+
+      // compute hydro flux along X
+      riemann_mhd(qleft, qright, flux, params);
+
+      //
+      // Update with fluxes along X
+      //
+      if (j < jsize - ghostWidth and i < isize - ghostWidth)
+      {
+        Kokkos::atomic_add(&Udata(i, j, ID), flux[ID] * dtdx);
+        Kokkos::atomic_add(&Udata(i, j, IP), flux[IP] * dtdx);
+        Kokkos::atomic_add(&Udata(i, j, IU), flux[IU] * dtdx);
+        Kokkos::atomic_add(&Udata(i, j, IV), flux[IV] * dtdx);
+        Kokkos::atomic_add(&Udata(i, j, IW), flux[IW] * dtdx);
+        Kokkos::atomic_add(&Udata(i, j, IBZ), flux[IBZ] * dtdx);
+      }
+
+      if (j < jsize - ghostWidth and i > ghostWidth)
+      {
+        Kokkos::atomic_sub(&Udata(i - 1, j, ID), flux[ID] * dtdx);
+        Kokkos::atomic_sub(&Udata(i - 1, j, IP), flux[IP] * dtdx);
+        Kokkos::atomic_sub(&Udata(i - 1, j, IU), flux[IU] * dtdx);
+        Kokkos::atomic_sub(&Udata(i - 1, j, IV), flux[IV] * dtdx);
+        Kokkos::atomic_sub(&Udata(i - 1, j, IW), flux[IW] * dtdx);
+        Kokkos::atomic_sub(&Udata(i - 1, j, IBZ), flux[IBZ] * dtdx);
+      }
+
+      //
+      // Solve Riemann problem at Y-interfaces and compute Y-fluxes
+      //
+      get_state(Qm_y, i, j - 1, qleft);
+      swapValues(&(qleft[IU]), &(qleft[IV]));
+      swapValues(&(qleft[IBX]), &(qleft[IBY]));
+
+      get_state(Qp_y, i, j, qright);
+      swapValues(&(qright[IU]), &(qright[IV]));
+      swapValues(&(qright[IBX]), &(qright[IBY]));
+
+      // compute hydro flux along Y
+      riemann_mhd(qleft, qright, flux, params);
+
+      swapValues(&(flux[IU]), &(flux[IV]));
+      swapValues(&(flux[IBX]), &(flux[IBY]));
+
+      //
+      // update with fluxes Y
+      //
+      if (j < jsize - ghostWidth and i < isize - ghostWidth)
+      {
+        Kokkos::atomic_add(&Udata(i, j, ID), flux[ID] * dtdy);
+        Kokkos::atomic_add(&Udata(i, j, IP), flux[IP] * dtdy);
+        Kokkos::atomic_add(&Udata(i, j, IU), flux[IU] * dtdy);
+        Kokkos::atomic_add(&Udata(i, j, IV), flux[IV] * dtdy);
+        Kokkos::atomic_add(&Udata(i, j, IW), flux[IW] * dtdy);
+        Kokkos::atomic_add(&Udata(i, j, IBZ), flux[IBZ] * dtdy);
+      }
+      if (j > ghostWidth and i < isize - ghostWidth)
+      {
+        Kokkos::atomic_sub(&Udata(i, j - 1, ID), flux[ID] * dtdy);
+        Kokkos::atomic_sub(&Udata(i, j - 1, IP), flux[IP] * dtdy);
+        Kokkos::atomic_sub(&Udata(i, j - 1, IU), flux[IU] * dtdy);
+        Kokkos::atomic_sub(&Udata(i, j - 1, IV), flux[IV] * dtdy);
+        Kokkos::atomic_sub(&Udata(i, j - 1, IW), flux[IW] * dtdy);
+        Kokkos::atomic_sub(&Udata(i, j - 1, IBZ), flux[IBZ] * dtdy);
+      }
+    }
+  }
+
+  DataArray2d Qm_x, Qm_y, Qp_x, Qp_y, Udata;
+  real_t      dtdx, dtdy;
+
+}; // ComputeFluxesAndUpdateFunctor2D_MHD
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
 class ComputeEmfAndStoreFunctor2D : public MHDBaseFunctor2D
 {
 
@@ -285,8 +420,10 @@ public:
   {
     ComputeEmfAndStoreFunctor2D functor(
       params, QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB, Emf, dtdx, dtdy);
-    Kokkos::parallel_for("ComputeEmfAndStoreFunctor2D",
-      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }), functor);
+    Kokkos::parallel_for(
+      "ComputeEmfAndStoreFunctor2D",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -325,6 +462,97 @@ public:
   real_t          dtdx, dtdy;
 
 }; // ComputeEmfAndStoreFunctor2D
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
+class ComputeEmfAndUpdateFunctor2D : public MHDBaseFunctor2D
+{
+
+public:
+  ComputeEmfAndUpdateFunctor2D(HydroParams params,
+                               DataArray2d QEdge_RT,
+                               DataArray2d QEdge_RB,
+                               DataArray2d QEdge_LT,
+                               DataArray2d QEdge_LB,
+                               DataArray2d Udata,
+                               real_t      dtdx,
+                               real_t      dtdy)
+    : MHDBaseFunctor2D(params)
+    , QEdge_RT(QEdge_RT)
+    , QEdge_RB(QEdge_RB)
+    , QEdge_LT(QEdge_LT)
+    , QEdge_LB(QEdge_LB)
+    , Udata(Udata)
+    , dtdx(dtdx)
+    , dtdy(dtdy){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params,
+        DataArray2d QEdge_RT,
+        DataArray2d QEdge_RB,
+        DataArray2d QEdge_LT,
+        DataArray2d QEdge_LB,
+        DataArray2d Udata,
+        real_t      dtdx,
+        real_t      dtdy)
+  {
+    ComputeEmfAndUpdateFunctor2D functor(
+      params, QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB, Udata, dtdx, dtdy);
+    Kokkos::parallel_for(
+      "ComputeEmfAndUpdateFunctor2D",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ghostWidth = params.ghostWidth;
+
+    // clang-format off
+    if (j >= ghostWidth and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth and i < isize - ghostWidth + 1)
+    // clang-format on
+    {
+
+      // in 2D, we only need to compute emfZ
+      MHDState qEdge_emfZ[4];
+
+      // preparation for calling compute_emf (equivalent to cmp_mag_flx
+      // in DUMSES)
+      // in the following, the 2 first indexes in qEdge_emf array play
+      // the same offset role as in the calling argument of cmp_mag_flx
+      // in DUMSES (if you see what I mean ?!)
+
+      // clang-format off
+      get_state(QEdge_RT, i - 1, j - 1, qEdge_emfZ[IRT]);
+      get_state(QEdge_RB, i - 1, j    , qEdge_emfZ[IRB]);
+      get_state(QEdge_LT, i    , j - 1, qEdge_emfZ[ILT]);
+      get_state(QEdge_LB, i    , j    , qEdge_emfZ[ILB]);
+      // clang-format on
+
+      // actually compute emfZ
+      const real_t emfZ = compute_emf<EMFZ>(qEdge_emfZ, params);
+
+      // clang-format off
+      Kokkos::atomic_sub(&Udata(i    , j    , IA), emfZ * dtdy);
+      Kokkos::atomic_add(&Udata(i    , j    , IB), emfZ * dtdx);
+
+      Kokkos::atomic_add(&Udata(i    , j - 1, IA), emfZ * dtdy);
+      Kokkos::atomic_sub(&Udata(i - 1, j    , IB), emfZ * dtdx);
+      // clang-format on
+    }
+  }
+
+  DataArray2d QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB, Udata;
+  real_t      dtdx, dtdy;
+
+}; // ComputeEmfAndUpdateFunctor2D
 
 
 /*************************************************/
@@ -390,8 +618,10 @@ public:
                                       QEdge_LB,
                                       dtdx,
                                       dtdy);
-    Kokkos::parallel_for("ComputeTraceFunctor2D_MHD",
-      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }), functor);
+    Kokkos::parallel_for(
+      "ComputeTraceFunctor2D_MHD",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
   }
 
   KOKKOS_INLINE_FUNCTION

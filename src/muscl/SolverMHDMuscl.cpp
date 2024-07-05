@@ -212,6 +212,44 @@ SolverMHDMuscl<3>::computeFluxesAndStore(real_t dt)
 // =======================================================
 // =======================================================
 // //////////////////////////////////////////////////////////////////
+// Compute flux via Riemann solver and update
+// //////////////////////////////////////////////////////////////////
+template <>
+void
+SolverMHDMuscl<2>::computeFluxesAndUpdate(real_t dt, DataArray Udata)
+{
+
+  real_t dtdx = dt / params.dx;
+  real_t dtdy = dt / params.dy;
+
+  // call device functor
+  ComputeFluxesAndUpdateFunctor2D_MHD::apply(params, Qm_x, Qm_y, Qp_x, Qp_y, Udata, dtdx, dtdy);
+
+} // SolverMHDMuscl<2>::computeFluxesAndUpdate
+
+// =======================================================
+// =======================================================
+// //////////////////////////////////////////////////////////////////
+// Compute flux via Riemann solver and update
+// //////////////////////////////////////////////////////////////////
+template <>
+void
+SolverMHDMuscl<3>::computeFluxesAndUpdate(real_t dt, DataArray Udata)
+{
+
+  real_t dtdx = dt / params.dx;
+  real_t dtdy = dt / params.dy;
+  real_t dtdz = dt / params.dz;
+
+  // call device functor
+  // ComputeFluxesAndUpdateFunctor3D_MHD::apply(
+  //   params, Qm_x, Qm_y, Qm_z, Qp_x, Qp_y, Qp_z, Udata, dtdx, dtdy, dtdz);
+
+} // SolverMHDMuscl<3>::computeFluxesAndUpdate
+
+// =======================================================
+// =======================================================
+// //////////////////////////////////////////////////////////////////
 // Compute EMF via 2D Riemann solver and store
 // //////////////////////////////////////////////////////////////////
 template <>
@@ -265,6 +303,45 @@ SolverMHDMuscl<3>::computeEmfAndStore(real_t dt)
 
 // =======================================================
 // =======================================================
+// //////////////////////////////////////////////////////////////////
+// Compute EMF via 2D Riemann solver and update magnetic field
+// //////////////////////////////////////////////////////////////////
+template <>
+void
+SolverMHDMuscl<2>::computeEmfAndUpdate(real_t dt, DataArray Udata)
+{
+
+  real_t dtdx = dt / params.dx;
+  real_t dtdy = dt / params.dy;
+
+  // call device functor
+  ComputeEmfAndUpdateFunctor2D::apply(
+    params, QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB, Udata, dtdx, dtdy);
+
+} // SolverMHSMuscl<2>::computeEmfAndUpdate
+
+// =======================================================
+// =======================================================
+// //////////////////////////////////////////////////////////////////
+// Compute EMF via 2D Riemann solver and update magnetic field
+// //////////////////////////////////////////////////////////////////
+template <>
+void
+SolverMHDMuscl<3>::computeEmfAndUpdate(real_t dt, DataArray Udata)
+{
+
+  real_t dtdx = dt / params.dx;
+  real_t dtdy = dt / params.dy;
+  real_t dtdz = dt / params.dz;
+
+  // call device functor
+  // ComputeEmfAndUpdateFunctor2D::apply(
+  //   params, QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB, Udata, dtdx, dtdy);
+
+} // SolverMHSMuscl<2>::computeEmfAndUpdate
+
+// =======================================================
+// =======================================================
 // ///////////////////////////////////////////
 // Actual computation of Godunov scheme - 2d
 // ///////////////////////////////////////////
@@ -314,7 +391,14 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
   }
   else if (params.implementationVersion == 1)
   {
-    ComputeHydroFluxesAndUpdateFunctor2D::apply(params, Q, data_out, dt);
+    // trace computation: fill arrays qm_x, qm_y, qp_x, qp_y
+    computeTrace(data_in, dt);
+
+    // Compute flux via Riemann solver and update (time integration)
+    computeFluxesAndUpdate(dt, data_out);
+
+    // Compute Emf and update magnetic field
+    computeEmfAndUpdate(dt, data_out);
   }
 
   timers[TIMER_NUM_SCHEME]->stop();

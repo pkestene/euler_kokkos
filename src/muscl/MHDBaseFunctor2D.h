@@ -683,23 +683,27 @@ public:
     // compute u,v,A,B,Ez (electric field)
     real_t Ez[2][2];
     for (int di = 0; di < 2; di++)
+    {
       for (int dj = 0; dj < 2; dj++)
       {
 
-        int    centerX = CENTER + di;
-        int    centerY = CENTER + dj;
+        int centerX = CENTER + di;
+        int centerY = CENTER + dj;
+        // clang-format off
         real_t u = 0.25f * (qNb[centerX - 1][centerY - 1][IU] + qNb[centerX - 1][centerY][IU] +
-                            qNb[centerX][centerY - 1][IU] + qNb[centerX][centerY][IU]);
+                            qNb[centerX    ][centerY - 1][IU] + qNb[centerX    ][centerY][IU]);
 
         real_t v = 0.25f * (qNb[centerX - 1][centerY - 1][IV] + qNb[centerX - 1][centerY][IV] +
-                            qNb[centerX][centerY - 1][IV] + qNb[centerX][centerY][IV]);
+                            qNb[centerX    ][centerY - 1][IV] + qNb[centerX    ][centerY][IV]);
 
-        real_t A = 0.5f * (bfNb[centerX][centerY - 1][IBFX] + bfNb[centerX][centerY][IBFX]);
+        real_t A = 0.5f * (bfNb[centerX    ][centerY - 1][IBFX] + bfNb[centerX][centerY][IBFX]);
 
-        real_t B = 0.5f * (bfNb[centerX - 1][centerY][IBFY] + bfNb[centerX][centerY][IBFY]);
+        real_t B = 0.5f * (bfNb[centerX - 1][centerY    ][IBFY] + bfNb[centerX][centerY][IBFY]);
+        // clang-format on
 
         Ez[di][dj] = u * B - v * A;
       }
+    }
 
     // Electric field
     real_t & ELL = Ez[0][0];
@@ -718,10 +722,12 @@ public:
     real_t C = q[IBZ];
 
     // Face centered variables
-    real_t AL = bfNb[CENTER][CENTER][IBFX];
-    real_t AR = bfNb[CENTER + 1][CENTER][IBFX];
-    real_t BL = bfNb[CENTER][CENTER][IBFY];
-    real_t BR = bfNb[CENTER][CENTER + 1][IBFY];
+    // clang-format off
+    real_t AL = bfNb[CENTER    ][CENTER    ][IBFX];
+    real_t AR = bfNb[CENTER + 1][CENTER    ][IBFX];
+    real_t BL = bfNb[CENTER    ][CENTER    ][IBFY];
+    real_t BR = bfNb[CENTER    ][CENTER + 1][IBFY];
+    // clang-format on
 
     // TODO LATER : compute xL, xR and xC using ::gParam
     // this is only needed when doing cylindrical or spherical coordinates
@@ -777,12 +783,14 @@ public:
     real_t(&dbfX)[3] = dbf[IX];
     real_t(&dbfY)[3] = dbf[IY];
 
-    bfNeighbors[0] = bfNb[CENTER][CENTER][IBFX];
-    bfNeighbors[1] = bfNb[CENTER][CENTER + 1][IBFX];
-    bfNeighbors[2] = bfNb[CENTER][CENTER - 1][IBFX];
-    bfNeighbors[3] = bfNb[CENTER][CENTER][IBFY];
-    bfNeighbors[4] = bfNb[CENTER + 1][CENTER][IBFY];
-    bfNeighbors[5] = bfNb[CENTER - 1][CENTER][IBFY];
+    // clang-format off
+    bfNeighbors[0] = bfNb[CENTER    ][CENTER    ][IBFX];
+    bfNeighbors[1] = bfNb[CENTER    ][CENTER + 1][IBFX];
+    bfNeighbors[2] = bfNb[CENTER    ][CENTER - 1][IBFX];
+    bfNeighbors[3] = bfNb[CENTER    ][CENTER    ][IBFY];
+    bfNeighbors[4] = bfNb[CENTER + 1][CENTER    ][IBFY];
+    bfNeighbors[5] = bfNb[CENTER - 1][CENTER    ][IBFY];
+    // clang-format on
 
     slope_unsplit_mhd_2d(bfNeighbors, dbf);
 
