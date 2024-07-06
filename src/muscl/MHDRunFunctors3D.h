@@ -1006,11 +1006,11 @@ public:
       udata[IW] -= flux[IW] * dtdy;
 
       get_state(FluxData_z, i, j, k, flux);
-      udata[ID] += flux[ID] * dtdy;
-      udata[IP] += flux[IP] * dtdy;
-      udata[IU] += flux[IW] * dtdy; //
-      udata[IV] += flux[IV] * dtdy;
-      udata[IW] += flux[IU] * dtdy; //
+      udata[ID] += flux[ID] * dtdz;
+      udata[IP] += flux[IP] * dtdz;
+      udata[IU] += flux[IW] * dtdz; //
+      udata[IV] += flux[IV] * dtdz;
+      udata[IW] += flux[IU] * dtdz; //
 
       get_state(FluxData_z, i, j, k + 1, flux);
       udata[ID] -= flux[ID] * dtdz;
