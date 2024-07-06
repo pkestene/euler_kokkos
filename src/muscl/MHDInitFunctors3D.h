@@ -263,14 +263,12 @@ public:
 class InitOrszagTangFunctor3D : public MHDBaseFunctor3D
 {
 
-private:
-  enum PhaseType
-  {
-    INIT_ALL_VAR_BUT_ENERGY = 0,
-    INIT_ENERGY = 1
-  };
-
 public:
+  struct TagInitTotalEnergy
+  {};
+  struct TagInitOtherVars
+  {};
+
   InitOrszagTangFunctor3D(HydroParams params, OrszagTangParams otParams, DataArray3d Udata)
     : MHDBaseFunctor3D(params)
     , otParams(otParams)
@@ -282,34 +280,20 @@ public:
   {
     InitOrszagTangFunctor3D functor(params, otParams, Udata);
 
-    functor.phase = INIT_ALL_VAR_BUT_ENERGY;
     Kokkos::parallel_for("InitOrszagTangFunctor3D",
-                         Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                         Kokkos::MDRangePolicy<Kokkos::Rank<3>, TagInitOtherVars>(
                            { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
                          functor);
 
-    functor.phase = INIT_ENERGY;
     Kokkos::parallel_for("InitOrszagTangFunctor3D - energy",
-                         Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                         Kokkos::MDRangePolicy<Kokkos::Rank<3>, TagInitTotalEnergy>(
                            { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
                          functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & i, const int & j, const int & k) const
-  {
-
-    if (phase == INIT_ALL_VAR_BUT_ENERGY)
-      init_all_var_but_energy(i, j, k);
-    else if (phase == INIT_ENERGY)
-      init_energy(i, j, k);
-
-  } // end operator ()
-
-  KOKKOS_INLINE_FUNCTION
-  void
-  init_all_var_but_energy(const int & i, const int & j, const int & k) const
+  operator()(TagInitOtherVars const &, const int & i, const int & j, const int & k) const
   {
 
     const int ghostWidth = params.ghostWidth;
@@ -376,7 +360,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void
-  init_energy(const int & i, const int & j, const int & k) const
+  operator()(TagInitTotalEnergy const &, const int & i, const int & j, const int & k) const
   {
 
     const int isize = params.isize;
@@ -407,9 +391,8 @@ public:
 
   } // init_energy
 
-  OrszagTangParams otParams;
+  const OrszagTangParams otParams;
   DataArray3d      Udata;
-  PhaseType        phase;
 
 }; // InitOrszagTangFunctor3D
 
