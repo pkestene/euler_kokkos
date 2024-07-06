@@ -52,7 +52,7 @@ public:
 
     int boundary_type;
 
-    if (faceId == FACE_XMIN)
+    if constexpr (faceId == FACE_XMIN)
     {
 
       // boundary xmin
@@ -91,7 +91,7 @@ public:
       }
     } // end FACE_XMIN
 
-    if (faceId == FACE_XMAX)
+    else if constexpr (faceId == FACE_XMAX)
     {
 
       // boundary xmax
@@ -131,7 +131,7 @@ public:
       }
     } // end FACE_XMAX
 
-    if (faceId == FACE_YMIN)
+    else if constexpr (faceId == FACE_YMIN)
     {
 
       // boundary ymin
@@ -170,7 +170,7 @@ public:
       }
     } // end FACE_YMIN
 
-    if (faceId == FACE_YMAX)
+    else if constexpr (faceId == FACE_YMAX)
     {
 
       // boundary ymax
@@ -270,7 +270,7 @@ public:
 
     int i0, j0, k0;
 
-    if (faceId == FACE_XMIN)
+    if constexpr (faceId == FACE_XMIN)
     {
 
       // boundary xmin (index = i + j * ghostWidth + k * ghostWidth*jsize)
@@ -309,7 +309,7 @@ public:
       } // end xmin
     }
 
-    if (faceId == FACE_XMAX)
+    else if constexpr (faceId == FACE_XMAX)
     {
 
       // boundary xmax (index = i + j *ghostWidth + k * ghostWidth*jsize)
@@ -351,7 +351,7 @@ public:
       } // end xmax
     }
 
-    if (faceId == FACE_YMIN)
+    else if constexpr (faceId == FACE_YMIN)
     {
 
       // boundary ymin (index = i + j*isize + k*isize*ghostWidth)
@@ -391,7 +391,7 @@ public:
       } // end ymin
     }
 
-    if (faceId == FACE_YMAX)
+    else if constexpr (faceId == FACE_YMAX)
     {
 
       // boundary ymax (index = i + j*isize + k*isize*ghostWidth)
@@ -434,7 +434,7 @@ public:
       } // end ymax
     }
 
-    if (faceId == FACE_ZMIN)
+    else if constexpr (faceId == FACE_ZMIN)
     {
 
       // boundary zmin (index = i + j*isize + k*isize*jsize)
@@ -472,7 +472,7 @@ public:
       } // end zmin
     }
 
-    if (faceId == FACE_ZMAX)
+    else if constexpr (faceId == FACE_ZMAX)
     {
 
       // boundary zmax (index = i + j*isize + k*isize*jsize)
@@ -569,7 +569,7 @@ public:
 
     int boundary_type;
 
-    if (faceId == FACE_XMIN)
+    if constexpr (faceId == FACE_XMIN)
     {
 
       // boundary xmin
@@ -611,7 +611,7 @@ public:
       }
     } // end FACE_XMIN
 
-    if (faceId == FACE_XMAX)
+    else if constexpr (faceId == FACE_XMAX)
     {
 
       // boundary xmax
@@ -653,7 +653,7 @@ public:
       }
     } // end FACE_XMAX
 
-    if (faceId == FACE_YMIN)
+    else if constexpr (faceId == FACE_YMIN)
     {
 
       // boundary ymin
@@ -694,7 +694,7 @@ public:
       }
     } // end FACE_YMIN
 
-    if (faceId == FACE_YMAX)
+    else if constexpr (faceId == FACE_YMAX)
     {
 
       // boundary ymax
@@ -793,7 +793,7 @@ public:
 
     int i0, j0, k0;
 
-    if (faceId == FACE_XMIN)
+    if constexpr (faceId == FACE_XMIN)
     {
 
       // boundary xmin (index = i + j * ghostWidth + k * ghostWidth*jsize)
@@ -833,7 +833,7 @@ public:
       }
     } // end FACE_XMIN
 
-    if (faceId == FACE_XMAX)
+    else if constexpr (faceId == FACE_XMAX)
     {
 
       // boundary xmax (index = i + j *ghostWidth + k * ghostWidth*jsize)
@@ -877,7 +877,7 @@ public:
       }
     } // end FACE_XMAX
 
-    if (faceId == FACE_YMIN)
+    else if constexpr (faceId == FACE_YMIN)
     {
 
       // boundary ymin (index = i + j*isize + k*isize*ghostWidth)
@@ -917,7 +917,7 @@ public:
       }
     } // end FACE_YMIN
 
-    if (faceId == FACE_YMAX)
+    else if constexpr (faceId == FACE_YMAX)
     {
 
       // boundary ymax (index = i + j*isize + k*isize*ghostWidth)
@@ -961,7 +961,7 @@ public:
       }
     } // end FACE_YMAX
 
-    if (faceId == FACE_ZMIN)
+    else if constexpr (faceId == FACE_ZMIN)
     {
 
       // boundary zmin (index = i + j*isize + k*isize*jsize)
@@ -1001,7 +1001,7 @@ public:
       }
     } // end FACE_ZMIN
 
-    if (faceId == FACE_ZMAX)
+    else if constexpr (faceId == FACE_ZMAX)
     {
 
       // boundary zmax (index = i + j*isize + k*isize*jsize)
