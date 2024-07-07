@@ -242,8 +242,8 @@ SolverMHDMuscl<3>::computeFluxesAndUpdate(real_t dt, DataArray Udata)
   real_t dtdz = dt / params.dz;
 
   // call device functor
-  // ComputeFluxesAndUpdateFunctor3D_MHD::apply(
-  //   params, Qm_x, Qm_y, Qm_z, Qp_x, Qp_y, Qp_z, Udata, dtdx, dtdy, dtdz);
+  ComputeFluxesAndUpdateFunctor3D_MHD::apply(
+    params, Qm_x, Qm_y, Qm_z, Qp_x, Qp_y, Qp_z, Udata, dtdx, dtdy, dtdz);
 
 } // SolverMHDMuscl<3>::computeFluxesAndUpdate
 
@@ -335,8 +335,23 @@ SolverMHDMuscl<3>::computeEmfAndUpdate(real_t dt, DataArray Udata)
   real_t dtdz = dt / params.dz;
 
   // call device functor
-  // ComputeEmfAndUpdateFunctor2D::apply(
-  //   params, QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB, Udata, dtdx, dtdy);
+  ComputeEmfAndUpdateFunctor3D::apply(params,
+                                      QEdge_RT,
+                                      QEdge_RB,
+                                      QEdge_LT,
+                                      QEdge_LB,
+                                      QEdge_RT2,
+                                      QEdge_RB2,
+                                      QEdge_LT2,
+                                      QEdge_LB2,
+                                      QEdge_RT3,
+                                      QEdge_RB3,
+                                      QEdge_LT3,
+                                      QEdge_LB3,
+                                      Udata,
+                                      dtdx,
+                                      dtdy,
+                                      dtdz);
 
 } // SolverMHSMuscl<2>::computeEmfAndUpdate
 
@@ -461,6 +476,23 @@ SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
 
     // actual update with emf
     UpdateEmfFunctor3D::apply(params, data_out, Emf, dtdx, dtdy, dtdz);
+  }
+  else if (params.implementationVersion == 1)
+  {
+    // compute electric field
+    computeElectricField(data_in);
+
+    // compute magnetic slopes
+    computeMagSlopes(data_in);
+
+    // trace computation: fill arrays qm_x, qm_y, qm_z, qp_x, qp_y, qp_z
+    computeTrace(data_in, dt);
+
+    // Compute flux via Riemann solver and update (time integration)
+    computeFluxesAndUpdate(dt, data_out);
+
+    // Compute Emf and update magnetic field
+    computeEmfAndUpdate(dt, data_out);
   }
   timers[TIMER_NUM_SCHEME]->stop();
 
