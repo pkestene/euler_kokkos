@@ -46,8 +46,11 @@ public:
     const real_t dy = params.dy;
     const real_t dz = params.dz;
 
-    if (k >= ghostWidth and k < ksize - ghostWidth and j >= ghostWidth and
-        j < jsize - ghostWidth and i >= ghostWidth and i < isize - ghostWidth)
+    // clang-format off
+    if (k >= ghostWidth and k < ksize - ghostWidth and
+        j >= ghostWidth and j < jsize - ghostWidth and
+        i >= ghostWidth and i < isize - ghostWidth)
+    // clang-format on
     {
 
       MHDState qLoc; // primitive    variables in current cell
@@ -113,7 +116,11 @@ public:
     // magnetic field in neighbor cells
     real_t magFieldNeighbors[3];
 
-    if (k >= 0 and k < ksize - 1 and j >= 0 and j < jsize - 1 and i >= 0 and i < isize - 1)
+    // clang-format off
+    if (k >= 0 and k < ksize - 1 and
+        j >= 0 and j < jsize - 1 and
+        i >= 0 and i < isize - 1)
+    // clang-format on
     {
 
       MHDState uLoc; // conservative    variables in current cell
@@ -190,7 +197,11 @@ public:
     const int ksize = params.ksize;
     // const int ghostWidth = params.ghostWidth;
 
-    if (k > 0 and k < ksize - 1 and j > 0 and j < jsize - 1 and i > 0 and i < isize - 1)
+    // clang-format off
+    if (k > 0 and k < ksize - 1 and
+        j > 0 and j < jsize - 1 and
+        i > 0 and i < isize - 1)
+    // clang-format on
     {
 
       real_t u, v, w, A, B, C;
@@ -283,7 +294,11 @@ public:
     const int ksize = params.ksize;
     // const int ghostWidth = params.ghostWidth;
 
-    if (k > 0 and k < ksize - 1 and j > 0 and j < jsize - 1 and i > 0 and i < isize - 1)
+    // clang-format off
+    if (k > 0 and k < ksize - 1 and
+        j > 0 and j < jsize - 1 and
+        i > 0 and i < isize - 1)
+    // clang-format on
     {
 
       real_t bfSlopes[15];
@@ -474,8 +489,11 @@ public:
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
 
-    if (k >= ghostWidth - 2 and k < ksize - ghostWidth + 1 and j >= ghostWidth - 2 and
-        j < jsize - ghostWidth + 1 and i >= ghostWidth - 2 and i < isize - ghostWidth + 1)
+    // clang-format off
+    if (k >= ghostWidth - 2 and k < ksize - ghostWidth + 1 and
+        j >= ghostWidth - 2 and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth - 2 and i < isize - ghostWidth + 1)
+    // clang-format on
     {
 
       MHDState q;
@@ -497,25 +515,27 @@ public:
 
       real_t xPos = params.xmin + params.dx / 2 + (i - ghostWidth) * params.dx;
 
+      // clang-format off
+
       // get primitive variables state vector
-      get_state(Qdata, i, j, k, q);
-      get_state(Qdata, i + 1, j, k, qPlusX);
-      get_state(Qdata, i - 1, j, k, qMinusX);
-      get_state(Qdata, i, j + 1, k, qPlusY);
-      get_state(Qdata, i, j - 1, k, qMinusY);
-      get_state(Qdata, i, j, k + 1, qPlusZ);
-      get_state(Qdata, i, j, k - 1, qMinusZ);
+      get_state(Qdata, i    , j    , k    , q);
+      get_state(Qdata, i + 1, j    , k    , qPlusX);
+      get_state(Qdata, i - 1, j    , k    , qMinusX);
+      get_state(Qdata, i    , j + 1, k    , qPlusY);
+      get_state(Qdata, i    , j - 1, k    , qMinusY);
+      get_state(Qdata, i    , j    , k + 1, qPlusZ);
+      get_state(Qdata, i    , j    , k - 1, qMinusZ);
 
       // get hydro slopes dq
       slope_unsplit_hydro_3d(q, qPlusX, qMinusX, qPlusY, qMinusY, qPlusZ, qMinusZ, dq);
 
       // get face-centered magnetic components
-      bfNb[0] = Udata(i, j, k, IA);
-      bfNb[1] = Udata(i + 1, j, k, IA);
-      bfNb[2] = Udata(i, j, k, IB);
-      bfNb[3] = Udata(i, j + 1, k, IB);
-      bfNb[4] = Udata(i, j, k, IC);
-      bfNb[5] = Udata(i, j, k + 1, IC);
+      bfNb[0] = Udata(i    , j    , k    , IA);
+      bfNb[1] = Udata(i + 1, j    , k    , IA);
+      bfNb[2] = Udata(i    , j    , k    , IB);
+      bfNb[3] = Udata(i    , j + 1, k    , IB);
+      bfNb[4] = Udata(i    , j    , k    , IC);
+      bfNb[5] = Udata(i    , j    , k + 1, IC);
 
       // get dbf (transverse magnetic slopes)
       dbf[0] = DeltaA(i, j, k, IY);
@@ -525,28 +545,30 @@ public:
       dbf[4] = DeltaC(i, j, k, IX);
       dbf[5] = DeltaC(i, j, k, IY);
 
-      dbf[6] = DeltaA(i + 1, j, k, IY);
-      dbf[7] = DeltaA(i + 1, j, k, IZ);
-      dbf[8] = DeltaB(i, j + 1, k, IX);
-      dbf[9] = DeltaB(i, j + 1, k, IZ);
-      dbf[10] = DeltaC(i, j, k + 1, IX);
-      dbf[11] = DeltaC(i, j, k + 1, IY);
+      dbf[6]  = DeltaA(i + 1, j    , k    , IY);
+      dbf[7]  = DeltaA(i + 1, j    , k    , IZ);
+      dbf[8]  = DeltaB(i    , j + 1, k    , IX);
+      dbf[9]  = DeltaB(i    , j + 1, k    , IZ);
+      dbf[10] = DeltaC(i    , j    , k + 1, IX);
+      dbf[11] = DeltaC(i    , j    , k + 1, IY);
 
       // get electric field components
-      Ex[0][0] = ElecField(i, j, k, IX);
-      Ex[0][1] = ElecField(i, j, k + 1, IX);
-      Ex[1][0] = ElecField(i, j + 1, k, IX);
-      Ex[1][1] = ElecField(i, j + 1, k + 1, IX);
+      Ex[0][0] = ElecField(i    , j    , k    , IX);
+      Ex[0][1] = ElecField(i    , j    , k + 1, IX);
+      Ex[1][0] = ElecField(i    , j + 1, k    , IX);
+      Ex[1][1] = ElecField(i    , j + 1, k + 1, IX);
 
-      Ey[0][0] = ElecField(i, j, k, IY);
-      Ey[0][1] = ElecField(i, j, k + 1, IY);
-      Ey[1][0] = ElecField(i + 1, j, k, IY);
-      Ey[1][1] = ElecField(i + 1, j, k + 1, IY);
+      Ey[0][0] = ElecField(i    , j    , k    , IY);
+      Ey[0][1] = ElecField(i    , j    , k + 1, IY);
+      Ey[1][0] = ElecField(i + 1, j    , k    , IY);
+      Ey[1][1] = ElecField(i + 1, j    , k + 1, IY);
 
-      Ez[0][0] = ElecField(i, j, k, IZ);
-      Ez[0][1] = ElecField(i, j + 1, k, IZ);
-      Ez[1][0] = ElecField(i + 1, j, k, IZ);
-      Ez[1][1] = ElecField(i + 1, j + 1, k, IZ);
+      Ez[0][0] = ElecField(i    , j    , k    , IZ);
+      Ez[0][1] = ElecField(i    , j + 1, k    , IZ);
+      Ez[1][0] = ElecField(i + 1, j    , k    , IZ);
+      Ez[1][1] = ElecField(i + 1, j + 1, k    , IZ);
+
+      // clang-format on
 
       // compute qm, qp and qEdge
       trace_unsplit_mhd_3d_simpler(
@@ -713,8 +735,11 @@ public:
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
 
-    if (k >= ghostWidth and k < ksize - ghostWidth + 1 and j >= ghostWidth and
-        j < jsize - ghostWidth + 1 and i >= ghostWidth and i < isize - ghostWidth + 1)
+    // clang-format off
+    if (k >= ghostWidth and k < ksize - ghostWidth + 1 and
+        j >= ghostWidth and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth and i < isize - ghostWidth + 1)
+    // clang-format on
     {
 
       MHDState qleft, qright;
@@ -868,8 +893,10 @@ public:
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
 
-    if (k >= ghostWidth and k < ksize - ghostWidth + 1 and j >= ghostWidth and
-        j < jsize - ghostWidth + 1 and i >= ghostWidth and i < isize - ghostWidth + 1)
+    // clang-format off
+    if (k >= ghostWidth and k < ksize - ghostWidth + 1 and
+        j >= ghostWidth and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth and i < isize - ghostWidth + 1)
     {
 
       MHDState qEdge_emf[4];
@@ -882,29 +909,30 @@ public:
 
       // actually compute emfZ
       get_state(QEdge_RT3, i - 1, j - 1, k, qEdge_emf[IRT]);
-      get_state(QEdge_RB3, i - 1, j, k, qEdge_emf[IRB]);
-      get_state(QEdge_LT3, i, j - 1, k, qEdge_emf[ILT]);
-      get_state(QEdge_LB3, i, j, k, qEdge_emf[ILB]);
+      get_state(QEdge_RB3, i - 1, j    , k, qEdge_emf[IRB]);
+      get_state(QEdge_LT3, i    , j - 1, k, qEdge_emf[ILT]);
+      get_state(QEdge_LB3, i    , j    , k, qEdge_emf[ILB]);
 
       Emf(i, j, k, I_EMFZ) = compute_emf<EMFZ>(qEdge_emf, params);
 
       // actually compute emfY (take care that RB and LT are
       // swapped !!!)
       get_state(QEdge_RT2, i - 1, j, k - 1, qEdge_emf[IRT]);
-      get_state(QEdge_LT2, i, j, k - 1, qEdge_emf[IRB]);
-      get_state(QEdge_RB2, i - 1, j, k, qEdge_emf[ILT]);
-      get_state(QEdge_LB2, i, j, k, qEdge_emf[ILB]);
+      get_state(QEdge_LT2, i    , j, k - 1, qEdge_emf[IRB]);
+      get_state(QEdge_RB2, i - 1, j, k    , qEdge_emf[ILT]);
+      get_state(QEdge_LB2, i    , j, k    , qEdge_emf[ILB]);
 
       Emf(i, j, k, I_EMFY) = compute_emf<EMFY>(qEdge_emf, params);
 
       // actually compute emfX
       get_state(QEdge_RT, i, j - 1, k - 1, qEdge_emf[IRT]);
-      get_state(QEdge_RB, i, j - 1, k, qEdge_emf[IRB]);
-      get_state(QEdge_LT, i, j, k - 1, qEdge_emf[ILT]);
-      get_state(QEdge_LB, i, j, k, qEdge_emf[ILB]);
+      get_state(QEdge_RB, i, j - 1, k    , qEdge_emf[IRB]);
+      get_state(QEdge_LT, i, j    , k - 1, qEdge_emf[ILT]);
+      get_state(QEdge_LB, i, j    , k    , qEdge_emf[ILB]);
 
       Emf(i, j, k, I_EMFX) = compute_emf<EMFX>(qEdge_emf, params);
     }
+    // clang-format on
   }
 
   DataArray3d      QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB;
@@ -967,8 +995,11 @@ public:
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
 
-    if (k >= ghostWidth and k < ksize - ghostWidth and j >= ghostWidth and
-        j < jsize - ghostWidth and i >= ghostWidth and i < isize - ghostWidth)
+    // clang-format off
+    if (k >= ghostWidth and k < ksize - ghostWidth and
+        j >= ghostWidth and j < jsize - ghostWidth and
+        i >= ghostWidth and i < isize - ghostWidth)
+    // clang-format on
     {
 
       MHDState udata;
@@ -1076,14 +1107,17 @@ public:
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
 
-    if (k >= ghostWidth and k < ksize - ghostWidth + 1 and j >= ghostWidth and
-        j < jsize - ghostWidth + 1 and i >= ghostWidth and i < isize - ghostWidth + 1)
+    // clang-format off
+    if (k >= ghostWidth and k < ksize - ghostWidth /*+ 1*/ and
+        j >= ghostWidth and j < jsize - ghostWidth /*+ 1*/ and
+        i >= ghostWidth and i < isize - ghostWidth /*+ 1*/)
+    // clang-format on
     {
 
       MHDState udata;
       get_state(Udata, i, j, k, udata);
 
-      if (k < ksize - ghostWidth)
+      // if (k < ksize - ghostWidth)
       {
         udata[IBX] += (Emf(i, j + 1, k, I_EMFZ) - Emf(i, j, k, I_EMFZ)) * dtdy;
 
