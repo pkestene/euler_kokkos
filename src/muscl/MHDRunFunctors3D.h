@@ -201,50 +201,48 @@ public:
     if (k > 0 and k < ksize - 1 and
         j > 0 and j < jsize - 1 and
         i > 0 and i < isize - 1)
-    // clang-format on
     {
 
       real_t u, v, w, A, B, C;
 
       // compute Ex
       v = ONE_FOURTH_F * (Qdata(i, j - 1, k - 1, IV) + Qdata(i, j - 1, k, IV) +
-                          Qdata(i, j, k - 1, IV) + Qdata(i, j, k, IV));
+                          Qdata(i, j    , k - 1, IV) + Qdata(i, j    , k, IV));
 
       w = ONE_FOURTH_F * (Qdata(i, j - 1, k - 1, IW) + Qdata(i, j - 1, k, IW) +
-                          Qdata(i, j, k - 1, IW) + Qdata(i, j, k, IW));
+                          Qdata(i, j    , k - 1, IW) + Qdata(i, j    , k, IW));
 
-      B = HALF_F * (Udata(i, j, k - 1, IB) + Udata(i, j, k, IB));
-
-      C = HALF_F * (Udata(i, j - 1, k, IC) + Udata(i, j, k, IC));
+      B = HALF_F * (Udata(i, j    , k - 1, IB) + Udata(i, j, k, IB));
+      C = HALF_F * (Udata(i, j - 1, k    , IC) + Udata(i, j, k, IC));
 
       ElecField(i, j, k, IX) = v * C - w * B;
 
       // compute Ey
       u = ONE_FOURTH_F * (Qdata(i - 1, j, k - 1, IU) + Qdata(i - 1, j, k, IU) +
-                          Qdata(i, j, k - 1, IU) + Qdata(i, j, k, IU));
+                          Qdata(i    , j, k - 1, IU) + Qdata(i    , j, k, IU));
 
       w = ONE_FOURTH_F * (Qdata(i - 1, j, k - 1, IW) + Qdata(i - 1, j, k, IW) +
-                          Qdata(i, j, k - 1, IW) + Qdata(i, j, k, IW));
+                          Qdata(i    , j, k - 1, IW) + Qdata(i    , j, k, IW));
 
-      A = HALF_F * (Udata(i, j, k - 1, IA) + Udata(i, j, k, IA));
-
-      C = HALF_F * (Udata(i - 1, j, k, IC) + Udata(i, j, k, IC));
+      A = HALF_F * (Udata(i    , j, k - 1, IA) + Udata(i, j, k, IA));
+      C = HALF_F * (Udata(i - 1, j, k    , IC) + Udata(i, j, k, IC));
 
       ElecField(i, j, k, IY) = w * A - u * C;
 
       // compute Ez
       u = ONE_FOURTH_F * (Qdata(i - 1, j - 1, k, IU) + Qdata(i - 1, j, k, IU) +
-                          Qdata(i, j - 1, k, IU) + Qdata(i, j, k, IU));
+                          Qdata(i    , j - 1, k, IU) + Qdata(i    , j, k, IU));
 
       v = ONE_FOURTH_F * (Qdata(i - 1, j - 1, k, IV) + Qdata(i - 1, j, k, IV) +
-                          Qdata(i, j - 1, k, IV) + Qdata(i, j, k, IV));
+                          Qdata(i    , j - 1, k, IV) + Qdata(i    , j, k, IV));
 
-      A = HALF_F * (Udata(i, j - 1, k, IA) + Udata(i, j, k, IA));
-
-      B = HALF_F * (Udata(i - 1, j, k, IB) + Udata(i, j, k, IB));
+      A = HALF_F * (Udata(i    , j - 1, k, IA) + Udata(i, j, k, IA));
+      B = HALF_F * (Udata(i - 1, j    , k, IB) + Udata(i, j, k, IB));
 
       ElecField(i, j, k, IZ) = u * B - v * A;
     }
+    // clang-format on
+
   } // operator ()
 
   DataArray3d      Udata;
