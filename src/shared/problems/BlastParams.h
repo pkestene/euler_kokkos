@@ -18,6 +18,12 @@ struct BlastParams
   real_t blast_density_out;
   real_t blast_pressure_in;
   real_t blast_pressure_out;
+  real_t blast_bx_in;
+  real_t blast_by_in;
+  real_t blast_bz_in;
+  real_t blast_bx_out;
+  real_t blast_by_out;
+  real_t blast_bz_out;
 
   BlastParams(ConfigMap & configMap)
   {
@@ -38,6 +44,12 @@ struct BlastParams
     blast_density_out = configMap.getFloat("blast", "density_out", 1.2);
     blast_pressure_in = configMap.getFloat("blast", "pressure_in", 10.0);
     blast_pressure_out = configMap.getFloat("blast", "pressure_out", 0.1);
+    blast_bx_in = configMap.getFloat("blast", "bx_in", 0.5);
+    blast_by_in = configMap.getFloat("blast", "by_in", 0.5);
+    blast_by_in = configMap.getFloat("blast", "bz_in", 0.5);
+    blast_bx_out = configMap.getFloat("blast", "bx_out", 0.5);
+    blast_by_out = configMap.getFloat("blast", "by_out", 0.5);
+    blast_by_out = configMap.getFloat("blast", "bz_out", 0.5);
   }
 
 }; // struct BlastParams

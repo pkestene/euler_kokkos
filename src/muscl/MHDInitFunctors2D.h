@@ -208,9 +208,9 @@ public:
       Udata(i, j, IU) = 0.0;
       Udata(i, j, IV) = 0.0;
       Udata(i, j, IW) = 0.0;
-      Udata(i, j, IA) = 0.5;
-      Udata(i, j, IB) = 0.5;
-      Udata(i, j, IC) = 0.5;
+      Udata(i, j, IA) = bParams.blast_bx_in;
+      Udata(i, j, IB) = bParams.blast_by_in;
+      Udata(i, j, IC) = bParams.blast_bz_in;
       Udata(i, j, IP) = blast_pressure_in / (gamma0 - 1.0) +
                         0.5 * (SQR(Udata(i, j, IA)) + SQR(Udata(i, j, IB)) + SQR(Udata(i, j, IC)));
     }
@@ -220,9 +220,9 @@ public:
       Udata(i, j, IU) = 0.0;
       Udata(i, j, IV) = 0.0;
       Udata(i, j, IW) = 0.0;
-      Udata(i, j, IA) = 0.5;
-      Udata(i, j, IB) = 0.5;
-      Udata(i, j, IC) = 0.5;
+      Udata(i, j, IA) = bParams.blast_bx_out;
+      Udata(i, j, IB) = bParams.blast_by_out;
+      Udata(i, j, IC) = bParams.blast_bz_out;
       Udata(i, j, IP) = blast_pressure_out / (gamma0 - 1.0) +
                         0.5 * (SQR(Udata(i, j, IA)) + SQR(Udata(i, j, IB)) + SQR(Udata(i, j, IC)));
     }

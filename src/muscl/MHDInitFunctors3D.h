@@ -215,9 +215,9 @@ public:
     const real_t blast_pressure_in = bParams.blast_pressure_in;
     const real_t blast_pressure_out = bParams.blast_pressure_out;
 
-    real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
-    real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
-    real_t z = zmin + dz / 2 + (k + nz * k_mpi - ghostWidth) * dz;
+    const real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
+    const real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
+    const real_t z = zmin + dz / 2 + (k + nz * k_mpi - ghostWidth) * dz;
 
     real_t d2 = (x - blast_center_x) * (x - blast_center_x) +
                 (y - blast_center_y) * (y - blast_center_y) +
@@ -229,9 +229,9 @@ public:
       Udata(i, j, k, IU) = 0.0;
       Udata(i, j, k, IV) = 0.0;
       Udata(i, j, k, IW) = 0.0;
-      Udata(i, j, k, IA) = 0.5;
-      Udata(i, j, k, IB) = 0.5;
-      Udata(i, j, k, IC) = 0.5;
+      Udata(i, j, k, IA) = bParams.blast_bx_in;
+      Udata(i, j, k, IB) = bParams.blast_by_in;
+      Udata(i, j, k, IC) = bParams.blast_bz_in;
       Udata(i, j, k, IP) =
         blast_pressure_in / (gamma0 - 1.0) +
         0.5 * (SQR(Udata(i, j, k, IA)) + SQR(Udata(i, j, k, IB)) + SQR(Udata(i, j, k, IC)));
@@ -242,9 +242,9 @@ public:
       Udata(i, j, k, IU) = 0.0;
       Udata(i, j, k, IV) = 0.0;
       Udata(i, j, k, IW) = 0.0;
-      Udata(i, j, k, IA) = 0.5;
-      Udata(i, j, k, IB) = 0.5;
-      Udata(i, j, k, IC) = 0.5;
+      Udata(i, j, k, IA) = bParams.blast_bx_out;
+      Udata(i, j, k, IB) = bParams.blast_by_out;
+      Udata(i, j, k, IC) = bParams.blast_bz_out;
       Udata(i, j, k, IP) =
         blast_pressure_out / (gamma0 - 1.0) +
         0.5 * (SQR(Udata(i, j, k, IA)) + SQR(Udata(i, j, k, IB)) + SQR(Udata(i, j, k, IC)));
