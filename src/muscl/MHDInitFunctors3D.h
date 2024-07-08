@@ -299,31 +299,29 @@ public:
     const int ghostWidth = params.ghostWidth;
 
 #ifdef USE_MPI
-    const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IY];
-    const int k_mpi = params.myMpiPos[IZ];
+    [[maybe_unused]] const int i_mpi = params.myMpiPos[IX];
+    [[maybe_unused]] const int j_mpi = params.myMpiPos[IY];
+    [[maybe_unused]] const int k_mpi = params.myMpiPos[IZ];
 #else
-    const int i_mpi = 0;
-    const int j_mpi = 0;
-    const int k_mpi = 0;
+    [[maybe_unused]] const int i_mpi = 0;
+    [[maybe_unused]] const int j_mpi = 0;
+    [[maybe_unused]] const int k_mpi = 0;
 #endif
-    UNUSED(k_mpi);
 
-    const int nx = params.nx;
-    const int ny = params.ny;
-    const int nz = params.nz;
-    UNUSED(nz);
+    [[maybe_unused]] const int nx = params.nx;
+    [[maybe_unused]] const int ny = params.ny;
+    [[maybe_unused]] const int nz = params.nz;
 
-    const real_t xmin = params.xmin;
-    const real_t ymin = params.ymin;
-    const real_t zmin = params.zmin;
-    const real_t zmax = params.zmax;
-    UNUSED(zmin);
+    [[maybe_unused]] const real_t xmin = params.xmin;
+    [[maybe_unused]] const real_t xmax = params.xmax;
+    [[maybe_unused]] const real_t ymin = params.ymin;
+    [[maybe_unused]] const real_t ymax = params.ymax;
+    [[maybe_unused]] const real_t zmin = params.zmin;
+    [[maybe_unused]] const real_t zmax = params.zmax;
 
-    const double dx = params.dx;
-    const double dy = params.dy;
-    const double dz = params.dz;
-    UNUSED(dz);
+    [[maybe_unused]] const double dx = params.dx;
+    [[maybe_unused]] const double dy = params.dy;
+    [[maybe_unused]] const double dz = params.dz;
 
     const real_t gamma0 = params.settings.gamma0;
 
@@ -337,24 +335,69 @@ public:
     double yPos = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
     double zPos = zmin + dz / 2 + (k + nz * k_mpi - ghostWidth) * dz;
 
-    // density
-    Udata(i, j, k, ID) = d0;
+    if (otParams.vortex_dir == OrszagTangParams::VortexDir::Z)
+    {
+      // density
+      Udata(i, j, k, ID) = d0;
 
-    // rho*vx
-    Udata(i, j, k, IU) = static_cast<real_t>(-d0 * v0 * sin(yPos * TWOPI_F));
+      // rho*vx
+      Udata(i, j, k, IU) = static_cast<real_t>(-d0 * v0 * sin(yPos * TWOPI_F));
 
-    // rho*vy
-    Udata(i, j, k, IV) = static_cast<real_t>(d0 * v0 * sin(xPos * TWOPI_F));
+      // rho*vy
+      Udata(i, j, k, IV) = static_cast<real_t>(d0 * v0 * sin(xPos * TWOPI_F));
 
-    // rho*vz
-    Udata(i, j, k, IW) = ZERO_F;
+      // rho*vz
+      Udata(i, j, k, IW) = ZERO_F;
 
-    // bx, by, bz
-    Udata(i, j, k, IBX) =
-      -B0 * cos(2 * TWOPI_F * kt * (zPos - zmin) / (zmax - zmin)) * sin(yPos * TWOPI_F);
-    Udata(i, j, k, IBY) =
-      B0 * cos(2 * TWOPI_F * kt * (zPos - zmin) / (zmax - zmin)) * sin(2.0 * xPos * TWOPI_F);
-    Udata(i, j, k, IBZ) = 0.0;
+      // bx, by, bz
+      Udata(i, j, k, IBX) =
+        -B0 * cos(2 * TWOPI_F * kt * (zPos - zmin) / (zmax - zmin)) * sin(yPos * TWOPI_F);
+      Udata(i, j, k, IBY) =
+        B0 * cos(2 * TWOPI_F * kt * (zPos - zmin) / (zmax - zmin)) * sin(2.0 * xPos * TWOPI_F);
+      Udata(i, j, k, IBZ) = 0.0;
+    }
+    else if (otParams.vortex_dir == OrszagTangParams::VortexDir::X)
+    {
+      // density
+      Udata(i, j, k, ID) = d0;
+
+      // rho*vx
+      Udata(i, j, k, IV) = static_cast<real_t>(-d0 * v0 * sin(zPos * TWOPI_F));
+
+      // rho*vy
+      Udata(i, j, k, IW) = static_cast<real_t>(d0 * v0 * sin(yPos * TWOPI_F));
+
+      // rho*vz
+      Udata(i, j, k, IU) = ZERO_F;
+
+      // bx, by, bz
+      Udata(i, j, k, IBY) =
+        -B0 * cos(2 * TWOPI_F * kt * (xPos - xmin) / (xmax - xmin)) * sin(zPos * TWOPI_F);
+      Udata(i, j, k, IBZ) =
+        B0 * cos(2 * TWOPI_F * kt * (xPos - xmin) / (xmax - xmin)) * sin(2.0 * yPos * TWOPI_F);
+      Udata(i, j, k, IBX) = 0.0;
+    }
+    else if (otParams.vortex_dir == OrszagTangParams::VortexDir::Y)
+    {
+      // density
+      Udata(i, j, k, ID) = d0;
+
+      // rho*vx
+      Udata(i, j, k, IW) = static_cast<real_t>(-d0 * v0 * sin(xPos * TWOPI_F));
+
+      // rho*vy
+      Udata(i, j, k, IU) = static_cast<real_t>(d0 * v0 * sin(zPos * TWOPI_F));
+
+      // rho*vz
+      Udata(i, j, k, IV) = ZERO_F;
+
+      // bx, by, bz
+      Udata(i, j, k, IBZ) =
+        -B0 * cos(2 * TWOPI_F * kt * (yPos - ymin) / (ymax - ymin)) * sin(xPos * TWOPI_F);
+      Udata(i, j, k, IBX) =
+        B0 * cos(2 * TWOPI_F * kt * (yPos - ymin) / (ymax - ymin)) * sin(2.0 * zPos * TWOPI_F);
+      Udata(i, j, k, IBY) = 0.0;
+    }
 
   } // init_all_var_but_energy
 
