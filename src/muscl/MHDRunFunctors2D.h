@@ -835,6 +835,12 @@ class ComputeFluxAndUpdateAlongDirFunctor2D_MHD : public MHDBaseFunctor2D
 {
 
 public:
+  //!
+  //! \param[in] Udata_in is conservative variables at t_n
+  //! \param[in] Udata_out is conservative variables at t_{n+1}
+  //! \param[in] Qdata is necessary to recompute limited slopes
+  //! \param[in] Qdata2 is primitive variables array at t_{n+1/2}
+  //!
   ComputeFluxAndUpdateAlongDirFunctor2D_MHD(HydroParams params,
                                             DataArray2d Udata_in,
                                             DataArray2d Udata_out,
@@ -863,7 +869,7 @@ public:
     ComputeFluxAndUpdateAlongDirFunctor2D_MHD<dir> functor(
       params, Udata_in, Udata_out, Qdata, Qdata2, dtdx, dtdy);
     Kokkos::parallel_for(
-      "ComputeUpdatedPrimVarFunctor2D_MHD",
+      "ComputeFluxAndUpdateAlongDirFunctor2D_MHD",
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
       functor);
   }
@@ -876,7 +882,7 @@ public:
     const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
-    const real_t gamma = params.settings.gamma0;
+    // const real_t gamma = params.settings.gamma0;
     const real_t smallR = params.settings.smallr;
     const real_t smallp = params.settings.smallp;
 
@@ -884,8 +890,8 @@ public:
     constexpr auto delta_j = dir == DIR_Y ? 1 : 0;
 
     // clang-format off
-    if (j >= ghostWidth - 2 and j < jsize - ghostWidth + 1 and
-        i >= ghostWidth - 2 and i < isize - ghostWidth + 1)
+    if (j >= ghostWidth and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth and i < isize - ghostWidth + 1)
     // clang-format on
     {
       MHDState dq, dqN;
@@ -896,11 +902,7 @@ public:
 
       // cell-centered primitive variables in neighbor cell
       MHDState qN;
-      get_state(Qdata, i - delta_i, j - delta_j, q);
-
-      const auto   db = compute_normal_mag_field_slopes(Udata_in, i, j);
-      const auto & dAx = db[IX];
-      const auto & dBy = db[IY];
+      get_state(Qdata, i - delta_i, j - delta_j, qN);
 
       MHDState qc, qm, qp;
       MHDState qR, qL;
@@ -927,6 +929,8 @@ public:
       qR[IV] = q2[IV] - 0.5 * dq[IV];
       qR[IW] = q2[IW] - 0.5 * dq[IW];
       qR[IP] = q2[IP] - 0.5 * dq[IP];
+      qR[ID] = fmax(smallR, qR[ID]);
+      qR[IP] = fmax(smallp * qR[ID], qR[IP]);
       if constexpr (dir == DIR_X)
       {
         const real_t ELR = compute_electric_field_2d(Udata_in, Qdata, i, j + 1);
@@ -945,8 +949,6 @@ public:
         qR[IB] = BL;
         qR[IC] = q2[IC] - 0.5 * dq[IC];
       }
-      qR[ID] = fmax(smallR, qR[ID]);
-      qR[IP] = fmax(smallp * qR[ID], qR[IP]);
 
       //
       // Left state at right interface (neighbor cell)
@@ -970,6 +972,8 @@ public:
       qL[IV] = q2N[IV] + 0.5 * dqN[IV];
       qL[IW] = q2N[IW] + 0.5 * dqN[IW];
       qL[IP] = q2N[IP] + 0.5 * dqN[IP];
+      qL[ID] = fmax(smallR, qL[ID]);
+      qL[IP] = fmax(smallp * qL[ID], qL[IP]);
       if constexpr (dir == DIR_X)
       {
         qL[IA] = qR[IA];
@@ -982,10 +986,67 @@ public:
         qL[IB] = qR[IB];
         qL[IC] = q2N[IC] - 0.5 * dqN[IC];
       }
-      qL[ID] = fmax(smallR, qL[ID]);
-      qL[IP] = fmax(smallp * qL[ID], qL[IP]);
 
       // now we are ready for computing hydro flux
+      MHDState flux;
+
+      if constexpr (dir == DIR_Y)
+      {
+        swapValues(&(qL[IU]), &(qL[IV]));
+        swapValues(&(qL[IA]), &(qL[IB]));
+        swapValues(&(qR[IU]), &(qR[IV]));
+        swapValues(&(qR[IA]), &(qR[IB]));
+      }
+      riemann_mhd(qL, qR, flux, params);
+      if constexpr (dir == DIR_Y)
+      {
+        swapValues(&(flux[IU]), &(flux[IV]));
+        swapValues(&(flux[IA]), &(flux[IB]));
+      }
+
+      if constexpr (dir == DIR_X)
+      {
+        if (j < jsize - ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_add(&Udata_out(i, j, ID), flux[ID] * dtdx);
+          Kokkos::atomic_add(&Udata_out(i, j, IP), flux[IP] * dtdx);
+          Kokkos::atomic_add(&Udata_out(i, j, IU), flux[IU] * dtdx);
+          Kokkos::atomic_add(&Udata_out(i, j, IV), flux[IV] * dtdx);
+          Kokkos::atomic_add(&Udata_out(i, j, IW), flux[IW] * dtdx);
+          Kokkos::atomic_add(&Udata_out(i, j, IC), flux[IC] * dtdx);
+        }
+
+        if (j < jsize - ghostWidth and i > ghostWidth)
+        {
+          Kokkos::atomic_sub(&Udata_out(i - 1, j, ID), flux[ID] * dtdx);
+          Kokkos::atomic_sub(&Udata_out(i - 1, j, IP), flux[IP] * dtdx);
+          Kokkos::atomic_sub(&Udata_out(i - 1, j, IU), flux[IU] * dtdx);
+          Kokkos::atomic_sub(&Udata_out(i - 1, j, IV), flux[IV] * dtdx);
+          Kokkos::atomic_sub(&Udata_out(i - 1, j, IW), flux[IW] * dtdx);
+          Kokkos::atomic_sub(&Udata_out(i - 1, j, IC), flux[IC] * dtdx);
+        }
+      }
+      else if constexpr (dir == DIR_Y)
+      {
+        if (j < jsize - ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_add(&Udata_out(i, j, ID), flux[ID] * dtdy);
+          Kokkos::atomic_add(&Udata_out(i, j, IP), flux[IP] * dtdy);
+          Kokkos::atomic_add(&Udata_out(i, j, IU), flux[IU] * dtdy);
+          Kokkos::atomic_add(&Udata_out(i, j, IV), flux[IV] * dtdy);
+          Kokkos::atomic_add(&Udata_out(i, j, IW), flux[IW] * dtdy);
+          Kokkos::atomic_add(&Udata_out(i, j, IC), flux[IC] * dtdy);
+        }
+        if (j > ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_sub(&Udata_out(i, j - 1, ID), flux[ID] * dtdy);
+          Kokkos::atomic_sub(&Udata_out(i, j - 1, IP), flux[IP] * dtdy);
+          Kokkos::atomic_sub(&Udata_out(i, j - 1, IU), flux[IU] * dtdy);
+          Kokkos::atomic_sub(&Udata_out(i, j - 1, IV), flux[IV] * dtdy);
+          Kokkos::atomic_sub(&Udata_out(i, j - 1, IW), flux[IW] * dtdy);
+          Kokkos::atomic_sub(&Udata_out(i, j - 1, IC), flux[IC] * dtdy);
+        }
+      }
     }
   } // operator ()
 
@@ -993,7 +1054,7 @@ public:
   DataArray2d Qdata, Qdata2;
   real_t      dtdx, dtdy;
 
-}; // ComputeUpdatedPrimvarFunctor2D_MHD
+}; // ComputeFluxAndUpdateAlongDirFunctor2D_MHD
 
 
 /*************************************************/

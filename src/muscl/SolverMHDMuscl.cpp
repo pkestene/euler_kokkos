@@ -419,6 +419,12 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
   {
     // update (cell-centered) primitive variables, perfrom 1/2 time step
     ComputeUpdatedPrimVarFunctor2D_MHD::apply(params, data_in, Q, Q2, dtdx, dtdy);
+
+    // update at t_{n+1} with hydro flux (across all faces)
+    ComputeFluxAndUpdateAlongDirFunctor2D_MHD<DIR_X>::apply(
+      params, data_in, data_out, Q, Q2, dtdx, dtdy);
+    ComputeFluxAndUpdateAlongDirFunctor2D_MHD<DIR_Y>::apply(
+      params, data_in, data_out, Q, Q2, dtdx, dtdy);
   }
 
   timers[TIMER_NUM_SCHEME]->stop();

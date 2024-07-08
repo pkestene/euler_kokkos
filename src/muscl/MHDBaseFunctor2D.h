@@ -56,9 +56,9 @@ public:
     q[IU] = data(i, j, IU);
     q[IV] = data(i, j, IV);
     q[IW] = data(i, j, IW);
-    q[IBX] = data(i, j, IBX);
-    q[IBY] = data(i, j, IBY);
-    q[IBZ] = data(i, j, IBZ);
+    q[IA] = data(i, j, IA);
+    q[IB] = data(i, j, IB);
+    q[IC] = data(i, j, IC);
 
   } // get_state
 
@@ -89,9 +89,9 @@ public:
   get_magField(const DataArray & data, int i, int j, BField & b) const
   {
 
-    b[IBFX] = data(i, j, IBX);
-    b[IBFY] = data(i, j, IBY);
-    b[IBFZ] = data(i, j, IBZ);
+    b[IBFX] = data(i, j, IA);
+    b[IBFY] = data(i, j, IB);
+    b[IBFZ] = data(i, j, IC);
 
   } // get_magField
 
