@@ -56,9 +56,9 @@ public:
       qLoc[IU] = Qdata(i, j, IU);
       qLoc[IV] = Qdata(i, j, IV);
       qLoc[IW] = Qdata(i, j, IW);
-      qLoc[IBX] = Qdata(i, j, IBX);
-      qLoc[IBY] = Qdata(i, j, IBY);
-      qLoc[IBZ] = Qdata(i, j, IBZ);
+      qLoc[IA] = Qdata(i, j, IA);
+      qLoc[IB] = Qdata(i, j, IB);
+      qLoc[IC] = Qdata(i, j, IC);
 
       // compute fastest information speeds
       real_t fastInfoSpeed[3];
@@ -123,13 +123,13 @@ public:
       uLoc[IU] = Udata(i, j, IU);
       uLoc[IV] = Udata(i, j, IV);
       uLoc[IW] = Udata(i, j, IW);
-      uLoc[IBX] = Udata(i, j, IBX);
-      uLoc[IBY] = Udata(i, j, IBY);
-      uLoc[IBZ] = Udata(i, j, IBZ);
+      uLoc[IA] = Udata(i, j, IA);
+      uLoc[IB] = Udata(i, j, IB);
+      uLoc[IC] = Udata(i, j, IC);
 
       // get mag field in neighbor cells
-      magFieldNeighbors[IX] = Udata(i + 1, j, IBX);
-      magFieldNeighbors[IY] = Udata(i, j + 1, IBY);
+      magFieldNeighbors[IX] = Udata(i + 1, j, IA);
+      magFieldNeighbors[IY] = Udata(i, j + 1, IB);
       magFieldNeighbors[IZ] = 0.0;
 
       // get primitive variables in current cell
@@ -141,9 +141,9 @@ public:
       Qdata(i, j, IU) = qLoc[IU];
       Qdata(i, j, IV) = qLoc[IV];
       Qdata(i, j, IW) = qLoc[IW];
-      Qdata(i, j, IBX) = qLoc[IBX];
-      Qdata(i, j, IBY) = qLoc[IBY];
-      Qdata(i, j, IBZ) = qLoc[IBZ];
+      Qdata(i, j, IA) = qLoc[IA];
+      Qdata(i, j, IB) = qLoc[IB];
+      Qdata(i, j, IC) = qLoc[IC];
     }
   }
 
@@ -554,7 +554,6 @@ public:
 
 }; // ComputeEmfAndUpdateFunctor2D
 
-
 /*************************************************/
 /*************************************************/
 /*************************************************/
@@ -687,6 +686,315 @@ public:
 
 }; // ComputeTraceFunctor2D_MHD
 
+/*************************************************/
+/*************************************************/
+/*************************************************/
+/**
+ * Compute cell-centered primitive data at t_{n+1/2} (half time step in
+ * Muscl-Hancock).
+ */
+class ComputeUpdatedPrimVarFunctor2D_MHD : public MHDBaseFunctor2D
+{
+
+public:
+  ComputeUpdatedPrimVarFunctor2D_MHD(HydroParams params,
+                                     DataArray2d Udata,
+                                     DataArray2d Qdata,
+                                     DataArray2d Qdata2,
+                                     real_t      dtdx,
+                                     real_t      dtdy)
+    : MHDBaseFunctor2D(params)
+    , Udata(Udata)
+    , Qdata(Qdata)
+    , Qdata2(Qdata2)
+    , dtdx(dtdx)
+    , dtdy(dtdy){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params,
+        DataArray2d Udata,
+        DataArray2d Qdata,
+        DataArray2d Qdata2,
+        real_t      dtdx,
+        real_t      dtdy)
+  {
+    ComputeUpdatedPrimVarFunctor2D_MHD functor(params, Udata, Qdata, Qdata2, dtdx, dtdy);
+    Kokkos::parallel_for(
+      "ComputeUpdatedPrimVarFunctor2D_MHD",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j) const
+  {
+    const int    isize = params.isize;
+    const int    jsize = params.jsize;
+    const int    ghostWidth = params.ghostWidth;
+    const real_t gamma = params.settings.gamma0;
+
+    // clang-format off
+    if (j >= ghostWidth - 2 and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth - 2 and i < isize - ghostWidth + 1)
+    // clang-format on
+    {
+      // get primitive variable in current cell
+      MHDState q;
+      get_state(Qdata, i, j, q);
+
+      MHDState dq[2];
+      MHDState qm, qp;
+
+      // compute hydro slopes along X
+      get_state(Qdata, i + 1, j, qp);
+      get_state(Qdata, i - 1, j, qm);
+      slope_unsplit_hydro_2d(q, qp, qm, dq[IX]);
+
+      // compute hydro slopes along Y
+      get_state(Qdata, i, j + 1, qp);
+      get_state(Qdata, i, j - 1, qm);
+      slope_unsplit_hydro_2d(q, qp, qm, dq[IY]);
+
+      // Cell centered values
+      real_t r = q[ID];
+      real_t p = q[IP];
+      real_t u = q[IU];
+      real_t v = q[IV];
+      real_t w = q[IW];
+      real_t A = q[IBX];
+      real_t B = q[IBY];
+      real_t C = q[IBZ];
+
+      // Cell centered TVD slopes in X direction
+      real_t drx = dq[IX][ID];
+      real_t dpx = dq[IX][IP];
+      real_t dux = dq[IX][IU];
+      real_t dvx = dq[IX][IV];
+      real_t dwx = dq[IX][IW];
+      real_t dCx = dq[IX][IBZ];
+      real_t dBx = dq[IX][IBY];
+
+      // Cell centered TVD slopes in Y direction
+      real_t dry = dq[IY][ID];
+      real_t dpy = dq[IY][IP];
+      real_t duy = dq[IY][IU];
+      real_t dvy = dq[IY][IV];
+      real_t dwy = dq[IY][IW];
+      real_t dCy = dq[IY][IBZ];
+      real_t dAy = dq[IY][IBX];
+
+      const auto   db = compute_normal_mag_field_slopes(Udata, i, j);
+      const auto & dAx = db[IX];
+      const auto & dBy = db[IY];
+
+      real_t sr0, su0, sv0, sw0, sp0, sA0, sB0, sC0;
+      {
+
+        sr0 = (-u * drx - dux * r) * dtdx + (-v * dry - dvy * r) * dtdy;
+        su0 =
+          (-u * dux - dpx / r - B * dBx / r - C * dCx / r) * dtdx + (-v * duy + B * dAy / r) * dtdy;
+        sv0 =
+          (-u * dvx + A * dBx / r) * dtdx + (-v * dvy - dpy / r - A * dAy / r - C * dCy / r) * dtdy;
+        sw0 = (-u * dwx + A * dCx / r) * dtdx + (-v * dwy + B * dCy / r) * dtdy;
+        sp0 = (-u * dpx - dux * gamma * p) * dtdx + (-v * dpy - dvy * gamma * p) * dtdy;
+        sA0 = (u * dBy + B * duy - v * dAy - A * dvy) * dtdy;
+        sB0 = (-u * dBx - B * dux + v * dAx + A * dvx) * dtdx;
+        sC0 = (w * dAx + A * dwx - u * dCx - C * dux) * dtdx +
+              (-v * dCy - C * dvy + w * dBy + B * dwy) * dtdy;
+      }
+
+      // Update in time the primitive variables (half time step)
+      Qdata2(i, j, ID) = r + 0.5 * sr0;
+      Qdata2(i, j, IU) = u + 0.5 * su0;
+      Qdata2(i, j, IV) = v + 0.5 * sv0;
+      Qdata2(i, j, IW) = w + 0.5 * sw0;
+      Qdata2(i, j, IP) = p + 0.5 * sp0;
+      Qdata2(i, j, IA) = A + 0.5 * sA0;
+      Qdata2(i, j, IB) = B + 0.5 * sB0;
+      Qdata2(i, j, IC) = C + 0.5 * sC0;
+    }
+  } // operator ()
+
+  DataArray2d Udata, Qdata; // input
+  DataArray2d Qdata2;       // output
+  real_t      dtdx, dtdy;
+
+}; // ComputeUpdatedPrimvarFunctor2D_MHD
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
+/**
+ * Compute cell-centered primitive data at t_{n+1/2} (half time step in
+ * Muscl-Hancock).
+ */
+template <Direction dir>
+class ComputeFluxAndUpdateAlongDirFunctor2D_MHD : public MHDBaseFunctor2D
+{
+
+public:
+  ComputeFluxAndUpdateAlongDirFunctor2D_MHD(HydroParams params,
+                                            DataArray2d Udata_in,
+                                            DataArray2d Udata_out,
+                                            DataArray2d Qdata,
+                                            DataArray2d Qdata2,
+                                            real_t      dtdx,
+                                            real_t      dtdy)
+    : MHDBaseFunctor2D(params)
+    , Udata_in(Udata_in)
+    , Udata_out(Udata_out)
+    , Qdata(Qdata)
+    , Qdata2(Qdata2)
+    , dtdx(dtdx)
+    , dtdy(dtdy){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params,
+        DataArray2d Udata_in,
+        DataArray2d Udata_out,
+        DataArray2d Qdata,
+        DataArray2d Qdata2,
+        real_t      dtdx,
+        real_t      dtdy)
+  {
+    ComputeFluxAndUpdateAlongDirFunctor2D_MHD<dir> functor(
+      params, Udata_in, Udata_out, Qdata, Qdata2, dtdx, dtdy);
+    Kokkos::parallel_for(
+      "ComputeUpdatedPrimVarFunctor2D_MHD",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ghostWidth = params.ghostWidth;
+
+    const real_t gamma = params.settings.gamma0;
+    const real_t smallR = params.settings.smallr;
+    const real_t smallp = params.settings.smallp;
+
+    constexpr auto delta_i = dir == DIR_X ? 1 : 0;
+    constexpr auto delta_j = dir == DIR_Y ? 1 : 0;
+
+    // clang-format off
+    if (j >= ghostWidth - 2 and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth - 2 and i < isize - ghostWidth + 1)
+    // clang-format on
+    {
+      MHDState dq, dqN;
+
+      // cell-centered primitive variables in current cell, and left and right neighbor along dir
+      MHDState q;
+      get_state(Qdata, i, j, q);
+
+      // cell-centered primitive variables in neighbor cell
+      MHDState qN;
+      get_state(Qdata, i - delta_i, j - delta_j, q);
+
+      const auto   db = compute_normal_mag_field_slopes(Udata_in, i, j);
+      const auto & dAx = db[IX];
+      const auto & dBy = db[IY];
+
+      MHDState qc, qm, qp;
+      MHDState qR, qL;
+
+      //
+      // Right state at left interface (current cell)
+      //
+
+      // compute hydro slopes along dir
+      // clang-format off
+      get_state(Qdata, i          , j          , qc);
+      get_state(Qdata, i + delta_i, j + delta_j, qp);
+      get_state(Qdata, i - delta_i, j - delta_j, qm);
+      // clang-format on
+
+      slope_unsplit_hydro_2d(qc, qp, qm, dq);
+
+      // get primitive variable in current cell at t_{n+1/2}
+      MHDState q2;
+      get_state(Qdata2, i, j, q2);
+
+      qR[ID] = q2[ID] - 0.5 * dq[ID];
+      qR[IU] = q2[IU] - 0.5 * dq[IU];
+      qR[IV] = q2[IV] - 0.5 * dq[IV];
+      qR[IW] = q2[IW] - 0.5 * dq[IW];
+      qR[IP] = q2[IP] - 0.5 * dq[IP];
+      if constexpr (dir == DIR_X)
+      {
+        const real_t ELR = compute_electric_field_2d(Udata_in, Qdata, i, j + 1);
+        const real_t ELL = compute_electric_field_2d(Udata_in, Qdata, i, j);
+        const real_t AL = Udata_in(i, j, IA) + (ELR - ELL) * 0.5 * dtdy;
+        qR[IA] = AL;
+        qR[IB] = q2[IB] - 0.5 * dq[IB];
+        qR[IC] = q2[IC] - 0.5 * dq[IC];
+      }
+      else if constexpr (dir == DIR_Y)
+      {
+        const real_t ERL = compute_electric_field_2d(Udata_in, Qdata, i + 1, j);
+        const real_t ELL = compute_electric_field_2d(Udata_in, Qdata, i, j);
+        const real_t BL = Udata_in(i, j, IB) - (ERL - ELL) * 0.5 * dtdx;
+        qR[IA] = q2[IA] - 0.5 * dq[IA];
+        qR[IB] = BL;
+        qR[IC] = q2[IC] - 0.5 * dq[IC];
+      }
+      qR[ID] = fmax(smallR, qR[ID]);
+      qR[IP] = fmax(smallp * qR[ID], qR[IP]);
+
+      //
+      // Left state at right interface (neighbor cell)
+      //
+
+      // compute hydro slopes along dir
+      // clang-format off
+      get_state(Qdata, i -   delta_i, j -   delta_j, qc);
+      get_state(Qdata, i            , j            , qp);
+      get_state(Qdata, i - 2*delta_i, j - 2*delta_j, qm);
+      // clang-format on
+
+      slope_unsplit_hydro_2d(qc, qp, qm, dqN);
+
+      // get primitive variable in neighbor cell at t_{n+1/2}
+      MHDState q2N;
+      get_state(Qdata2, i - delta_i, j - delta_j, q2N);
+
+      qL[ID] = q2N[ID] + 0.5 * dqN[ID];
+      qL[IU] = q2N[IU] + 0.5 * dqN[IU];
+      qL[IV] = q2N[IV] + 0.5 * dqN[IV];
+      qL[IW] = q2N[IW] + 0.5 * dqN[IW];
+      qL[IP] = q2N[IP] + 0.5 * dqN[IP];
+      if constexpr (dir == DIR_X)
+      {
+        qL[IA] = qR[IA];
+        qL[IB] = q2N[IB] + 0.5 * dqN[IB];
+        qL[IC] = q2N[IC] + 0.5 * dqN[IC];
+      }
+      else if constexpr (dir == DIR_Y)
+      {
+        qL[IA] = q2N[IA] - 0.5 * dqN[IA];
+        qL[IB] = qR[IB];
+        qL[IC] = q2N[IC] - 0.5 * dqN[IC];
+      }
+      qL[ID] = fmax(smallR, qL[ID]);
+      qL[IP] = fmax(smallp * qL[ID], qL[IP]);
+
+      // now we are ready for computing hydro flux
+    }
+  } // operator ()
+
+  DataArray2d Udata_in, Udata_out;
+  DataArray2d Qdata, Qdata2;
+  real_t      dtdx, dtdy;
+
+}; // ComputeUpdatedPrimvarFunctor2D_MHD
+
 
 /*************************************************/
 /*************************************************/
@@ -718,8 +1026,10 @@ public:
         real_t      dtdy)
   {
     UpdateFunctor2D_MHD functor(params, Udata, FluxData_x, FluxData_y, dtdx, dtdy);
-    Kokkos::parallel_for("UpdateFunctor2D_MHD",
-      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }), functor);
+    Kokkos::parallel_for(
+      "UpdateFunctor2D_MHD",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
   }
 
   KOKKOS_INLINE_FUNCTION

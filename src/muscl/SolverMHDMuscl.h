@@ -73,18 +73,19 @@ public:
     return solver;
   }
 
-  DataArray     U;     /*!< hydrodynamics conservative variables arrays */
-  DataArrayHost Uhost; /*!< U mirror on host memory space */
-  DataArray     U2;    /*!< hydrodynamics conservative variables arrays */
-  DataArray     Q;     /*!< hydrodynamics primitive    variables array  */
+  DataArray     U;     //!< hydrodynamics conservative variables array
+  DataArrayHost Uhost; //!< U mirror on host memory space
+  DataArray     U2;    //!< hydrodynamics conservative variables array
+  DataArray     Q;     //!< hydrodynamics primitive    variables array
+  DataArray Q2; //!< hydrodynamics primitive    variables array at t_{n+1/2} (half time step update)
 
-  DataArray Qm_x; /*!< hydrodynamics Riemann states array implementation 2 */
-  DataArray Qm_y; /*!< hydrodynamics Riemann states array */
-  DataArray Qm_z; /*!< hydrodynamics Riemann states array */
+  DataArray Qm_x; //!< hydrodynamics Riemann states array implementation 2
+  DataArray Qm_y; //!< hydrodynamics Riemann states array
+  DataArray Qm_z; //!< hydrodynamics Riemann states array
 
-  DataArray Qp_x; /*!< hydrodynamics Riemann states array */
-  DataArray Qp_y; /*!< hydrodynamics Riemann states array */
-  DataArray Qp_z; /*!< hydrodynamics Riemann states array */
+  DataArray Qp_x; //!< hydrodynamics Riemann states array
+  DataArray Qp_y; //!< hydrodynamics Riemann states array
+  DataArray Qp_z; //!< hydrodynamics Riemann states array
 
   DataArray QEdge_RT;
   DataArray QEdge_RB;
@@ -105,7 +106,7 @@ public:
   DataArray Fluxes_y;
   DataArray Fluxes_z;
 
-  /* electromotive forces */
+  // electromotive forces
   DataArrayScalar  Emf1; // 2d
   DataArrayVector3 Emf;  // 3d
 
@@ -207,6 +208,7 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
   , U()
   , U2()
   , Q()
+  , Q2()
   , Qm_x()
   , Qm_y()
   , Qm_z()
@@ -279,6 +281,11 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
       QEdge_LB = DataArray("QEdge_LB", isize, jsize, nbvar);
 
       total_mem_size += isize * jsize * nbvar * sizeof(real_t) * 8;
+    }
+    else if (params.implementationVersion == 2)
+    {
+      Q2 = DataArray("Q2", isize, jsize, nbvar);
+      total_mem_size += isize * jsize * nbvar * sizeof(real_t) * 1;
     }
 
     if (params.implementationVersion == 0)

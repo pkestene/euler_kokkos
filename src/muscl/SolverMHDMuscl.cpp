@@ -415,6 +415,11 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
     // Compute Emf and update magnetic field
     computeEmfAndUpdate(dt, data_out);
   }
+  else if (params.implementationVersion == 2)
+  {
+    // update (cell-centered) primitive variables, perfrom 1/2 time step
+    ComputeUpdatedPrimVarFunctor2D_MHD::apply(params, data_in, Q, Q2, dtdx, dtdy);
+  }
 
   timers[TIMER_NUM_SCHEME]->stop();
 
@@ -493,6 +498,10 @@ SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
 
     // Compute Emf and update magnetic field
     computeEmfAndUpdate(dt, data_out);
+  }
+  else if (params.implementationVersion == 2)
+  {
+    // TODO
   }
   timers[TIMER_NUM_SCHEME]->stop();
 

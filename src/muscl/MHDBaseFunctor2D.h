@@ -48,7 +48,7 @@ public:
    */
   KOKKOS_INLINE_FUNCTION
   void
-  get_state(DataArray data, int i, int j, MHDState & q) const
+  get_state(DataArray const & data, int i, int j, MHDState & q) const
   {
 
     q[ID] = data(i, j, ID);
@@ -94,6 +94,61 @@ public:
     b[IBFZ] = data(i, j, IBZ);
 
   } // get_magField
+
+  /**
+   * Compute slopes of face-centered magnetic field along normal direction
+   *
+   * \param[in] data is Conservative data array (which is the one containing face-centered magnetic
+   * field components)
+   * \param[in] i x-coordinate
+   * \param[in] j y-coordinate
+   *
+   * \return db magnetic slopes
+   */
+  KOKKOS_INLINE_FUNCTION
+  BField
+  compute_normal_mag_field_slopes(const DataArray & data, int i, int j) const
+  {
+
+    BField db;
+
+    // clang-format off
+    db[IX] = data(i + 1, j    , IA) - data(i, j, IA);
+    db[IY] = data(i    , j + 1, IB) - data(i, j, IB);
+    db[IZ] = 0.0;
+    // clang-format on
+
+    return db;
+  } // compute_normal_mag_field_slopes
+
+  /**
+   * Compute face centered magnetic slope.
+   */
+  template <Direction dir>
+  KOKKOS_INLINE_FUNCTION real_t
+  compute_mag_slope(DataArray data, int i, int j, int component) const
+  {
+    KOKKOS_ASSERT(((component == IBX) or (component == IBY) or (component == IBZ)) &&
+                  "Wrong component index for a magnetic field.");
+
+    constexpr auto delta_i = dir == DIR_X ? 1 : 0;
+    constexpr auto delta_j = dir == DIR_Y ? 1 : 0;
+
+    const auto b = data(i, j, component);
+    const auto b_plus = data(i + delta_i, j + delta_j, component);
+    const auto b_minus = data(i - delta_i, j - delta_j, component);
+
+    const real_t dlft = params.settings.slope_type * (b - b_minus);
+    const real_t drgt = params.settings.slope_type * (b_plus - b);
+    const real_t dcen = HALF_F * (b_plus - b_minus);
+    const real_t dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
+    const real_t slop = fmin(fabs(dlft), fabs(drgt));
+    real_t       dlim = slop;
+    if ((dlft * drgt) <= ZERO_F)
+      dlim = ZERO_F;
+    return dsgn * fmin(dlim, fabs(dcen));
+
+  } // compute_mag_slope
 
   /**
    * Equation of state:
@@ -236,6 +291,38 @@ public:
   } // slope_unsplit_hydro_2d_scalar
 
   /**
+   * Compute primitive variables slopes (dqX,dqY) for one component from q and its neighbors.
+   * This routine is only used in the 2D UNSPLIT integration and slope_type = 0,1 and 2.
+   *
+   * Only slope_type 1 and 2 are supported.
+   *
+   * \param[in]  q       : current primitive variable
+   * \param[in]  qPlus  : value in the next neighbor cell
+   * \param[in]  qMinus : value in the previous neighbor cell
+   *
+   */
+  KOKKOS_INLINE_FUNCTION
+  real_t
+  slope_unsplit_hydro_2d_scalar(real_t q, real_t qPlus, real_t qMinus) const
+  {
+    real_t slope_type = params.settings.slope_type;
+
+    real_t dlft, drgt, dcen, dsgn, slop, dlim;
+
+    // slopes in first coordinate direction
+    dlft = slope_type * (q - qMinus);
+    drgt = slope_type * (qPlus - q);
+    dcen = 0.5 * (qPlus - qMinus);
+    dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
+    slop = fmin(fabs(dlft), fabs(drgt));
+    dlim = slop;
+    if ((dlft * drgt) <= ZERO_F)
+      dlim = ZERO_F;
+    return dsgn * fmin(dlim, fabs(dcen));
+
+  } // slope_unsplit_hydro_2d_scalar
+
+  /**
    * Compute primitive variables slope (vector dq) from q and its neighbors.
    * This routine is only used in the 2D UNSPLIT integration and slope_type = 0,1,2 and 3.
    *
@@ -337,6 +424,48 @@ public:
   } // slope_unsplit_hydro_2d
 
   /**
+   * Compute primitive variables slope (vector dq) from q and its neighbors.
+   * This routine is only used in the 2D UNSPLIT integration and slope_type = 1 or 2.
+   *
+   * Only slope_type 1 and 2 are supported.
+   *
+   * \param[in]  q     : primitive variable state in center cell
+   * \param[in]  qp    : primitive variable state in center cell plus one
+   * \param[in]  qm    : primitive variable state in center cell minus one
+   * \param[out] dq    : reference to a slope state
+   *
+   */
+  KOKKOS_INLINE_FUNCTION void
+  slope_unsplit_hydro_2d(MHDState const & q,
+                         MHDState const & qp,
+                         MHDState const & qm,
+                         MHDState &       dq) const
+  {
+    real_t slope_type = params.settings.slope_type;
+
+    // index of current cell in the neighborhood
+    enum
+    {
+      CENTER = 1
+    };
+
+
+    if (slope_type == 1 or slope_type == 2)
+    { // minmod or average
+
+      dq[ID] = slope_unsplit_hydro_2d_scalar(q[ID], qp[ID], qm[ID]);
+      dq[IP] = slope_unsplit_hydro_2d_scalar(q[IP], qp[IP], qm[IP]);
+      dq[IU] = slope_unsplit_hydro_2d_scalar(q[IU], qp[IU], qm[IU]);
+      dq[IV] = slope_unsplit_hydro_2d_scalar(q[IV], qp[IV], qm[IV]);
+      dq[IW] = slope_unsplit_hydro_2d_scalar(q[IW], qp[IW], qm[IW]);
+      dq[IA] = slope_unsplit_hydro_2d_scalar(q[IA], qp[IA], qm[IA]);
+      dq[IB] = slope_unsplit_hydro_2d_scalar(q[IB], qp[IB], qm[IB]);
+      dq[IC] = slope_unsplit_hydro_2d_scalar(q[IC], qp[IC], qm[IC]);
+    }
+
+  } // slope_unsplit_hydro_2d
+
+  /**
    * slope_unsplit_mhd_2d computes only magnetic field slopes in 2D; hydro
    * slopes are always computed in slope_unsplit_hydro_2d.
    *
@@ -408,6 +537,39 @@ public:
     }
 
   } // slope_unsplit_mhd_2d
+
+  /**
+   * Compute electric field E = U ^ B at mid-edge
+   *
+   * \param[in] conservative data array
+   * \param[in] primitive data array
+   * \param[in] x-coordinate
+   * \param[in] y-coordinate
+   *
+   * \return electric field at mid-edge
+   */
+  KOKKOS_INLINE_FUNCTION real_t
+  compute_electric_field_2d(DataArray const & udata, DataArray const & qdata, int i, int j) const
+  {
+    // clang-format off
+    const real_t u = ONE_FOURTH_F * (qdata(i - 1, j - 1, IU) +
+                                     qdata(i - 1, j    , IU) +
+                                     qdata(i    , j - 1, IU) +
+                                     qdata(i    , j    , IU));
+
+    const real_t v = ONE_FOURTH_F * (qdata(i - 1, j - 1, IV) +
+                                     qdata(i - 1, j    , IV) +
+                                     qdata(i    , j - 1, IV) +
+                                     qdata(i    , j    , IV));
+
+
+    const real_t A = HALF_F * (udata(i,j-1,IA) + udata(i,j,IA));
+
+    const real_t B = HALF_F * (udata(i-1,j,IB) + udata(i,j,IB));
+    // clang-format on
+
+    return u * B - v * A;
+  }
 
   /**
    * Trace computations for unsplit Godunov scheme.
@@ -733,7 +895,7 @@ public:
     // this is only needed when doing cylindrical or spherical coordinates
 
     /*
-     * compute dq slopes
+     * compute hydro slopes
      */
     MHDState dq[2];
 
