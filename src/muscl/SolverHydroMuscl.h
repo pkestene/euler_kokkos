@@ -78,25 +78,25 @@ public:
     return solver;
   }
 
-  DataArray     U;     /*!< hydrodynamics conservative variables arrays */
-  DataArrayHost Uhost; /*!< U mirror on host memory space */
-  DataArray     U2;    /*!< hydrodynamics conservative variables arrays */
-  DataArray     Q;     /*!< hydrodynamics primitive    variables array  */
+  DataArray     U;     //!< hydrodynamics conservative variables arrays
+  DataArrayHost Uhost; //!< U mirror on host memory space
+  DataArray     U2;    //!< hydrodynamics conservative variables arrays
+  DataArray     Q;     //!< hydrodynamics primitive    variables array
 
-  /* implementation 0 and 1 */
-  DataArray Fluxes_x; /*!< implementation 0 */
-  DataArray Fluxes_y; /*!< implementation 0 */
-  DataArray Fluxes_z; /*!< implementation 0 */
+  // implementation 0 and 1
+  DataArray Fluxes_x; //!< implementation 0
+  DataArray Fluxes_y; //!< implementation 0
+  DataArray Fluxes_z; //!< implementation 0
 
-  /* implementation 1 only */
-  DataArray Slopes_x; /*!< implementation 1 only */
-  DataArray Slopes_y; /*!< implementation 1 only */
-  DataArray Slopes_z; /*!< implementation 1 only */
+  // implementation 1 only
+  DataArray Slopes_x; //!< implementation 1 only
+  DataArray Slopes_y; //!< implementation 1 only
+  DataArray Slopes_z; //!< implementation 1 only
 
   /* Gravity field */
   VectorField gravity;
 
-  // riemann_solver_t riemann_solver_fn; /*!< riemann solver function pointer */
+  // riemann_solver_t riemann_solver_fn; //!< riemann solver function pointer
 
   /*
    * methods
