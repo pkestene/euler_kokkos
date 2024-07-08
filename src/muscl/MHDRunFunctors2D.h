@@ -324,7 +324,7 @@ public:
         Kokkos::atomic_add(&Udata(i, j, IU), flux[IU] * dtdx);
         Kokkos::atomic_add(&Udata(i, j, IV), flux[IV] * dtdx);
         Kokkos::atomic_add(&Udata(i, j, IW), flux[IW] * dtdx);
-        Kokkos::atomic_add(&Udata(i, j, IBZ), flux[IBZ] * dtdx);
+        Kokkos::atomic_add(&Udata(i, j, IC), flux[IC] * dtdx);
       }
 
       if (j < jsize - ghostWidth and i > ghostWidth)
@@ -334,7 +334,7 @@ public:
         Kokkos::atomic_sub(&Udata(i - 1, j, IU), flux[IU] * dtdx);
         Kokkos::atomic_sub(&Udata(i - 1, j, IV), flux[IV] * dtdx);
         Kokkos::atomic_sub(&Udata(i - 1, j, IW), flux[IW] * dtdx);
-        Kokkos::atomic_sub(&Udata(i - 1, j, IBZ), flux[IBZ] * dtdx);
+        Kokkos::atomic_sub(&Udata(i - 1, j, IC), flux[IC] * dtdx);
       }
 
       //
@@ -364,7 +364,7 @@ public:
         Kokkos::atomic_add(&Udata(i, j, IU), flux[IU] * dtdy);
         Kokkos::atomic_add(&Udata(i, j, IV), flux[IV] * dtdy);
         Kokkos::atomic_add(&Udata(i, j, IW), flux[IW] * dtdy);
-        Kokkos::atomic_add(&Udata(i, j, IBZ), flux[IBZ] * dtdy);
+        Kokkos::atomic_add(&Udata(i, j, IC), flux[IC] * dtdy);
       }
       if (j > ghostWidth and i < isize - ghostWidth)
       {
@@ -373,7 +373,7 @@ public:
         Kokkos::atomic_sub(&Udata(i, j - 1, IU), flux[IU] * dtdy);
         Kokkos::atomic_sub(&Udata(i, j - 1, IV), flux[IV] * dtdy);
         Kokkos::atomic_sub(&Udata(i, j - 1, IW), flux[IW] * dtdy);
-        Kokkos::atomic_sub(&Udata(i, j - 1, IBZ), flux[IBZ] * dtdy);
+        Kokkos::atomic_sub(&Udata(i, j - 1, IC), flux[IC] * dtdy);
       }
     }
   }
@@ -441,15 +441,12 @@ public:
       // in 2D, we only need to compute emfZ
       MHDState qEdge_emfZ[4];
 
-      // preparation for calling compute_emf (equivalent to cmp_mag_flx
-      // in DUMSES)
-      // in the following, the 2 first indexes in qEdge_emf array play
-      // the same offset role as in the calling argument of cmp_mag_flx
-      // in DUMSES (if you see what I mean ?!)
+      // clang-format off
       get_state(QEdge_RT, i - 1, j - 1, qEdge_emfZ[IRT]);
-      get_state(QEdge_RB, i - 1, j, qEdge_emfZ[IRB]);
-      get_state(QEdge_LT, i, j - 1, qEdge_emfZ[ILT]);
-      get_state(QEdge_LB, i, j, qEdge_emfZ[ILB]);
+      get_state(QEdge_RB, i - 1, j    , qEdge_emfZ[IRB]);
+      get_state(QEdge_LT, i    , j - 1, qEdge_emfZ[ILT]);
+      get_state(QEdge_LB, i    , j    , qEdge_emfZ[ILB]);
+      // clang-format on
 
       // actually compute emfZ
       real_t emfZ = compute_emf<EMFZ>(qEdge_emfZ, params);
