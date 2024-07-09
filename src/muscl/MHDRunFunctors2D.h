@@ -1216,6 +1216,7 @@ public:
                                               DataArray2d Qdata2,
                                               DataArray2d Slopes_x,
                                               DataArray2d Slopes_y,
+                                              DataArray2d ElecField,
                                               real_t      dtdx,
                                               real_t      dtdy)
     : MHDBaseFunctor2D(params)
@@ -1225,6 +1226,7 @@ public:
     , Qdata2(Qdata2)
     , Slopes_x(Slopes_x)
     , Slopes_y(Slopes_y)
+    , ElecField(ElecField)
     , dtdx(dtdx)
     , dtdy(dtdy){};
 
@@ -1237,11 +1239,12 @@ public:
         DataArray2d Qdata2,
         DataArray2d Slopes_x,
         DataArray2d Slopes_y,
+        DataArray2d ElecField,
         real_t      dtdx,
         real_t      dtdy)
   {
     ReconstructEdgeComputeEmfAndUpdateFunctor2D functor(
-      params, Udata_in, Udata_out, Qdata, Qdata2, Slopes_x, Slopes_y, dtdx, dtdy);
+      params, Udata_in, Udata_out, Qdata, Qdata2, Slopes_x, Slopes_y, ElecField, dtdx, dtdy);
     Kokkos::parallel_for(
       "ReconstructEdgeComputeEmfAndUpdateFunctor2D",
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
@@ -1288,7 +1291,12 @@ public:
 
 
       // qLB is current cell, qLT, qRT and qRB are direct neighbors surrounding the lower left edge
-      MHDState qLB, qLT, qRB, qRT;
+      // MHDState qLB, qLT, qRB, qRT;
+      MHDState   qEdge_emfZ[4];
+      MHDState & qRT = qEdge_emfZ[IRT];
+      MHDState & qLT = qEdge_emfZ[ILT];
+      MHDState & qRB = qEdge_emfZ[IRB];
+      MHDState & qLB = qEdge_emfZ[ILB];
 
       // get primitive variable in current cell and neighbors at t_{n+1/2}
       // clang-format off
@@ -1304,17 +1312,19 @@ public:
 
       // LB at (i,j)
       {
-        const real_t ELR = compute_electric_field_2d(Udata_in, Qdata, i, j + 1);
-        const real_t ELL = compute_electric_field_2d(Udata_in, Qdata, i, j);
-        const real_t AL = Udata_in(i, j, IA) + (ELR - ELL) * 0.5 * dtdy;
-        const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i, j, IA);
+        const auto   i0 = i;
+        const auto   j0 = j;
+        const real_t ELR = ElecField(i0 + 0, j0 + 1, 0);
+        const real_t ELL = ElecField(i0 + 0, j0 + 0, 0);
+        const real_t AL = Udata_in(i0 + 0, j0 + 0, IA) + (ELR - ELL) * 0.5 * dtdy;
+        const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0, j0, IA);
 
-        const real_t ERL = compute_electric_field_2d(Udata_in, Qdata, i + 1, j);
-        const real_t BL = Udata_in(i, j, IB) - (ERL - ELL) * 0.5 * dtdx;
-        const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i, j, IB);
+        const real_t ERL = ElecField(i0 + 1, j0 + 0, 0);
+        const real_t BL = Udata_in(i0, j0, IB) - (ERL - ELL) * 0.5 * dtdx;
+        const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0, j0, IB);
 
-        get_state(Slopes_x, i, j, dqX);
-        get_state(Slopes_x, i, j, dqY);
+        get_state(Slopes_x, i0, j0, dqX);
+        get_state(Slopes_y, i0, j0, dqY);
         qLB[ID] += 0.5 * (-dqX[ID] - dqY[ID]);
         qLB[IU] += 0.5 * (-dqX[IU] - dqY[IU]);
         qLB[IV] += 0.5 * (-dqX[IV] - dqY[IV]);
@@ -1329,17 +1339,19 @@ public:
 
       // RT (i-1, j-1)
       {
-        const real_t ERR = compute_electric_field_2d(Udata_in, Qdata, (i - 1) + 1, (j - 1) + 1);
-        const real_t ERL = compute_electric_field_2d(Udata_in, Qdata, (i - 1) + 1, (j - 1));
-        const real_t AR = Udata_in((i - 1) + 1, (j - 1), IA) + (ERR - ERL) * 0.5 * dtdy;
-        const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, (i - 1) + 1, (j - 1), IA);
+        const auto   i0 = i - 1;
+        const auto   j0 = j - 1;
+        const real_t ERR = ElecField(i0 + 1, j0 + 1, 0);
+        const real_t ERL = ElecField(i0 + 1, j0 + 0, 0);
+        const real_t AR = Udata_in(i0 + 1, j0 + 0, IA) + (ERR - ERL) * 0.5 * dtdy;
+        const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 1, j0 + 0, IA);
 
-        const real_t ELR = compute_electric_field_2d(Udata_in, Qdata, (i - 1), (j - 1) + 1);
-        const real_t BR = Udata_in((i - 1), (j - 1) + 1, IB) - (ERR - ELR) * 0.5 * dtdx;
-        const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, (i - 1), (j - 1) + 1, IB);
+        const real_t ELR = ElecField(i0 + 0, j0 + 1, 0);
+        const real_t BR = Udata_in(i0 + 0, j0 + 1, IB) - (ERR - ELR) * 0.5 * dtdx;
+        const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, i0, j0 + 1, IB);
 
-        get_state(Slopes_x, i - 1, j - 1, dqX);
-        get_state(Slopes_x, i - 1, j - 1, dqY);
+        get_state(Slopes_x, i0, j0, dqX);
+        get_state(Slopes_y, i0, j0, dqY);
         qRT[ID] += 0.5 * (+dqX[ID] + dqY[ID]);
         qRT[IU] += 0.5 * (+dqX[IU] + dqY[IU]);
         qRT[IV] += 0.5 * (+dqX[IV] + dqY[IV]);
@@ -1354,162 +1366,78 @@ public:
 
 
       // RB (i-1,j)
-      // {
-      //   const real_t ERR = compute_electric_field_2d(Udata_in, Qdata, (i - 1) + 1, (j - 0) + 1);
-      //   const real_t ERL = compute_electric_field_2d(Udata_in, Qdata, (i - 1) + 1, (j - 0) + 0);
-      //   const real_t AR = Udata_in((i - 1) + 1, (j - 0), IA) + (ERR - ERL) * 0.5 * dtdy;
-      //   const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, (i - 1) + 1, (j - 0), IA);
+      {
+        const auto   i0 = i - 1;
+        const auto   j0 = j;
+        const real_t ERR = ElecField(i0 + 1, j0 + 1, 0);
+        const real_t ERL = ElecField(i0 + 1, j0 + 0, 0);
+        const real_t AR = Udata_in(i0 + 1, j0 + 0, IA) + (ERR - ERL) * 0.5 * dtdy;
+        const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 1, j0, IA);
 
-      //   const real_t ERL = compute_electric_field_2d(Udata_in, Qdata, (i - 1) + 1, (j - 0) + 0);
-      //   const real_t BL = Udata_in((i - 1), (j - 0), IB) - (ERL - ELL) * 0.5 * dtdx;
-      //   const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, (i - 1), (j - 0), IB);
+        const real_t ELL = ElecField(i0 + 0, j0 + 0, 0);
+        const real_t BL = Udata_in(i0 + 0, j0 + 0, IB) - (ERL - ELL) * 0.5 * dtdx;
+        const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0, j0, IB);
 
-      //   get_state(Slopes_x, i - 1, j - 0, dqX);
-      //   get_state(Slopes_x, i - 1, j - 0, dqY);
-      //   qRB[ID] += 0.5 * (+drx - dry);
-      //   qRB[IU] += 0.5 * (+dux - duy);
-      //   qRB[IV] += 0.5 * (+dvx - dvy);
-      //   qRB[IW] += 0.5 * (+dwx - dwy);
-      //   qRB[IP] += 0.5 * (+dpx - dpy);
-      //   qRB[IA] = AR + (-dARy);
-      //   qRB[IB] = BL + (+dBLx);
-      //   qRB[IC] += 0.5 * (+dCx - dCy);
-      //   qRB[ID] = fmax(smallR, qRB[ID]);
-      //   qRB[IP] = fmax(smallp * qRB[ID], qRB[IP]);
-      // }
+        get_state(Slopes_x, i0, j0, dqX);
+        get_state(Slopes_y, i0, j0, dqY);
+        qRB[ID] += 0.5 * (+dqX[ID] - dqY[ID]);
+        qRB[IU] += 0.5 * (+dqX[IU] - dqY[IU]);
+        qRB[IV] += 0.5 * (+dqX[IV] - dqY[IV]);
+        qRB[IW] += 0.5 * (+dqX[IW] - dqY[IW]);
+        qRB[IP] += 0.5 * (+dqX[IP] - dqY[IP]);
+        qRB[IA] = AR + (-dARy);
+        qRB[IB] = BL + (+dBLx);
+        qRB[IC] += 0.5 * (+dqX[IC] - dqY[IC]);
+        qRB[ID] = fmax(smallR, qRB[ID]);
+        qRB[IP] = fmax(smallp * qRB[ID], qRB[IP]);
+      }
 
-      // qR[ID] = q2[ID] - 0.5 * dq[ID];
-      // qR[IU] = q2[IU] - 0.5 * dq[IU];
-      // qR[IV] = q2[IV] - 0.5 * dq[IV];
-      // qR[IW] = q2[IW] - 0.5 * dq[IW];
-      // qR[IP] = q2[IP] - 0.5 * dq[IP];
-      // qR[ID] = fmax(smallR, qR[ID]);
-      // qR[IP] = fmax(smallp * qR[ID], qR[IP]);
-      // if constexpr (dir == DIR_X)
-      // {
-      //   const real_t ELR = compute_electric_field_2d(Udata_in, Qdata, i, j + 1);
-      //   const real_t ELL = compute_electric_field_2d(Udata_in, Qdata, i, j);
-      //   const real_t AL = Udata_in(i, j, IA) + (ELR - ELL) * 0.5 * dtdy;
-      //   qR[IA] = AL;
-      //   qR[IB] = q2[IB] - 0.5 * dq[IB];
-      //   qR[IC] = q2[IC] - 0.5 * dq[IC];
-      // }
-      // else if constexpr (dir == DIR_Y)
-      // {
-      //   const real_t ERL = compute_electric_field_2d(Udata_in, Qdata, i + 1, j);
-      //   const real_t ELL = compute_electric_field_2d(Udata_in, Qdata, i, j);
-      //   const real_t BL = Udata_in(i, j, IB) - (ERL - ELL) * 0.5 * dtdx;
-      //   qR[IA] = q2[IA] - 0.5 * dq[IA];
-      //   qR[IB] = BL;
-      //   qR[IC] = q2[IC] - 0.5 * dq[IC];
-      // }
+      // LT (i,j-1)
+      {
+        const auto   i0 = i;
+        const auto   j0 = j - 1;
+        const real_t ELR = ElecField(i0 + 0, j0 + 1, 0);
+        const real_t ELL = ElecField(i0 + 0, j0 + 0, 0);
+        const real_t AL = Udata_in(i0 + 0, j0 + 0, IA) + (ELR - ELL) * 0.5 * dtdy;
+        const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0, j0, IA);
 
-      // //
-      // // Left state at right interface (neighbor cell)
-      // //
+        const real_t ERR = ElecField(i0 + 1, j0 + 1, 0);
+        const real_t BR = Udata_in(i0 + 0, j0 + 1, IB) - (ERR - ELR) * 0.5 * dtdx;
+        const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, i0, j0 + 1, IB);
 
-      // // compute hydro slopes along dir
-      // // clang-format off
-      // get_state(Qdata, i -   delta_i, j -   delta_j, qc);
-      // get_state(Qdata, i            , j            , qp);
-      // get_state(Qdata, i - 2*delta_i, j - 2*delta_j, qm);
-      // // clang-format on
+        get_state(Slopes_x, i0, j0, dqX);
+        get_state(Slopes_y, i0, j0, dqY);
+        qLT[ID] += 0.5 * (-dqX[ID] + dqY[ID]);
+        qLT[IU] += 0.5 * (-dqX[IU] + dqY[IU]);
+        qLT[IV] += 0.5 * (-dqX[IV] + dqY[IV]);
+        qLT[IW] += 0.5 * (-dqX[IW] + dqY[IW]);
+        qLT[IP] += 0.5 * (-dqX[IP] + dqY[IP]);
+        qLT[IA] = AL + (+dALy);
+        qLT[IB] = BR + (-dBRx);
+        qLT[IC] += 0.5 * (-dqX[IC] + dqY[IC]);
+        qLT[ID] = fmax(smallR, qLT[ID]);
+        qLT[IP] = fmax(smallp * qLT[ID], qLT[IP]);
+      }
 
-      // slope_unsplit_hydro_2d(qc, qp, qm, dqN);
+      const real_t emfZ = compute_emf<EMFZ>(qEdge_emfZ, params);
 
-      // // get primitive variable in neighbor cell at t_{n+1/2}
-      // MHDState q2N;
-      // get_state(Qdata2, i - delta_i, j - delta_j, q2N);
+      // clang-format off
+      Kokkos::atomic_sub(&Udata_out(i    , j    , IA), emfZ * dtdy);
+      Kokkos::atomic_add(&Udata_out(i    , j    , IB), emfZ * dtdx);
 
-      // qL[ID] = q2N[ID] + 0.5 * dqN[ID];
-      // qL[IU] = q2N[IU] + 0.5 * dqN[IU];
-      // qL[IV] = q2N[IV] + 0.5 * dqN[IV];
-      // qL[IW] = q2N[IW] + 0.5 * dqN[IW];
-      // qL[IP] = q2N[IP] + 0.5 * dqN[IP];
-      // qL[ID] = fmax(smallR, qL[ID]);
-      // qL[IP] = fmax(smallp * qL[ID], qL[IP]);
-      // if constexpr (dir == DIR_X)
-      // {
-      //   qL[IA] = qR[IA];
-      //   qL[IB] = q2N[IB] + 0.5 * dqN[IB];
-      //   qL[IC] = q2N[IC] + 0.5 * dqN[IC];
-      // }
-      // else if constexpr (dir == DIR_Y)
-      // {
-      //   qL[IA] = q2N[IA] - 0.5 * dqN[IA];
-      //   qL[IB] = qR[IB];
-      //   qL[IC] = q2N[IC] - 0.5 * dqN[IC];
-      // }
-
-      // // now we are ready for computing hydro flux
-      // MHDState flux;
-
-      // if constexpr (dir == DIR_Y)
-      // {
-      //   swapValues(&(qL[IU]), &(qL[IV]));
-      //   swapValues(&(qL[IA]), &(qL[IB]));
-      //   swapValues(&(qR[IU]), &(qR[IV]));
-      //   swapValues(&(qR[IA]), &(qR[IB]));
-      // }
-      // riemann_mhd(qL, qR, flux, params);
-      // if constexpr (dir == DIR_Y)
-      // {
-      //   swapValues(&(flux[IU]), &(flux[IV]));
-      //   swapValues(&(flux[IA]), &(flux[IB]));
-      // }
-
-      // if constexpr (dir == DIR_X)
-      // {
-      //   if (j < jsize - ghostWidth and i < isize - ghostWidth)
-      //   {
-      //     Kokkos::atomic_add(&Udata_out(i, j, ID), flux[ID] * dtdx);
-      //     Kokkos::atomic_add(&Udata_out(i, j, IP), flux[IP] * dtdx);
-      //     Kokkos::atomic_add(&Udata_out(i, j, IU), flux[IU] * dtdx);
-      //     Kokkos::atomic_add(&Udata_out(i, j, IV), flux[IV] * dtdx);
-      //     Kokkos::atomic_add(&Udata_out(i, j, IW), flux[IW] * dtdx);
-      //     Kokkos::atomic_add(&Udata_out(i, j, IC), flux[IC] * dtdx);
-      //   }
-
-      //   if (j < jsize - ghostWidth and i > ghostWidth)
-      //   {
-      //     Kokkos::atomic_sub(&Udata_out(i - 1, j, ID), flux[ID] * dtdx);
-      //     Kokkos::atomic_sub(&Udata_out(i - 1, j, IP), flux[IP] * dtdx);
-      //     Kokkos::atomic_sub(&Udata_out(i - 1, j, IU), flux[IU] * dtdx);
-      //     Kokkos::atomic_sub(&Udata_out(i - 1, j, IV), flux[IV] * dtdx);
-      //     Kokkos::atomic_sub(&Udata_out(i - 1, j, IW), flux[IW] * dtdx);
-      //     Kokkos::atomic_sub(&Udata_out(i - 1, j, IC), flux[IC] * dtdx);
-      //   }
-      // }
-      // else if constexpr (dir == DIR_Y)
-      // {
-      //   if (j < jsize - ghostWidth and i < isize - ghostWidth)
-      //   {
-      //     Kokkos::atomic_add(&Udata_out(i, j, ID), flux[ID] * dtdy);
-      //     Kokkos::atomic_add(&Udata_out(i, j, IP), flux[IP] * dtdy);
-      //     Kokkos::atomic_add(&Udata_out(i, j, IU), flux[IU] * dtdy);
-      //     Kokkos::atomic_add(&Udata_out(i, j, IV), flux[IV] * dtdy);
-      //     Kokkos::atomic_add(&Udata_out(i, j, IW), flux[IW] * dtdy);
-      //     Kokkos::atomic_add(&Udata_out(i, j, IC), flux[IC] * dtdy);
-      //   }
-      //   if (j > ghostWidth and i < isize - ghostWidth)
-      //   {
-      //     Kokkos::atomic_sub(&Udata_out(i, j - 1, ID), flux[ID] * dtdy);
-      //     Kokkos::atomic_sub(&Udata_out(i, j - 1, IP), flux[IP] * dtdy);
-      //     Kokkos::atomic_sub(&Udata_out(i, j - 1, IU), flux[IU] * dtdy);
-      //     Kokkos::atomic_sub(&Udata_out(i, j - 1, IV), flux[IV] * dtdy);
-      //     Kokkos::atomic_sub(&Udata_out(i, j - 1, IW), flux[IW] * dtdy);
-      //     Kokkos::atomic_sub(&Udata_out(i, j - 1, IC), flux[IC] * dtdy);
-      //   }
-      // } // end if dir
+      Kokkos::atomic_add(&Udata_out(i    , j - 1, IA), emfZ * dtdy);
+      Kokkos::atomic_sub(&Udata_out(i - 1, j    , IB), emfZ * dtdx);
+      // clang-format on
     }
   } // operator ()
 
-  DataArray2d Udata_in, Udata_out;
-  DataArray2d Qdata, Qdata2;
-  DataArray2d Slopes_x, Slopes_y;
-  real_t      dtdx, dtdy;
+    DataArray2d Udata_in, Udata_out;
+    DataArray2d Qdata, Qdata2;
+    DataArray2d Slopes_x, Slopes_y;
+    DataArray2d ElecField;
+    real_t      dtdx, dtdy;
 
-}; // ComputeEmfAndUpdateFunctor2D_MHD
+  }; // ComputeEmfAndUpdateFunctor2D_MHD
 
 /*************************************************/
 /*************************************************/

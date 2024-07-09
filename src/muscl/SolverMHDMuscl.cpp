@@ -442,6 +442,9 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
 
     ComputeFluxAndUpdateAlongDirFunctor2D_MHD<DIR_Y>::apply(
       params, data_in, data_out, Q, Q2, dtdx, dtdy);
+
+    ReconstructEdgeComputeEmfAndUpdateFunctor2D::apply(
+      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, ElecField, dtdx, dtdy);
   }
 
   timers[TIMER_NUM_SCHEME]->stop();
