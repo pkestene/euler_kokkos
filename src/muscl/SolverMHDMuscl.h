@@ -114,7 +114,7 @@ public:
   DataArrayScalar  Emf1; // 2d
   DataArrayVector3 Emf;  // 3d
 
-  DataArrayVector3 ElecField;
+  DataArray ElecField; // 2 or 3 components
 
   DataArrayVector3 DeltaA;
   DataArrayVector3 DeltaB;
@@ -344,7 +344,7 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
       QEdge_LT3 = DataArray("QEdge_LT3", isize, jsize, ksize, nbvar);
       QEdge_LB3 = DataArray("QEdge_LB3", isize, jsize, ksize, nbvar);
 
-      ElecField = DataArrayVector3("ElecField", isize, jsize, ksize);
+      ElecField = DataArray("ElecField", isize, jsize, ksize, 3);
 
       DeltaA = DataArrayVector3("DeltaA", isize, jsize, ksize);
       DeltaB = DataArrayVector3("DeltaB", isize, jsize, ksize);

@@ -169,10 +169,10 @@ class ComputeElecFieldFunctor3D : public MHDBaseFunctor3D
 {
 
 public:
-  ComputeElecFieldFunctor3D(HydroParams      params,
-                            DataArray3d      Udata,
-                            DataArray3d      Qdata,
-                            DataArrayVector3 ElecField)
+  ComputeElecFieldFunctor3D(HydroParams params,
+                            DataArray3d Udata,
+                            DataArray3d Qdata,
+                            DataArray3d ElecField)
     : MHDBaseFunctor3D(params)
     , Udata(Udata)
     , Qdata(Qdata)
@@ -180,7 +180,7 @@ public:
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams params, DataArray3d Udata, DataArray3d Qdata, DataArrayVector3 ElecField)
+  apply(HydroParams params, DataArray3d Udata, DataArray3d Qdata, DataArray3d ElecField)
   {
     ComputeElecFieldFunctor3D functor(params, Udata, Qdata, ElecField);
     Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
@@ -245,9 +245,9 @@ public:
 
   } // operator ()
 
-  DataArray3d      Udata;
-  DataArray3d      Qdata;
-  DataArrayVector3 ElecField;
+  DataArray3d Udata;
+  DataArray3d Qdata;
+  DataArray3d ElecField;
 
 }; // ComputeElecFieldFunctor3D
 
@@ -422,7 +422,7 @@ public:
         DataArrayVector3 DeltaA,
         DataArrayVector3 DeltaB,
         DataArrayVector3 DeltaC,
-        DataArrayVector3 ElecField,
+        DataArray3d      ElecField,
         DataArray3d      Qm_x,
         DataArray3d      Qm_y,
         DataArray3d      Qm_z,
@@ -657,7 +657,8 @@ public:
   } // operator ()
 
   DataArray3d      Udata, Qdata;
-  DataArrayVector3 DeltaA, DeltaB, DeltaC, ElecField;
+  DataArrayVector3 DeltaA, DeltaB, DeltaC;
+  DataArray3d      ElecField;
   DataArray3d      Qm_x, Qm_y, Qm_z;
   DataArray3d      Qp_x, Qp_y, Qp_z;
   DataArray3d      QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB;
