@@ -121,12 +121,15 @@ public:
     return db;
   } // compute_normal_mag_field_slopes
 
+
   /**
-   * Compute face centered magnetic slope.
+   * Compute limited slope of face centered magnetic field component.
+   *
+   * \param[in] udata is a conservative variable array
    */
   template <Direction dir>
   KOKKOS_INLINE_FUNCTION real_t
-  compute_mag_slope(DataArray data, int i, int j, int component) const
+  compute_limited_slope(DataArray udata, int i, int j, int component) const
   {
     KOKKOS_ASSERT(((component == IA) or (component == IB) or (component == IC)) &&
                   "Wrong component index for a magnetic field.");
@@ -134,9 +137,11 @@ public:
     constexpr auto delta_i = dir == DIR_X ? 1 : 0;
     constexpr auto delta_j = dir == DIR_Y ? 1 : 0;
 
-    const auto b = data(i, j, component);
-    const auto b_plus = data(i + delta_i, j + delta_j, component);
-    const auto b_minus = data(i - delta_i, j - delta_j, component);
+    // clang-format off
+    const auto b       = udata(i          , j          , component);
+    const auto b_plus  = udata(i + delta_i, j + delta_j, component);
+    const auto b_minus = udata(i - delta_i, j - delta_j, component);
+    // clang-format on
 
     const real_t dlft = params.settings.slope_type * (b - b_minus);
     const real_t drgt = params.settings.slope_type * (b_plus - b);
@@ -148,7 +153,7 @@ public:
       dlim = ZERO_F;
     return dsgn * fmin(dlim, fabs(dcen));
 
-  } // compute_mag_slope
+  } // compute_limited_slope
 
   /**
    * Equation of state:
@@ -380,51 +385,12 @@ public:
       slope_unsplit_hydro_2d_scalar(
         q[IC], qPlusX[IC], qMinusX[IC], qPlusY[IC], qMinusY[IC], &(dqX[IC]), &(dqY[IC]));
     }
-    // else if (::gParams.slope_type == 3) {
-
-    //   real_t slop, dlim;
-    //   real_t dfll, dflm, dflr, dfml, dfmm, dfmr, dfrl, dfrm, dfrr;
-    //   real_t vmin, vmax;
-    //   real_t dfx, dfy, dff;
-
-    //   for (int nVar=0; nVar<NVAR_MHD; ++nVar) {
-
-    // 	dfll = qNb[CENTER-1][CENTER-1][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dflm = qNb[CENTER-1][CENTER  ][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dflr = qNb[CENTER-1][CENTER+1][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dfml = qNb[CENTER  ][CENTER-1][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dfmm = qNb[CENTER  ][CENTER  ][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dfmr = qNb[CENTER  ][CENTER+1][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dfrl = qNb[CENTER+1][CENTER-1][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dfrm = qNb[CENTER+1][CENTER  ][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dfrr = qNb[CENTER+1][CENTER+1][nVar]-qNb[CENTER][CENTER][nVar];
-
-    // 	vmin = FMIN9_(dfll,dflm,dflr,dfml,dfmm,dfmr,dfrl,dfrm,dfrr);
-    // 	vmax = FMAX9_(dfll,dflm,dflr,dfml,dfmm,dfmr,dfrl,dfrm,dfrr);
-
-    // 	dfx  = HALF_F * (qNb[CENTER+1][CENTER  ][nVar] - qNb[CENTER-1][CENTER  ][nVar]);
-    // 	dfy  = HALF_F * (qNb[CENTER  ][CENTER+1][nVar] - qNb[CENTER  ][CENTER-1][nVar]);
-    // 	dff  = HALF_F * (fabs(dfx) + fabs(dfy));
-
-    // 	if (dff>ZERO_F) {
-    // 	  slop = fmin(ONE_F, fmin(fabs(vmin), fabs(vmax))/dff);
-    // 	} else {
-    // 	  slop = ONE_F;
-    // 	}
-
-    // 	dlim = slop;
-
-    // 	dqX[nVar] = dlim*dfx;
-    // 	dqY[nVar] = dlim*dfy;
-
-    //   } // end for nVar
-
-    // } // end slope_type
 
   } // slope_unsplit_hydro_2d
 
   /**
-   * Compute primitive variables slope (vector dq) from q and its neighbors.
+   * Compute primitive variables slopes (vector dq) from q and its neighbors using cell-centered
+   * values.
    * This routine is only used in the 2D UNSPLIT integration and slope_type = 1 or 2.
    *
    * Only slope_type 1 and 2 are supported.

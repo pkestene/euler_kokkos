@@ -155,6 +155,78 @@ public:
 /*************************************************/
 /*************************************************/
 /*************************************************/
+class ComputeSlopesFunctor2D_MHD : public MHDBaseFunctor2D
+{
+
+public:
+  /**
+   * Compute limited slopes.
+   *
+   * \param[in] Qdata primitive variables
+   * \param[out] Slopes_x limited slopes along direction X
+   * \param[out] Slopes_y limited slopes along direction Y
+   */
+  ComputeSlopesFunctor2D_MHD(HydroParams params,
+                             DataArray2d Qdata,
+                             DataArray2d Slopes_x,
+                             DataArray2d Slopes_y)
+    : MHDBaseFunctor2D(params)
+    , Qdata(Qdata)
+    , Slopes_x(Slopes_x)
+    , Slopes_y(Slopes_y){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params, DataArray2d Qdata, DataArray2d Slopes_x, DataArray2d Slopes_y)
+  {
+    ComputeSlopesFunctor2D_MHD functor(params, Qdata, Slopes_x, Slopes_y);
+    Kokkos::parallel_for(
+      "ComputeSlopesFunctor2D_MHD",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    // const int ghostWidth = params.ghostWidth;
+
+    // clang-format off
+    if (j >= 1 and j < jsize - 1 and
+        i >= 1 and i < isize - 1)
+    // clang-format on
+    {
+      MHDState qc, qm, qp;
+      get_state(Qdata, i, j, qc);
+
+      MHDState dq;
+
+      // slopes along X
+      get_state(Qdata, i - 1, j, qm);
+      get_state(Qdata, i + 1, j, qp);
+      slope_unsplit_hydro_2d(qc, qp, qm, dq);
+      set_state(Slopes_x, i, j, dq);
+
+      // slopes along Y
+      get_state(Qdata, i, j - 1, qm);
+      get_state(Qdata, i, j + 1, qp);
+      slope_unsplit_hydro_2d(qc, qp, qm, dq);
+      set_state(Slopes_y, i, j, dq);
+    }
+  } // end operator ()
+
+  DataArray2d Qdata;
+  DataArray2d Slopes_x, Slopes_y;
+
+}; // ComputeSlopesFunctor2D_MHD
+
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
 class ComputeFluxesAndStoreFunctor2D_MHD : public MHDBaseFunctor2D
 {
 
@@ -192,8 +264,10 @@ public:
   {
     ComputeFluxesAndStoreFunctor2D_MHD functor(
       params, Qm_x, Qm_y, Qp_x, Qp_y, Flux_x, Flux_y, dtdx, dtdy);
-    Kokkos::parallel_for("ComputeFluxesAndStoreFunctor2D_MHD",
-      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }), functor);
+    Kokkos::parallel_for(
+      "ComputeFluxesAndStoreFunctor2D_MHD",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -824,8 +898,9 @@ public:
 /*************************************************/
 /*************************************************/
 /**
- * Compute cell-centered primitive data at t_{n+1/2} (half time step in
- * Muscl-Hancock).
+ * Reconstruct hydro state at cell face center, solve Riemann problems and update.
+ *
+ * This is done in a direction by direction manner.
  */
 template <Direction dir>
 class ComputeFluxAndUpdateAlongDirFunctor2D_MHD : public MHDBaseFunctor2D
@@ -1053,6 +1128,323 @@ public:
 
 }; // ComputeFluxAndUpdateAlongDirFunctor2D_MHD
 
+/*************************************************/
+/*************************************************/
+/*************************************************/
+/**
+ * Reconstruct hydrodynamics variables and magnetic field at edge center, compute Emf and update.
+ */
+class ReconstructEdgeComputeEmfAndUpdateFunctor2D : public MHDBaseFunctor2D
+{
+
+public:
+  //!
+  //! \param[in] Udata_in is conservative variables at t_n
+  //! \param[in] Udata_out is conservative variables at t_{n+1}
+  //! \param[in] Qdata is necessary to recompute limited slopes
+  //! \param[in] Qdata2 is primitive variables array at t_{n+1/2}
+  //!
+  ReconstructEdgeComputeEmfAndUpdateFunctor2D(HydroParams params,
+                                              DataArray2d Udata_in,
+                                              DataArray2d Udata_out,
+                                              DataArray2d Qdata,
+                                              DataArray2d Qdata2,
+                                              DataArray2d Slopes_x,
+                                              DataArray2d Slopes_y,
+                                              real_t      dtdx,
+                                              real_t      dtdy)
+    : MHDBaseFunctor2D(params)
+    , Udata_in(Udata_in)
+    , Udata_out(Udata_out)
+    , Qdata(Qdata)
+    , Qdata2(Qdata2)
+    , Slopes_x(Slopes_x)
+    , Slopes_y(Slopes_y)
+    , dtdx(dtdx)
+    , dtdy(dtdy){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params,
+        DataArray2d Udata_in,
+        DataArray2d Udata_out,
+        DataArray2d Qdata,
+        DataArray2d Qdata2,
+        DataArray2d Slopes_x,
+        DataArray2d Slopes_y,
+        real_t      dtdx,
+        real_t      dtdy)
+  {
+    ReconstructEdgeComputeEmfAndUpdateFunctor2D functor(
+      params, Udata_in, Udata_out, Qdata, Qdata2, Slopes_x, Slopes_y, dtdx, dtdy);
+    Kokkos::parallel_for(
+      "ReconstructEdgeComputeEmfAndUpdateFunctor2D",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ghostWidth = params.ghostWidth;
+
+    // const real_t gamma = params.settings.gamma0;
+    const real_t smallR = params.settings.smallr;
+    const real_t smallp = params.settings.smallp;
+
+    // clang-format off
+    if (j >= ghostWidth and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth and i < isize - ghostWidth + 1)
+    // clang-format on
+    {
+      // this drawing is a simple helper to reminder how reconstruction is done
+      //
+      // symbols LB, RB, LT, RT indicate location of reconstructed edge from the cell center.
+      //
+      //
+      //  X locates the edge where hydrodynamics values must be reconstructed
+      //    _________________________
+      //   |           |            |
+      //   |           |            |
+      //   |     RB    |     LB     |
+      //   |  (i-1,j)  |   (i,j)    |
+      //   |          \| /          |
+      //   |___________X____________|
+      //   |          /| \          |
+      //   |        /  |  \         |
+      //   |     RT    |     LT     |
+      //   | (i-1,j-1) |   (i,j-1)  |
+      //   |           |            |
+      //   |___________|____________|
+      //
+
+
+      // qLB is current cell, qLT, qRT and qRB are direct neighbors surrounding the lower left edge
+      MHDState qLB, qLT, qRB, qRT;
+
+      // get primitive variable in current cell and neighbors at t_{n+1/2}
+      // clang-format off
+      get_state(Qdata2, i    , j    , qLB);
+      get_state(Qdata2, i    , j - 1, qLT);
+      get_state(Qdata2, i - 1, j    , qRB);
+      get_state(Qdata2, i - 1, j - 1, qRT);
+      // clang-format on
+
+
+      // reconstruct edge states using limited slopes
+      MHDState dqX, dqY;
+
+      // LB at (i,j)
+      {
+        const real_t ELR = compute_electric_field_2d(Udata_in, Qdata, i, j + 1);
+        const real_t ELL = compute_electric_field_2d(Udata_in, Qdata, i, j);
+        const real_t AL = Udata_in(i, j, IA) + (ELR - ELL) * 0.5 * dtdy;
+        const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i, j, IA);
+
+        const real_t ERL = compute_electric_field_2d(Udata_in, Qdata, i + 1, j);
+        const real_t BL = Udata_in(i, j, IB) - (ERL - ELL) * 0.5 * dtdx;
+        const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i, j, IB);
+
+        get_state(Slopes_x, i, j, dqX);
+        get_state(Slopes_x, i, j, dqY);
+        qLB[ID] += 0.5 * (-dqX[ID] - dqY[ID]);
+        qLB[IU] += 0.5 * (-dqX[IU] - dqY[IU]);
+        qLB[IV] += 0.5 * (-dqX[IV] - dqY[IV]);
+        qLB[IW] += 0.5 * (-dqX[IW] - dqY[IW]);
+        qLB[IP] += 0.5 * (-dqX[IP] - dqY[IP]);
+        qLB[IA] = AL + 0.5 * (-dALy);
+        qLB[IB] = BL + 0.5 * (-dBLx);
+        qLB[IC] += 0.5 * (-dqX[IC] - dqY[IC]);
+        qLB[ID] = fmax(smallR, qLB[ID]);
+        qLB[IP] = fmax(smallp * qLB[ID], qLB[IP]);
+      }
+
+      // RT (i-1, j-1)
+      {
+        const real_t ERR = compute_electric_field_2d(Udata_in, Qdata, (i - 1) + 1, (j - 1) + 1);
+        const real_t ERL = compute_electric_field_2d(Udata_in, Qdata, (i - 1) + 1, (j - 1));
+        const real_t AR = Udata_in((i - 1) + 1, (j - 1), IA) + (ERR - ERL) * 0.5 * dtdy;
+        const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, (i - 1) + 1, (j - 1), IA);
+
+        const real_t ELR = compute_electric_field_2d(Udata_in, Qdata, (i - 1), (j - 1) + 1);
+        const real_t BR = Udata_in((i - 1), (j - 1) + 1, IB) - (ERR - ELR) * 0.5 * dtdx;
+        const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, (i - 1), (j - 1) + 1, IB);
+
+        get_state(Slopes_x, i - 1, j - 1, dqX);
+        get_state(Slopes_x, i - 1, j - 1, dqY);
+        qRT[ID] += 0.5 * (+dqX[ID] + dqY[ID]);
+        qRT[IU] += 0.5 * (+dqX[IU] + dqY[IU]);
+        qRT[IV] += 0.5 * (+dqX[IV] + dqY[IV]);
+        qRT[IW] += 0.5 * (+dqX[IW] + dqY[IW]);
+        qRT[IP] += 0.5 * (+dqX[IP] + dqY[IP]);
+        qRT[IA] = AR + (+dARy);
+        qRT[IB] = BR + (+dBRx);
+        qRT[IC] += 0.5 * (+dqX[IC] + dqY[IC]);
+        qRT[ID] = fmax(smallR, qRT[ID]);
+        qRT[IP] = fmax(smallp * qRT[ID], qRT[IP]);
+      }
+
+
+      // RB (i-1,j)
+      // {
+      //   const real_t ERR = compute_electric_field_2d(Udata_in, Qdata, (i - 1) + 1, (j - 0) + 1);
+      //   const real_t ERL = compute_electric_field_2d(Udata_in, Qdata, (i - 1) + 1, (j - 0) + 0);
+      //   const real_t AR = Udata_in((i - 1) + 1, (j - 0), IA) + (ERR - ERL) * 0.5 * dtdy;
+      //   const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, (i - 1) + 1, (j - 0), IA);
+
+      //   const real_t ERL = compute_electric_field_2d(Udata_in, Qdata, (i - 1) + 1, (j - 0) + 0);
+      //   const real_t BL = Udata_in((i - 1), (j - 0), IB) - (ERL - ELL) * 0.5 * dtdx;
+      //   const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, (i - 1), (j - 0), IB);
+
+      //   get_state(Slopes_x, i - 1, j - 0, dqX);
+      //   get_state(Slopes_x, i - 1, j - 0, dqY);
+      //   qRB[ID] += 0.5 * (+drx - dry);
+      //   qRB[IU] += 0.5 * (+dux - duy);
+      //   qRB[IV] += 0.5 * (+dvx - dvy);
+      //   qRB[IW] += 0.5 * (+dwx - dwy);
+      //   qRB[IP] += 0.5 * (+dpx - dpy);
+      //   qRB[IA] = AR + (-dARy);
+      //   qRB[IB] = BL + (+dBLx);
+      //   qRB[IC] += 0.5 * (+dCx - dCy);
+      //   qRB[ID] = fmax(smallR, qRB[ID]);
+      //   qRB[IP] = fmax(smallp * qRB[ID], qRB[IP]);
+      // }
+
+      // qR[ID] = q2[ID] - 0.5 * dq[ID];
+      // qR[IU] = q2[IU] - 0.5 * dq[IU];
+      // qR[IV] = q2[IV] - 0.5 * dq[IV];
+      // qR[IW] = q2[IW] - 0.5 * dq[IW];
+      // qR[IP] = q2[IP] - 0.5 * dq[IP];
+      // qR[ID] = fmax(smallR, qR[ID]);
+      // qR[IP] = fmax(smallp * qR[ID], qR[IP]);
+      // if constexpr (dir == DIR_X)
+      // {
+      //   const real_t ELR = compute_electric_field_2d(Udata_in, Qdata, i, j + 1);
+      //   const real_t ELL = compute_electric_field_2d(Udata_in, Qdata, i, j);
+      //   const real_t AL = Udata_in(i, j, IA) + (ELR - ELL) * 0.5 * dtdy;
+      //   qR[IA] = AL;
+      //   qR[IB] = q2[IB] - 0.5 * dq[IB];
+      //   qR[IC] = q2[IC] - 0.5 * dq[IC];
+      // }
+      // else if constexpr (dir == DIR_Y)
+      // {
+      //   const real_t ERL = compute_electric_field_2d(Udata_in, Qdata, i + 1, j);
+      //   const real_t ELL = compute_electric_field_2d(Udata_in, Qdata, i, j);
+      //   const real_t BL = Udata_in(i, j, IB) - (ERL - ELL) * 0.5 * dtdx;
+      //   qR[IA] = q2[IA] - 0.5 * dq[IA];
+      //   qR[IB] = BL;
+      //   qR[IC] = q2[IC] - 0.5 * dq[IC];
+      // }
+
+      // //
+      // // Left state at right interface (neighbor cell)
+      // //
+
+      // // compute hydro slopes along dir
+      // // clang-format off
+      // get_state(Qdata, i -   delta_i, j -   delta_j, qc);
+      // get_state(Qdata, i            , j            , qp);
+      // get_state(Qdata, i - 2*delta_i, j - 2*delta_j, qm);
+      // // clang-format on
+
+      // slope_unsplit_hydro_2d(qc, qp, qm, dqN);
+
+      // // get primitive variable in neighbor cell at t_{n+1/2}
+      // MHDState q2N;
+      // get_state(Qdata2, i - delta_i, j - delta_j, q2N);
+
+      // qL[ID] = q2N[ID] + 0.5 * dqN[ID];
+      // qL[IU] = q2N[IU] + 0.5 * dqN[IU];
+      // qL[IV] = q2N[IV] + 0.5 * dqN[IV];
+      // qL[IW] = q2N[IW] + 0.5 * dqN[IW];
+      // qL[IP] = q2N[IP] + 0.5 * dqN[IP];
+      // qL[ID] = fmax(smallR, qL[ID]);
+      // qL[IP] = fmax(smallp * qL[ID], qL[IP]);
+      // if constexpr (dir == DIR_X)
+      // {
+      //   qL[IA] = qR[IA];
+      //   qL[IB] = q2N[IB] + 0.5 * dqN[IB];
+      //   qL[IC] = q2N[IC] + 0.5 * dqN[IC];
+      // }
+      // else if constexpr (dir == DIR_Y)
+      // {
+      //   qL[IA] = q2N[IA] - 0.5 * dqN[IA];
+      //   qL[IB] = qR[IB];
+      //   qL[IC] = q2N[IC] - 0.5 * dqN[IC];
+      // }
+
+      // // now we are ready for computing hydro flux
+      // MHDState flux;
+
+      // if constexpr (dir == DIR_Y)
+      // {
+      //   swapValues(&(qL[IU]), &(qL[IV]));
+      //   swapValues(&(qL[IA]), &(qL[IB]));
+      //   swapValues(&(qR[IU]), &(qR[IV]));
+      //   swapValues(&(qR[IA]), &(qR[IB]));
+      // }
+      // riemann_mhd(qL, qR, flux, params);
+      // if constexpr (dir == DIR_Y)
+      // {
+      //   swapValues(&(flux[IU]), &(flux[IV]));
+      //   swapValues(&(flux[IA]), &(flux[IB]));
+      // }
+
+      // if constexpr (dir == DIR_X)
+      // {
+      //   if (j < jsize - ghostWidth and i < isize - ghostWidth)
+      //   {
+      //     Kokkos::atomic_add(&Udata_out(i, j, ID), flux[ID] * dtdx);
+      //     Kokkos::atomic_add(&Udata_out(i, j, IP), flux[IP] * dtdx);
+      //     Kokkos::atomic_add(&Udata_out(i, j, IU), flux[IU] * dtdx);
+      //     Kokkos::atomic_add(&Udata_out(i, j, IV), flux[IV] * dtdx);
+      //     Kokkos::atomic_add(&Udata_out(i, j, IW), flux[IW] * dtdx);
+      //     Kokkos::atomic_add(&Udata_out(i, j, IC), flux[IC] * dtdx);
+      //   }
+
+      //   if (j < jsize - ghostWidth and i > ghostWidth)
+      //   {
+      //     Kokkos::atomic_sub(&Udata_out(i - 1, j, ID), flux[ID] * dtdx);
+      //     Kokkos::atomic_sub(&Udata_out(i - 1, j, IP), flux[IP] * dtdx);
+      //     Kokkos::atomic_sub(&Udata_out(i - 1, j, IU), flux[IU] * dtdx);
+      //     Kokkos::atomic_sub(&Udata_out(i - 1, j, IV), flux[IV] * dtdx);
+      //     Kokkos::atomic_sub(&Udata_out(i - 1, j, IW), flux[IW] * dtdx);
+      //     Kokkos::atomic_sub(&Udata_out(i - 1, j, IC), flux[IC] * dtdx);
+      //   }
+      // }
+      // else if constexpr (dir == DIR_Y)
+      // {
+      //   if (j < jsize - ghostWidth and i < isize - ghostWidth)
+      //   {
+      //     Kokkos::atomic_add(&Udata_out(i, j, ID), flux[ID] * dtdy);
+      //     Kokkos::atomic_add(&Udata_out(i, j, IP), flux[IP] * dtdy);
+      //     Kokkos::atomic_add(&Udata_out(i, j, IU), flux[IU] * dtdy);
+      //     Kokkos::atomic_add(&Udata_out(i, j, IV), flux[IV] * dtdy);
+      //     Kokkos::atomic_add(&Udata_out(i, j, IW), flux[IW] * dtdy);
+      //     Kokkos::atomic_add(&Udata_out(i, j, IC), flux[IC] * dtdy);
+      //   }
+      //   if (j > ghostWidth and i < isize - ghostWidth)
+      //   {
+      //     Kokkos::atomic_sub(&Udata_out(i, j - 1, ID), flux[ID] * dtdy);
+      //     Kokkos::atomic_sub(&Udata_out(i, j - 1, IP), flux[IP] * dtdy);
+      //     Kokkos::atomic_sub(&Udata_out(i, j - 1, IU), flux[IU] * dtdy);
+      //     Kokkos::atomic_sub(&Udata_out(i, j - 1, IV), flux[IV] * dtdy);
+      //     Kokkos::atomic_sub(&Udata_out(i, j - 1, IW), flux[IW] * dtdy);
+      //     Kokkos::atomic_sub(&Udata_out(i, j - 1, IC), flux[IC] * dtdy);
+      //   }
+      // } // end if dir
+    }
+  } // operator ()
+
+  DataArray2d Udata_in, Udata_out;
+  DataArray2d Qdata, Qdata2;
+  DataArray2d Slopes_x, Slopes_y;
+  real_t      dtdx, dtdy;
+
+}; // ComputeEmfAndUpdateFunctor2D_MHD
 
 /*************************************************/
 /*************************************************/
@@ -1374,283 +1766,6 @@ public:
   real_t      dtdx, dtdy;
 
 }; // ComputeTraceAndFluxes_Functor2D_MHD
-
-/*************************************************/
-/*************************************************/
-/*************************************************/
-class ComputeHydroFluxesAndUpdateFunctor2D : public MHDBaseFunctor2D
-{
-
-public:
-  ComputeHydroFluxesAndUpdateFunctor2D(HydroParams params,
-                                       DataArray2d Qdata,
-                                       DataArray2d Udata,
-                                       real_t      dt)
-    : MHDBaseFunctor2D(params)
-    , Qdata(Qdata)
-    , Udata(Udata)
-    , dt(dt)
-    , dtdx(dt / params.dx)
-    , dtdy(dt / params.dy)
-  {}
-
-  // static method which does it all: create and execute functor
-  static void
-  apply(HydroParams params, DataArray2d Qdata, DataArray2d Udata, real_t dt)
-  {
-    ComputeHydroFluxesAndUpdateFunctor2D functor(params, Qdata, Udata, dt);
-    Kokkos::parallel_for(
-      "ComputeHydroFluxesAndUpdateFunctor2D",
-      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
-      functor);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void
-  operator()(const int & i, const int & j) const
-  {
-    const int isize = params.isize;
-    const int jsize = params.jsize;
-    const int ghostWidth = params.ghostWidth;
-
-    if (j >= ghostWidth and j <= jsize - ghostWidth and i >= ghostWidth and i <= isize - ghostWidth)
-    {
-
-      // // local primitive variables
-      // HydroState qLoc; // local primitive variables
-
-      // // local primitive variables in neighbor cell
-      // HydroState qLocNeighbor;
-
-      // // local primitive variables in neighborbood
-      // HydroState qNeighbors_0;
-      // HydroState qNeighbors_1;
-      // HydroState qNeighbors_2;
-      // HydroState qNeighbors_3;
-
-      // // Local slopes and neighbor slopes
-      // HydroState dqX;
-      // HydroState dqY;
-      // HydroState dqX_neighbor;
-      // HydroState dqY_neighbor;
-
-      // // Local variables for Riemann problems solving
-      // HydroState qleft;
-      // HydroState qright;
-      // HydroState qgdnv;
-      // HydroState flux_x;
-      // HydroState flux_y;
-
-      // //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      // // deal with left interface along X !
-      // //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      // // get primitive variables state vector
-      // // clang-format off
-      // qLoc[ID] = Qdata(i, j, ID);
-      // qNeighbors_0[ID] = Qdata(i + 1, j    , ID);
-      // qNeighbors_1[ID] = Qdata(i - 1, j    , ID);
-      // qNeighbors_2[ID] = Qdata(i    , j + 1, ID);
-      // qNeighbors_3[ID] = Qdata(i    , j - 1, ID);
-
-      // qLoc[IP] = Qdata(i, j, IP);
-      // qNeighbors_0[IP] = Qdata(i + 1, j    , IP);
-      // qNeighbors_1[IP] = Qdata(i - 1, j    , IP);
-      // qNeighbors_2[IP] = Qdata(i    , j + 1, IP);
-      // qNeighbors_3[IP] = Qdata(i    , j - 1, IP);
-
-      // qLoc[IU] = Qdata(i, j, IU);
-      // qNeighbors_0[IU] = Qdata(i + 1, j    , IU);
-      // qNeighbors_1[IU] = Qdata(i - 1, j    , IU);
-      // qNeighbors_2[IU] = Qdata(i    , j + 1, IU);
-      // qNeighbors_3[IU] = Qdata(i    , j - 1, IU);
-
-      // qLoc[IV] = Qdata(i, j, IV);
-      // qNeighbors_0[IV] = Qdata(i + 1, j    , IV);
-      // qNeighbors_1[IV] = Qdata(i - 1, j    , IV);
-      // qNeighbors_2[IV] = Qdata(i    , j + 1, IV);
-      // qNeighbors_3[IV] = Qdata(i    , j - 1, IV);
-      // // clang-format on
-
-      // slope_unsplit_hydro_2d(
-      //   qLoc, qNeighbors_0, qNeighbors_1, qNeighbors_2, qNeighbors_3, dqX, dqY);
-
-      // // slopes at left neighbor along X
-      // // clang-format off
-      // qLocNeighbor[ID] = Qdata(i - 1, j    , ID);
-      // qNeighbors_0[ID] = Qdata(i    , j    , ID);
-      // qNeighbors_1[ID] = Qdata(i - 2, j    , ID);
-      // qNeighbors_2[ID] = Qdata(i - 1, j + 1, ID);
-      // qNeighbors_3[ID] = Qdata(i - 1, j - 1, ID);
-
-      // qLocNeighbor[IP] = Qdata(i - 1, j    , IP);
-      // qNeighbors_0[IP] = Qdata(i    , j    , IP);
-      // qNeighbors_1[IP] = Qdata(i - 2, j    , IP);
-      // qNeighbors_2[IP] = Qdata(i - 1, j + 1, IP);
-      // qNeighbors_3[IP] = Qdata(i - 1, j - 1, IP);
-
-      // qLocNeighbor[IU] = Qdata(i - 1, j    , IU);
-      // qNeighbors_0[IU] = Qdata(i    , j    , IU);
-      // qNeighbors_1[IU] = Qdata(i - 2, j    , IU);
-      // qNeighbors_2[IU] = Qdata(i - 1, j + 1, IU);
-      // qNeighbors_3[IU] = Qdata(i - 1, j - 1, IU);
-
-      // qLocNeighbor[IV] = Qdata(i - 1, j    , IV);
-      // qNeighbors_0[IV] = Qdata(i    , j    , IV);
-      // qNeighbors_1[IV] = Qdata(i - 2, j    , IV);
-      // qNeighbors_2[IV] = Qdata(i - 1, j + 1, IV);
-      // qNeighbors_3[IV] = Qdata(i - 1, j - 1, IV);
-      // // clang-format on
-
-      // slope_unsplit_hydro_2d(qLocNeighbor,
-      //                        qNeighbors_0,
-      //                        qNeighbors_1,
-      //                        qNeighbors_2,
-      //                        qNeighbors_3,
-      //                        dqX_neighbor,
-      //                        dqY_neighbor);
-
-      // //
-      // // compute reconstructed states at left interface along X
-      // //
-
-      // // left interface : right state
-      // trace_unsplit_2d_along_dir(qLoc, dqX, dqY, dtdx, dtdy, FACE_XMIN, qright);
-
-      // // left interface : left state
-      // trace_unsplit_2d_along_dir(
-      //   qLocNeighbor, dqX_neighbor, dqY_neighbor, dtdx, dtdy, FACE_XMAX, qleft);
-
-      // if (gravity_enabled)
-      // {
-      //   // we need to modify input to flux computation with
-      //   // gravity predictor (half time step)
-
-      //   qleft[IU] += 0.5 * dt * gravity(i - 1, j, IX);
-      //   qleft[IV] += 0.5 * dt * gravity(i - 1, j, IY);
-
-      //   qright[IU] += 0.5 * dt * gravity(i, j, IX);
-      //   qright[IV] += 0.5 * dt * gravity(i, j, IY);
-      // }
-
-      // // Solve Riemann problem at X-interfaces and compute X-fluxes
-      // riemann_hydro(qleft, qright, qgdnv, flux_x, params);
-
-      // //
-      // // Update with fluxes along X
-      // //
-      // if (j < jsize - ghostWidth and i < isize - ghostWidth)
-      // {
-      //   Kokkos::atomic_add(&Udata(i, j, ID), flux_x[ID] * dtdx);
-      //   Kokkos::atomic_add(&Udata(i, j, IP), flux_x[IP] * dtdx);
-      //   Kokkos::atomic_add(&Udata(i, j, IU), flux_x[IU] * dtdx);
-      //   Kokkos::atomic_add(&Udata(i, j, IV), flux_x[IV] * dtdx);
-      // }
-
-      // if (j < jsize - ghostWidth and i > ghostWidth)
-      // {
-      //   Kokkos::atomic_sub(&Udata(i - 1, j, ID), flux_x[ID] * dtdx);
-      //   Kokkos::atomic_sub(&Udata(i - 1, j, IP), flux_x[IP] * dtdx);
-      //   Kokkos::atomic_sub(&Udata(i - 1, j, IU), flux_x[IU] * dtdx);
-      //   Kokkos::atomic_sub(&Udata(i - 1, j, IV), flux_x[IV] * dtdx);
-      // }
-
-      // //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      // // deal with left interface along Y !
-      // //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      // // slopes at left neighbor along Y
-      // // clang-format off
-      // qLocNeighbor[ID] = Qdata(i    , j - 1, ID);
-      // qNeighbors_0[ID] = Qdata(i + 1, j - 1, ID);
-      // qNeighbors_1[ID] = Qdata(i - 1, j - 1, ID);
-      // qNeighbors_2[ID] = Qdata(i    , j    , ID);
-      // qNeighbors_3[ID] = Qdata(i    , j - 2, ID);
-
-      // qLocNeighbor[IP] = Qdata(i    , j - 1, IP);
-      // qNeighbors_0[IP] = Qdata(i + 1, j - 1, IP);
-      // qNeighbors_1[IP] = Qdata(i - 1, j - 1, IP);
-      // qNeighbors_2[IP] = Qdata(i    , j    , IP);
-      // qNeighbors_3[IP] = Qdata(i    , j - 2, IP);
-
-      // qLocNeighbor[IU] = Qdata(i    , j - 1, IU);
-      // qNeighbors_0[IU] = Qdata(i + 1, j - 1, IU);
-      // qNeighbors_1[IU] = Qdata(i - 1, j - 1, IU);
-      // qNeighbors_2[IU] = Qdata(i    , j    , IU);
-      // qNeighbors_3[IU] = Qdata(i    , j - 2, IU);
-
-      // qLocNeighbor[IV] = Qdata(i    , j - 1, IV);
-      // qNeighbors_0[IV] = Qdata(i + 1, j - 1, IV);
-      // qNeighbors_1[IV] = Qdata(i - 1, j - 1, IV);
-      // qNeighbors_2[IV] = Qdata(i    , j    , IV);
-      // qNeighbors_3[IV] = Qdata(i    , j - 2, IV);
-      // // clang-format off
-
-      // slope_unsplit_hydro_2d(qLocNeighbor,
-      //                        qNeighbors_0,
-      //                        qNeighbors_1,
-      //                        qNeighbors_2,
-      //                        qNeighbors_3,
-      //                        dqX_neighbor,
-      //                        dqY_neighbor);
-
-      // //
-      // // compute reconstructed states at left interface along Y
-      // //
-
-      // // left interface : right state
-      // trace_unsplit_2d_along_dir(qLoc, dqX, dqY, dtdx, dtdy, FACE_YMIN, qright);
-
-      // // left interface : left state
-      // trace_unsplit_2d_along_dir(
-      //   qLocNeighbor, dqX_neighbor, dqY_neighbor, dtdx, dtdy, FACE_YMAX, qleft);
-
-      // if (gravity_enabled)
-      // {
-      //   // we need to modify input to flux computation with
-      //   // gravity predictor (half time step)
-
-      //   qleft[IU] += 0.5 * dt * gravity(i, j - 1, IX);
-      //   qleft[IV] += 0.5 * dt * gravity(i, j - 1, IY);
-
-      //   qright[IU] += 0.5 * dt * gravity(i, j, IX);
-      //   qright[IV] += 0.5 * dt * gravity(i, j, IY);
-      // }
-
-      // // Solve Riemann problem at Y-interfaces and compute Y-fluxes
-      // swapValues(&(qleft[IU]), &(qleft[IV]));
-      // swapValues(&(qright[IU]), &(qright[IV]));
-      // riemann_hydro(qleft, qright, qgdnv, flux_y, params);
-      // swapValues(&(flux_y[IU]), &(flux_y[IV]));
-
-      // //
-      // // store fluxes Y
-      // //
-      // if (j < jsize - ghostWidth and i < isize - ghostWidth)
-      // {
-      //   Kokkos::atomic_add(&Udata(i, j, ID), flux_y[ID] * dtdy);
-      //   Kokkos::atomic_add(&Udata(i, j, IP), flux_y[IP] * dtdy);
-      //   Kokkos::atomic_add(&Udata(i, j, IU), flux_y[IU] * dtdy);
-      //   Kokkos::atomic_add(&Udata(i, j, IV), flux_y[IV] * dtdy);
-      // }
-      // if (j > ghostWidth and i < isize - ghostWidth)
-      // {
-      //   Kokkos::atomic_sub(&Udata(i, j - 1, ID), flux_y[ID] * dtdy);
-      //   Kokkos::atomic_sub(&Udata(i, j - 1, IP), flux_y[IP] * dtdy);
-      //   Kokkos::atomic_sub(&Udata(i, j - 1, IU), flux_y[IU] * dtdy);
-      //   Kokkos::atomic_sub(&Udata(i, j - 1, IV), flux_y[IV] * dtdy);
-      // }
-
-    } // end if
-
-  } // end operator ()
-
-  DataArray2d Qdata;
-  DataArray2d Udata;
-  real_t      dt, dtdx, dtdy;
-
-}; // ComputeHydroFluxesAndUpdateFunctor2D
-
 
 } // namespace muscl
 } // namespace euler_kokkos

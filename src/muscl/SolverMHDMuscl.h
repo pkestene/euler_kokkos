@@ -79,6 +79,10 @@ public:
   DataArray     Q;     //!< hydrodynamics primitive    variables array
   DataArray Q2; //!< hydrodynamics primitive    variables array at t_{n+1/2} (half time step update)
 
+  DataArray Slopes_x; //!< implementation 2 only
+  DataArray Slopes_y; //!< implementation 2 only
+  DataArray Slopes_z; //!< implementation 2 only
+
   DataArray Qm_x; //!< hydrodynamics Riemann states array implementation 2
   DataArray Qm_y; //!< hydrodynamics Riemann states array
   DataArray Qm_z; //!< hydrodynamics Riemann states array
@@ -209,6 +213,9 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
   , U2()
   , Q()
   , Q2()
+  , Slopes_x()
+  , Slopes_y()
+  , Slopes_z()
   , Qm_x()
   , Qm_y()
   , Qm_z()
@@ -285,7 +292,10 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
     else if (params.implementationVersion == 2)
     {
       Q2 = DataArray("Q2", isize, jsize, nbvar);
-      total_mem_size += isize * jsize * nbvar * sizeof(real_t) * 1;
+      Slopes_x = DataArray("Slope_x", isize, jsize, nbvar);
+      Slopes_y = DataArray("Slope_y", isize, jsize, nbvar);
+
+      total_mem_size += isize * jsize * nbvar * sizeof(real_t) * (1 + 2);
     }
 
     if (params.implementationVersion == 0)
