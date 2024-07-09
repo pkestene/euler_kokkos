@@ -294,8 +294,10 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
       Q2 = DataArray("Q2", isize, jsize, nbvar);
       Slopes_x = DataArray("Slope_x", isize, jsize, nbvar);
       Slopes_y = DataArray("Slope_y", isize, jsize, nbvar);
+      ElecField = DataArray("ElecField", isize, jsize, 1);
 
       total_mem_size += isize * jsize * nbvar * sizeof(real_t) * (1 + 2);
+      total_mem_size += isize * jsize * 1 * sizeof(real_t) * 1;
     }
 
     if (params.implementationVersion == 0)
@@ -823,9 +825,14 @@ void
 SolverMHDMuscl<dim>::computeElectricField(DataArray Udata)
 {
 
-  // NA, 3D only
+  // 2d / 3d implementation are specialized
 
 } // SolverMHDMuscl<dim>::computeElectricField
+
+// 2d
+template <>
+void
+SolverMHDMuscl<2>::computeElectricField(DataArray Udata);
 
 // 3d
 template <>

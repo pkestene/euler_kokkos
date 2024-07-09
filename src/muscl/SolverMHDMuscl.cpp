@@ -70,6 +70,16 @@ SolverMHDMuscl<3>::make_boundaries(DataArray Udata)
 // ///////////////////////////////////////////////////////////////////
 template <>
 void
+SolverMHDMuscl<2>::computeElectricField(DataArray Udata)
+{
+
+  // call device functor
+  // ComputeElecFieldFunctor2D::apply(params, Udata, Q, ElecField);
+
+} // SolverMHDMuscl<2>::computeElectricField
+
+template <>
+void
 SolverMHDMuscl<3>::computeElectricField(DataArray Udata)
 {
 
@@ -423,9 +433,13 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
     // compute limited slopes (for reconstruction)
     ComputeSlopesFunctor2D_MHD::apply(params, Q, Slopes_x, Slopes_y);
 
+    // compute electric field (v wedge B)
+    ComputeElecFieldFunctor2D::apply(params, data_in, Q, ElecField);
+
     // update at t_{n+1} with hydro flux (across all faces)
     ComputeFluxAndUpdateAlongDirFunctor2D_MHD<DIR_X>::apply(
       params, data_in, data_out, Q, Q2, dtdx, dtdy);
+
     ComputeFluxAndUpdateAlongDirFunctor2D_MHD<DIR_Y>::apply(
       params, data_in, data_out, Q, Q2, dtdx, dtdy);
   }

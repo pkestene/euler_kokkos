@@ -223,6 +223,71 @@ public:
 
 }; // ComputeSlopesFunctor2D_MHD
 
+/*************************************************/
+/*************************************************/
+/*************************************************/
+class ComputeElecFieldFunctor2D : public MHDBaseFunctor2D
+{
+
+public:
+  ComputeElecFieldFunctor2D(HydroParams params,
+                            DataArray2d Udata,
+                            DataArray2d Qdata,
+                            DataArray2d ElecField)
+    : MHDBaseFunctor2D(params)
+    , Udata(Udata)
+    , Qdata(Qdata)
+    , ElecField(ElecField){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params, DataArray2d Udata, DataArray2d Qdata, DataArray2d ElecField)
+  {
+    ComputeElecFieldFunctor2D functor(params, Udata, Qdata, ElecField);
+    Kokkos::parallel_for(
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }), functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+
+    // clang-format off
+    if (j > 0 and j < jsize - 1 and
+        i > 0 and i < isize - 1)
+    {
+
+      // compute Ez
+
+      // clang-format off
+      const real_t u = ONE_FOURTH_F * (Qdata(i - 1, j - 1, IU) +
+                                       Qdata(i - 1, j    , IU) +
+                                       Qdata(i    , j - 1, IU) +
+                                       Qdata(i    , j    , IU));
+
+      const real_t v = ONE_FOURTH_F * (Qdata(i - 1, j - 1, IV) +
+                                       Qdata(i - 1, j    , IV) +
+                                       Qdata(i    , j - 1, IV) +
+                                       Qdata(i    , j    , IV));
+
+      const real_t A = HALF_F * (Udata(i    , j - 1, IA) + Udata(i, j, IA));
+      const real_t B = HALF_F * (Udata(i - 1, j    , IB) + Udata(i, j, IB));
+      // clang-format on
+
+      ElecField(i, j, 0) = u * B - v * A;
+    }
+    // clang-format on
+
+  } // operator ()
+
+  DataArray2d Udata;
+  DataArray2d Qdata;
+  DataArray2d ElecField;
+
+}; // ComputeElecFieldFunctor2D
 
 /*************************************************/
 /*************************************************/
