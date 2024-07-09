@@ -75,9 +75,9 @@ public:
     data(i, j, IU) = q[IU];
     data(i, j, IV) = q[IV];
     data(i, j, IW) = q[IW];
-    data(i, j, IBX) = q[IBX];
-    data(i, j, IBY) = q[IBY];
-    data(i, j, IBZ) = q[IBZ];
+    data(i, j, IA) = q[IA];
+    data(i, j, IB) = q[IB];
+    data(i, j, IC) = q[IC];
 
   } // set_state
 
@@ -128,7 +128,7 @@ public:
   KOKKOS_INLINE_FUNCTION real_t
   compute_mag_slope(DataArray data, int i, int j, int component) const
   {
-    KOKKOS_ASSERT(((component == IBX) or (component == IBY) or (component == IBZ)) &&
+    KOKKOS_ASSERT(((component == IA) or (component == IB) or (component == IC)) &&
                   "Wrong component index for a magnetic field.");
 
     constexpr auto delta_i = dir == DIR_X ? 1 : 0;
@@ -203,13 +203,13 @@ public:
     q[IW] = u[IW] / q[ID];
 
     // compute cell-centered magnetic field
-    q[IBX] = 0.5 * (u[IBX] + magFieldNeighbors[0]);
-    q[IBY] = 0.5 * (u[IBY] + magFieldNeighbors[1]);
-    q[IBZ] = 0.5 * (u[IBZ] + magFieldNeighbors[2]);
+    q[IA] = 0.5 * (u[IA] + magFieldNeighbors[0]);
+    q[IB] = 0.5 * (u[IB] + magFieldNeighbors[1]);
+    q[IC] = 0.5 * (u[IC] + magFieldNeighbors[2]);
 
     // compute specific kinetic energy and magnetic energy
     real_t eken = 0.5 * (q[IU] * q[IU] + q[IV] * q[IV] + q[IW] * q[IW]);
-    real_t emag = 0.5 * (q[IBX] * q[IBX] + q[IBY] * q[IBY] + q[IBZ] * q[IBZ]);
+    real_t emag = 0.5 * (q[IA] * q[IA] + q[IB] * q[IB] + q[IC] * q[IC]);
 
     // compute pressure
 
@@ -374,11 +374,11 @@ public:
       slope_unsplit_hydro_2d_scalar(
         q[IW], qPlusX[IW], qMinusX[IW], qPlusY[IW], qMinusY[IW], &(dqX[IW]), &(dqY[IW]));
       slope_unsplit_hydro_2d_scalar(
-        q[IBX], qPlusX[IBX], qMinusX[IBX], qPlusY[IBX], qMinusY[IBX], &(dqX[IBX]), &(dqY[IBX]));
+        q[IA], qPlusX[IA], qMinusX[IA], qPlusY[IA], qMinusY[IA], &(dqX[IA]), &(dqY[IA]));
       slope_unsplit_hydro_2d_scalar(
-        q[IBY], qPlusX[IBY], qMinusX[IBY], qPlusY[IBY], qMinusY[IBY], &(dqX[IBY]), &(dqY[IBY]));
+        q[IB], qPlusX[IB], qMinusX[IB], qPlusY[IB], qMinusY[IB], &(dqX[IB]), &(dqY[IB]));
       slope_unsplit_hydro_2d_scalar(
-        q[IBZ], qPlusX[IBZ], qMinusX[IBZ], qPlusY[IBZ], qMinusY[IBZ], &(dqX[IBZ]), &(dqY[IBZ]));
+        q[IC], qPlusX[IC], qMinusX[IC], qPlusY[IC], qMinusY[IC], &(dqX[IC]), &(dqY[IC]));
     }
     // else if (::gParams.slope_type == 3) {
 
@@ -879,9 +879,9 @@ public:
     real_t u = q[IU];
     real_t v = q[IV];
     real_t w = q[IW];
-    real_t A = q[IBX];
-    real_t B = q[IBY];
-    real_t C = q[IBZ];
+    real_t A = q[IA];
+    real_t B = q[IB];
+    real_t C = q[IC];
 
     // Face centered variables
     // clang-format off
@@ -916,9 +916,9 @@ public:
     dvx *= 0.5;
     real_t dwx = dq[IX][IW];
     dwx *= 0.5;
-    real_t dCx = dq[IX][IBZ];
+    real_t dCx = dq[IX][IC];
     dCx *= 0.5;
-    real_t dBx = dq[IX][IBY];
+    real_t dBx = dq[IX][IB];
     dBx *= 0.5;
 
     // Cell centered TVD slopes in Y direction
@@ -932,9 +932,9 @@ public:
     dvy *= 0.5;
     real_t dwy = dq[IY][IW];
     dwy *= 0.5;
-    real_t dCy = dq[IY][IBZ];
+    real_t dCy = dq[IY][IC];
     dCy *= 0.5;
-    real_t dAy = dq[IY][IBX];
+    real_t dAy = dq[IY][IA];
     dAy *= 0.5;
 
     /*
@@ -1045,9 +1045,9 @@ public:
     qp[0][IV] = v - dvx;
     qp[0][IW] = w - dwx;
     qp[0][IP] = p - dpx;
-    qp[0][IBX] = AL;
-    qp[0][IBY] = B - dBx;
-    qp[0][IBZ] = C - dCx;
+    qp[0][IA] = AL;
+    qp[0][IB] = B - dBx;
+    qp[0][IC] = C - dCx;
     qp[0][ID] = fmax(smallR, qp[0][ID]);
     qp[0][IP] = fmax(smallp * qp[0][ID], qp[0][IP]);
 
@@ -1057,9 +1057,9 @@ public:
     qm[0][IV] = v + dvx;
     qm[0][IW] = w + dwx;
     qm[0][IP] = p + dpx;
-    qm[0][IBX] = AR;
-    qm[0][IBY] = B + dBx;
-    qm[0][IBZ] = C + dCx;
+    qm[0][IA] = AR;
+    qm[0][IB] = B + dBx;
+    qm[0][IC] = C + dCx;
     qm[0][ID] = fmax(smallR, qm[0][ID]);
     qm[0][IP] = fmax(smallp * qm[0][ID], qm[0][IP]);
 
@@ -1069,9 +1069,9 @@ public:
     qp[1][IV] = v - dvy;
     qp[1][IW] = w - dwy;
     qp[1][IP] = p - dpy;
-    qp[1][IBX] = A - dAy;
-    qp[1][IBY] = BL;
-    qp[1][IBZ] = C - dCy;
+    qp[1][IA] = A - dAy;
+    qp[1][IB] = BL;
+    qp[1][IC] = C - dCy;
     qp[1][ID] = fmax(smallR, qp[1][ID]);
     qp[1][IP] = fmax(smallp * qp[1][ID], qp[1][IP]);
 
@@ -1081,9 +1081,9 @@ public:
     qm[1][IV] = v + dvy;
     qm[1][IW] = w + dwy;
     qm[1][IP] = p + dpy;
-    qm[1][IBX] = A + dAy;
-    qm[1][IBY] = BR;
-    qm[1][IBZ] = C + dCy;
+    qm[1][IA] = A + dAy;
+    qm[1][IB] = BR;
+    qm[1][IC] = C + dCy;
     qm[1][ID] = fmax(smallR, qm[1][ID]);
     qm[1][IP] = fmax(smallp * qm[1][ID], qm[1][IP]);
 
@@ -1094,9 +1094,9 @@ public:
     qRT[IV] = v + (+dvx + dvy);
     qRT[IW] = w + (+dwx + dwy);
     qRT[IP] = p + (+dpx + dpy);
-    qRT[IBX] = AR + (+dARy);
-    qRT[IBY] = BR + (+dBRx);
-    qRT[IBZ] = C + (+dCx + dCy);
+    qRT[IA] = AR + (+dARy);
+    qRT[IB] = BR + (+dBRx);
+    qRT[IC] = C + (+dCx + dCy);
     qRT[ID] = fmax(smallR, qRT[ID]);
     qRT[IP] = fmax(smallp * qRT[ID], qRT[IP]);
 
@@ -1106,9 +1106,9 @@ public:
     qRB[IV] = v + (+dvx - dvy);
     qRB[IW] = w + (+dwx - dwy);
     qRB[IP] = p + (+dpx - dpy);
-    qRB[IBX] = AR + (-dARy);
-    qRB[IBY] = BL + (+dBLx);
-    qRB[IBZ] = C + (+dCx - dCy);
+    qRB[IA] = AR + (-dARy);
+    qRB[IB] = BL + (+dBLx);
+    qRB[IC] = C + (+dCx - dCy);
     qRB[ID] = fmax(smallR, qRB[ID]);
     qRB[IP] = fmax(smallp * qRB[ID], qRB[IP]);
 
@@ -1118,9 +1118,9 @@ public:
     qLB[IV] = v + (-dvx - dvy);
     qLB[IW] = w + (-dwx - dwy);
     qLB[IP] = p + (-dpx - dpy);
-    qLB[IBX] = AL + (-dALy);
-    qLB[IBY] = BL + (-dBLx);
-    qLB[IBZ] = C + (-dCx - dCy);
+    qLB[IA] = AL + (-dALy);
+    qLB[IB] = BL + (-dBLx);
+    qLB[IC] = C + (-dCx - dCy);
     qLB[ID] = fmax(smallR, qLB[ID]);
     qLB[IP] = fmax(smallp * qLB[ID], qLB[IP]);
 
@@ -1130,9 +1130,9 @@ public:
     qLT[IV] = v + (-dvx + dvy);
     qLT[IW] = w + (-dwx + dwy);
     qLT[IP] = p + (-dpx + dpy);
-    qLT[IBX] = AL + (+dALy);
-    qLT[IBY] = BR + (-dBRx);
-    qLT[IBZ] = C + (-dCx + dCy);
+    qLT[IA] = AL + (+dALy);
+    qLT[IB] = BR + (-dBRx);
+    qLT[IC] = C + (-dCx + dCy);
     qLT[ID] = fmax(smallR, qLT[ID]);
     qLT[IP] = fmax(smallp * qLT[ID], qLT[IP]);
 
