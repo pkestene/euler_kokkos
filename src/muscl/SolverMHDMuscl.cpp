@@ -427,7 +427,7 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
   }
   else if (params.implementationVersion == 2)
   {
-    // update (cell-centered) primitive variables, perfrom 1/2 time step
+    // update (cell-centered) primitive variables, perform 1/2 time step
     ComputeUpdatedPrimVarFunctor2D_MHD::apply(params, data_in, Q, Q2, dtdx, dtdy);
 
     // compute limited slopes (for reconstruction)
