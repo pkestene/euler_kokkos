@@ -95,6 +95,32 @@ public:
   } // get_magField
 
   /**
+   * Compute slopes of face-centered magnetic field along normal direction
+   *
+   * \param[in] data is Conservative data array (which is the one containing face-centered magnetic
+   * field components)
+   * \param[in] i x-coordinate
+   * \param[in] j y-coordinate
+   *
+   * \return db magnetic slopes
+   */
+  KOKKOS_INLINE_FUNCTION
+  BField
+  compute_normal_mag_field_slopes(const DataArray & data, int i, int j, int k) const
+  {
+
+    BField db;
+
+    // clang-format off
+    db[IX] = data(i + 1, j    , k    , IA) - data(i, j, k, IA);
+    db[IY] = data(i    , j + 1, k    , IB) - data(i, j, k, IB);
+    db[IZ] = data(i    , j    , k + 1, IC) - data(i, j, k, IC);
+    // clang-format on
+
+    return db;
+  } // compute_normal_mag_field_slopes
+
+  /**
    * Equation of state:
    * compute pressure p and speed of sound c, from density rho and
    * internal energy eint using the "calorically perfect gas" equation
@@ -251,6 +277,37 @@ public:
 
   } // slope_unsplit_hydro_3d_scalar
 
+  /**
+   * Compute primitive variables slopes (dqX,dqY,dqZ) for one component from q and its neighbors.
+   * This routine is only used in the 3D UNSPLIT integration and slope_type = 0,1 and 2.
+   *
+   * Only slope_type 1 and 2 are supported.
+   *
+   * \param[in]  q      : current primitive variable
+   * \param[in]  qPlus  : value in the next neighbor cell
+   * \param[in]  qMinus : value in the previous neighbor cell
+   *
+   */
+  KOKKOS_INLINE_FUNCTION
+  real_t
+  slope_unsplit_hydro_3d_scalar(real_t q, real_t qPlus, real_t qMinus) const
+  {
+    real_t slope_type = params.settings.slope_type;
+
+    real_t dlft, drgt, dcen, dsgn, slop, dlim;
+
+    // slopes in first coordinate direction
+    dlft = slope_type * (q - qMinus);
+    drgt = slope_type * (qPlus - q);
+    dcen = 0.5 * (qPlus - qMinus);
+    dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
+    slop = fmin(fabs(dlft), fabs(drgt));
+    dlim = slop;
+    if ((dlft * drgt) <= ZERO_F)
+      dlim = ZERO_F;
+    return dsgn * fmin(dlim, fabs(dcen));
+
+  } // slope_unsplit_hydro_3d_scalar
 
   /**
    * Compute primitive variables slope (vector dq) from q and its neighbors.
@@ -399,6 +456,49 @@ public:
       dqZ[IBZ] = ZERO_F;
 
       return;
+    }
+
+  } // slope_unsplit_hydro_3d
+
+  /**
+   * Compute primitive variables slopes (vector dq) from q and its neighbors using cell-centered
+   * values.
+   * This routine is only used in the 3D UNSPLIT integration and slope_type = 1 or 2.
+   *
+   * Only slope_type 1 and 2 are supported.
+   *
+   * \param[in]  q     : primitive variable state in center cell
+   * \param[in]  qp    : primitive variable state in center cell plus one
+   * \param[in]  qm    : primitive variable state in center cell minus one
+   * \param[out] dq    : reference to a slope state
+   *
+   */
+  KOKKOS_INLINE_FUNCTION void
+  slope_unsplit_hydro_3d(MHDState const & q,
+                         MHDState const & qp,
+                         MHDState const & qm,
+                         MHDState &       dq) const
+  {
+    real_t slope_type = params.settings.slope_type;
+
+    // index of current cell in the neighborhood
+    enum
+    {
+      CENTER = 1
+    };
+
+
+    if (slope_type == 1 or slope_type == 2)
+    { // minmod or average
+
+      dq[ID] = slope_unsplit_hydro_3d_scalar(q[ID], qp[ID], qm[ID]);
+      dq[IP] = slope_unsplit_hydro_3d_scalar(q[IP], qp[IP], qm[IP]);
+      dq[IU] = slope_unsplit_hydro_3d_scalar(q[IU], qp[IU], qm[IU]);
+      dq[IV] = slope_unsplit_hydro_3d_scalar(q[IV], qp[IV], qm[IV]);
+      dq[IW] = slope_unsplit_hydro_3d_scalar(q[IW], qp[IW], qm[IW]);
+      dq[IA] = slope_unsplit_hydro_3d_scalar(q[IA], qp[IA], qm[IA]);
+      dq[IB] = slope_unsplit_hydro_3d_scalar(q[IB], qp[IB], qm[IB]);
+      dq[IC] = slope_unsplit_hydro_3d_scalar(q[IC], qp[IC], qm[IC]);
     }
 
   } // slope_unsplit_hydro_3d

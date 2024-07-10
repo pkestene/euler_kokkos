@@ -671,6 +671,168 @@ public:
 /*************************************************/
 /*************************************************/
 /*************************************************/
+/**
+ * Compute cell-centered primitive data at t_{n+1/2} (half time step in
+ * Muscl-Hancock).
+ */
+class ComputeUpdatedPrimVarFunctor3D_MHD : public MHDBaseFunctor3D
+{
+
+public:
+  ComputeUpdatedPrimVarFunctor3D_MHD(HydroParams params,
+                                     DataArray3d Udata,
+                                     DataArray3d Qdata,
+                                     DataArray3d Qdata2,
+                                     real_t      dtdx,
+                                     real_t      dtdy,
+                                     real_t      dtdz)
+    : MHDBaseFunctor3D(params)
+    , Udata(Udata)
+    , Qdata(Qdata)
+    , Qdata2(Qdata2)
+    , dtdx(dtdx)
+    , dtdy(dtdy)
+    , dtdz(dtdz){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params,
+        DataArray3d Udata,
+        DataArray3d Qdata,
+        DataArray3d Qdata2,
+        real_t      dtdx,
+        real_t      dtdy,
+        real_t      dtdz)
+  {
+    ComputeUpdatedPrimVarFunctor3D_MHD functor(params, Udata, Qdata, Qdata2, dtdx, dtdy, dtdz);
+    Kokkos::parallel_for("ComputeUpdatedPrimVarFunctor3D_MHD",
+                         Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j, const int & k) const
+  {
+    const int    isize = params.isize;
+    const int    jsize = params.jsize;
+    const int    ksize = params.ksize;
+    const int    ghostWidth = params.ghostWidth;
+    const real_t gamma = params.settings.gamma0;
+
+    // clang-format off
+    if (k >= ghostWidth - 2 and k < jsize - ghostWidth + 1 and
+        j >= ghostWidth - 2 and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth - 2 and i < isize - ghostWidth + 1)
+    // clang-format on
+    {
+      // get primitive variable in current cell
+      MHDState q;
+      get_state(Qdata, i, j, k, q);
+
+      MHDState dq[3];
+      MHDState qm, qp;
+
+      // compute hydro slopes along X
+      get_state(Qdata, i + 1, j, k, qp);
+      get_state(Qdata, i - 1, j, k, qm);
+      slope_unsplit_hydro_3d(q, qp, qm, dq[IX]);
+
+      // compute hydro slopes along Y
+      get_state(Qdata, i, j + 1, k, qp);
+      get_state(Qdata, i, j - 1, k, qm);
+      slope_unsplit_hydro_3d(q, qp, qm, dq[IY]);
+
+      // compute hydro slopes along Z
+      get_state(Qdata, i, j, k + 1, qp);
+      get_state(Qdata, i, j, k - 1, qm);
+      slope_unsplit_hydro_3d(q, qp, qm, dq[IZ]);
+
+      // Cell centered values
+      real_t r = q[ID];
+      real_t p = q[IP];
+      real_t u = q[IU];
+      real_t v = q[IV];
+      real_t w = q[IW];
+      real_t A = q[IA];
+      real_t B = q[IB];
+      real_t C = q[IC];
+
+      // Cell centered TVD slopes in X direction
+      real_t drx = dq[IX][ID];
+      real_t dpx = dq[IX][IP];
+      real_t dux = dq[IX][IU];
+      real_t dvx = dq[IX][IV];
+      real_t dwx = dq[IX][IW];
+      real_t dCx = dq[IX][IC];
+      real_t dBx = dq[IX][IB];
+
+      // Cell centered TVD slopes in Y direction
+      real_t dry = dq[IY][ID];
+      real_t dpy = dq[IY][IP];
+      real_t duy = dq[IY][IU];
+      real_t dvy = dq[IY][IV];
+      real_t dwy = dq[IY][IW];
+      real_t dCy = dq[IY][IC];
+      real_t dAy = dq[IY][IA];
+
+      // Cell centered TVD slopes in Z direction
+      real_t drz = dq[IZ][ID];
+      real_t dpz = dq[IZ][IP];
+      real_t duz = dq[IZ][IU];
+      real_t dvz = dq[IZ][IV];
+      real_t dwz = dq[IZ][IW];
+      real_t dAz = dq[IZ][IA];
+      real_t dBz = dq[IZ][IB];
+
+      const auto   db = compute_normal_mag_field_slopes(Udata, i, j, k);
+      const auto & dAx = db[IX];
+      const auto & dBy = db[IY];
+      const auto & dCz = db[IZ];
+
+      real_t sr0, su0, sv0, sw0, sp0, sA0, sB0, sC0;
+      {
+
+        sr0 =
+          (-u * drx - dux * r) * dtdx + (-v * dry - dvy * r) * dtdy + (-w * drz - dwz * r) * dtdz;
+        su0 = (-u * dux - (dpx + B * dBx + C * dCx) / r) * dtdx + (-v * duy + B * dAy / r) * dtdy +
+              (-w * duz + C * dAz / r) * dtdz;
+        sv0 = (-u * dvx + A * dBx / r) * dtdx + (-v * dvy - (dpy + A * dAy + C * dCy) / r) * dtdy +
+              (-w * dvz + C * dBz / r) * dtdz;
+        sw0 = (-u * dwx + A * dCx / r) * dtdx + (-v * dwy + B * dCy / r) * dtdy +
+              (-w * dwz - (dpz + A * dAz + B * dBz) / r) * dtdz;
+        sp0 = (-u * dpx - dux * gamma * p) * dtdx + (-v * dpy - dvy * gamma * p) * dtdy +
+              (-w * dpz - dwz * gamma * p) * dtdz;
+        sA0 = (u * dBy + B * duy - v * dAy - A * dvy) * dtdy +
+              (u * dCz + C * duz - w * dAz - A * dwz) * dtdz;
+        sB0 = (v * dAx + A * dvx - u * dBx - B * dux) * dtdx +
+              (v * dCz + C * dvz - w * dBz - B * dwz) * dtdz;
+        sC0 = (w * dAx + A * dwx - u * dCx - C * dux) * dtdx +
+              (w * dBy + B * dwy - v * dCy - C * dvy) * dtdy;
+      }
+
+      // Update in time the primitive variables (half time step)
+      Qdata2(i, j, k, ID) = r + 0.5 * sr0;
+      Qdata2(i, j, k, IU) = u + 0.5 * su0;
+      Qdata2(i, j, k, IV) = v + 0.5 * sv0;
+      Qdata2(i, j, k, IW) = w + 0.5 * sw0;
+      Qdata2(i, j, k, IP) = p + 0.5 * sp0;
+      Qdata2(i, j, k, IA) = A + 0.5 * sA0;
+      Qdata2(i, j, k, IB) = B + 0.5 * sB0;
+      Qdata2(i, j, k, IC) = C + 0.5 * sC0;
+    }
+  } // operator ()
+
+  DataArray3d Udata, Qdata; // input
+  DataArray3d Qdata2;       // output
+  real_t      dtdx, dtdy, dtdz;
+
+}; // ComputeUpdatedPrimvarFunctor3D_MHD
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
 class ComputeFluxesAndStoreFunctor3D_MHD : public MHDBaseFunctor3D
 {
 
