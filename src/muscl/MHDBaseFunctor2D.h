@@ -121,7 +121,6 @@ public:
     return db;
   } // compute_normal_mag_field_slopes
 
-
   /**
    * Compute limited slope of face centered magnetic field component.
    *
@@ -301,7 +300,7 @@ public:
    *
    * Only slope_type 1 and 2 are supported.
    *
-   * \param[in]  q       : current primitive variable
+   * \param[in]  q      : current primitive variable
    * \param[in]  qPlus  : value in the next neighbor cell
    * \param[in]  qMinus : value in the previous neighbor cell
    *
