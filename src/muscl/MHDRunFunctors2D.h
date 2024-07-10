@@ -45,7 +45,10 @@ public:
     const real_t dx = params.dx;
     const real_t dy = params.dy;
 
-    if (j >= ghostWidth and j < jsize - ghostWidth and i >= ghostWidth and i < isize - ghostWidth)
+    // clang-format off
+    if (j >= ghostWidth and j < jsize - ghostWidth and
+        i >= ghostWidth and i < isize - ghostWidth)
+    // clang-format on
     {
 
       MHDState qLoc; // primitive    variables in current cell
@@ -110,7 +113,10 @@ public:
     // magnetic field in neighbor cells
     real_t magFieldNeighbors[3];
 
-    if (j >= 0 and j < jsize - 1 and i >= 0 and i < isize - 1)
+    // clang-format off
+    if (j >= 0 and j < jsize - 1 and
+        i >= 0 and i < isize - 1)
+    // clang-format on
     {
 
       MHDState uLoc; // conservative    variables in current cell
@@ -343,8 +349,9 @@ public:
     const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
-    if (j >= ghostWidth and j < jsize - ghostWidth + 1 and i >= ghostWidth and
-        i < isize - ghostWidth + 1)
+    // clang-format off
+    if (j >= ghostWidth and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth and i < isize - ghostWidth + 1)
     {
 
       MHDState qleft, qright;
@@ -354,7 +361,7 @@ public:
       // Solve Riemann problem at X-interfaces and compute X-fluxes
       //
       get_state(Qm_x, i - 1, j, qleft);
-      get_state(Qp_x, i, j, qright);
+      get_state(Qp_x, i    , j, qright);
 
       // compute hydro flux along X
       riemann_mhd(qleft, qright, flux, params);
@@ -365,13 +372,13 @@ public:
       //
       // Solve Riemann problem at Y-interfaces and compute Y-fluxes
       //
-      get_state(Qm_y, i, j - 1, qleft);
+      get_state(Qm_y, i    , j - 1, qleft);
       swapValues(&(qleft[IU]), &(qleft[IV]));
-      swapValues(&(qleft[IBX]), &(qleft[IBY]));
+      swapValues(&(qleft[IA]), &(qleft[IB]));
 
-      get_state(Qp_y, i, j, qright);
+      get_state(Qp_y, i    , j    , qright);
       swapValues(&(qright[IU]), &(qright[IV]));
-      swapValues(&(qright[IBX]), &(qright[IBY]));
+      swapValues(&(qright[IA]), &(qright[IB]));
 
       // compute hydro flux along Y
       riemann_mhd(qleft, qright, flux, params);
@@ -379,6 +386,7 @@ public:
       // store fluxes
       set_state(Fluxes_y, i, j, flux);
     }
+    // clang-format on
   }
 
   DataArray2d Qm_x, Qm_y, Qp_x, Qp_y;
@@ -437,8 +445,10 @@ public:
     const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
-    if (j >= ghostWidth and j < jsize - ghostWidth + 1 and i >= ghostWidth and
-        i < isize - ghostWidth + 1)
+    // clang-format off
+    if (j >= ghostWidth and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth and i < isize - ghostWidth + 1)
+    // clang-format on
     {
 
       MHDState qleft, qright;
@@ -481,17 +491,17 @@ public:
       //
       get_state(Qm_y, i, j - 1, qleft);
       swapValues(&(qleft[IU]), &(qleft[IV]));
-      swapValues(&(qleft[IBX]), &(qleft[IBY]));
+      swapValues(&(qleft[IA]), &(qleft[IB]));
 
       get_state(Qp_y, i, j, qright);
       swapValues(&(qright[IU]), &(qright[IV]));
-      swapValues(&(qright[IBX]), &(qright[IBY]));
+      swapValues(&(qright[IA]), &(qright[IB]));
 
       // compute hydro flux along Y
       riemann_mhd(qleft, qright, flux, params);
 
       swapValues(&(flux[IU]), &(flux[IV]));
-      swapValues(&(flux[IBX]), &(flux[IBY]));
+      swapValues(&(flux[IA]), &(flux[IB]));
 
       //
       // update with fluxes Y
@@ -573,8 +583,10 @@ public:
     const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
-    if (j >= ghostWidth and j < jsize - ghostWidth + 1 and i >= ghostWidth and
-        i < isize - ghostWidth + 1)
+    // clang-format off
+    if (j >= ghostWidth and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth and i < isize - ghostWidth + 1)
+    // clang-format on
     {
 
       // in 2D, we only need to compute emfZ
@@ -767,8 +779,10 @@ public:
     const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
-    if (j >= ghostWidth - 2 and j < jsize - ghostWidth + 1 and i >= ghostWidth - 2 and
-        i < isize - ghostWidth + 1)
+    // clang-format off
+    if (j >= ghostWidth - 2 and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth - 2 and i < isize - ghostWidth + 1)
+    // clang-format on
     {
 
       MHDState qNb[3][3];
@@ -1496,9 +1510,9 @@ public:
       udata[IU] += flux[IU] * dtdx;
       udata[IV] += flux[IV] * dtdx;
       udata[IW] += flux[IW] * dtdx;
-      // udata[IBX] +=  flux[IBX]*dtdx;
-      // udata[IBY] +=  flux[IBY]*dtdx;
-      udata[IBZ] += flux[IBZ] * dtdx;
+      // udata[IA] +=  flux[IA]*dtdx;
+      // udata[IB] +=  flux[IB]*dtdx;
+      udata[IC] += flux[IC] * dtdx;
 
       get_state(FluxData_x, i + 1, j, flux);
       udata[ID] -= flux[ID] * dtdx;
@@ -1506,9 +1520,9 @@ public:
       udata[IU] -= flux[IU] * dtdx;
       udata[IV] -= flux[IV] * dtdx;
       udata[IW] -= flux[IW] * dtdx;
-      // udata[IBX] -=  flux[IBX]*dtdx;
-      // udata[IBY] -=  flux[IBY]*dtdx;
-      udata[IBZ] -= flux[IBZ] * dtdx;
+      // udata[IA] -=  flux[IA]*dtdx;
+      // udata[IB] -=  flux[IB]*dtdx;
+      udata[IC] -= flux[IC] * dtdx;
 
       get_state(FluxData_y, i, j, flux);
       udata[ID] += flux[ID] * dtdy;
@@ -1516,9 +1530,9 @@ public:
       udata[IU] += flux[IV] * dtdy; //
       udata[IV] += flux[IU] * dtdy; //
       udata[IW] += flux[IW] * dtdy;
-      // udata[IBX] +=  flux[IBX]*dtdy;
-      // udata[IBY] +=  flux[IBY]*dtdy;
-      udata[IBZ] += flux[IBZ] * dtdy;
+      // udata[IA] +=  flux[IA]*dtdy;
+      // udata[IB] +=  flux[IB]*dtdy;
+      udata[IC] += flux[IC] * dtdy;
 
       get_state(FluxData_y, i, j + 1, flux);
       udata[ID] -= flux[ID] * dtdy;
@@ -1526,9 +1540,9 @@ public:
       udata[IU] -= flux[IV] * dtdy; //
       udata[IV] -= flux[IU] * dtdy; //
       udata[IW] -= flux[IW] * dtdy;
-      // udata[IBX] -=  flux[IBX]*dtdy;
-      // udata[IBY] -=  flux[IBY]*dtdy;
-      udata[IBZ] -= flux[IBZ] * dtdy;
+      // udata[IA] -=  flux[IA]*dtdy;
+      // udata[IB] -=  flux[IB]*dtdy;
+      udata[IC] -= flux[IC] * dtdy;
 
       // write back result in Udata
       set_state(Udata, i, j, udata);
@@ -1579,8 +1593,10 @@ public:
     const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
-    if (j >= ghostWidth and j < jsize - ghostWidth /*+1*/ and i >= ghostWidth and
-        i < isize - ghostWidth /*+1*/)
+    // clang-format off
+    if (j >= ghostWidth and j < jsize - ghostWidth /*+1*/ and
+        i >= ghostWidth and i < isize - ghostWidth /*+1*/)
+    // clang-format on
     {
 
       // MHDState udata;
@@ -1630,7 +1646,10 @@ public:
     const int jsize = params.jsize;
     const int ghostWidth = params.ghostWidth;
 
-    if (j >= ghostWidth and j <= jsize - ghostWidth and i >= ghostWidth and i <= isize - ghostWidth)
+    // clang-format off
+    if (j >= ghostWidth and j <= jsize - ghostWidth and
+        i >= ghostWidth and i <= isize - ghostWidth)
+    // clang-format on
     {
 
       // local primitive variables
