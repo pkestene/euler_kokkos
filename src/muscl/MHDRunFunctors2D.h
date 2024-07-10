@@ -256,8 +256,8 @@ public:
     const int jsize = params.jsize;
 
     // clang-format off
-    if (j > 0 and j < jsize - 1 and
-        i > 0 and i < isize - 1)
+    if (j > 0 and j < jsize  and
+        i > 0 and i < isize)
     {
 
       // compute Ez
@@ -899,9 +899,9 @@ public:
       real_t u = q[IU];
       real_t v = q[IV];
       real_t w = q[IW];
-      real_t A = q[IBX];
-      real_t B = q[IBY];
-      real_t C = q[IBZ];
+      real_t A = q[IA];
+      real_t B = q[IB];
+      real_t C = q[IC];
 
       // Cell centered TVD slopes in X direction
       real_t drx = dq[IX][ID];
@@ -909,8 +909,8 @@ public:
       real_t dux = dq[IX][IU];
       real_t dvx = dq[IX][IV];
       real_t dwx = dq[IX][IW];
-      real_t dCx = dq[IX][IBZ];
-      real_t dBx = dq[IX][IBY];
+      real_t dCx = dq[IX][IC];
+      real_t dBx = dq[IX][IB];
 
       // Cell centered TVD slopes in Y direction
       real_t dry = dq[IY][ID];
@@ -918,8 +918,8 @@ public:
       real_t duy = dq[IY][IU];
       real_t dvy = dq[IY][IV];
       real_t dwy = dq[IY][IW];
-      real_t dCy = dq[IY][IBZ];
-      real_t dAy = dq[IY][IBX];
+      real_t dCy = dq[IY][IC];
+      real_t dAy = dq[IY][IA];
 
       const auto   db = compute_normal_mag_field_slopes(Udata, i, j);
       const auto & dAx = db[IX];
@@ -1119,9 +1119,9 @@ public:
       }
       else if constexpr (dir == DIR_Y)
       {
-        qL[IA] = q2N[IA] - 0.5 * dqN[IA];
+        qL[IA] = q2N[IA] + 0.5 * dqN[IA];
         qL[IB] = qR[IB];
-        qL[IC] = q2N[IC] - 0.5 * dqN[IC];
+        qL[IC] = q2N[IC] + 0.5 * dqN[IC];
       }
 
       // now we are ready for computing hydro flux
@@ -1306,7 +1306,6 @@ public:
       get_state(Qdata2, i - 1, j - 1, qRT);
       // clang-format on
 
-
       // reconstruct edge states using limited slopes
       MHDState dqX, dqY;
 
@@ -1317,11 +1316,11 @@ public:
         const real_t ELR = ElecField(i0 + 0, j0 + 1, 0);
         const real_t ELL = ElecField(i0 + 0, j0 + 0, 0);
         const real_t AL = Udata_in(i0 + 0, j0 + 0, IA) + (ELR - ELL) * 0.5 * dtdy;
-        const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0, j0, IA);
+        const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, IA);
 
         const real_t ERL = ElecField(i0 + 1, j0 + 0, 0);
-        const real_t BL = Udata_in(i0, j0, IB) - (ERL - ELL) * 0.5 * dtdx;
-        const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0, j0, IB);
+        const real_t BL = Udata_in(i0 + 0, j0 + 0, IB) - (ERL - ELL) * 0.5 * dtdx;
+        const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, IB);
 
         get_state(Slopes_x, i0, j0, dqX);
         get_state(Slopes_y, i0, j0, dqY);
@@ -1348,7 +1347,7 @@ public:
 
         const real_t ELR = ElecField(i0 + 0, j0 + 1, 0);
         const real_t BR = Udata_in(i0 + 0, j0 + 1, IB) - (ERR - ELR) * 0.5 * dtdx;
-        const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, i0, j0 + 1, IB);
+        const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 1, IB);
 
         get_state(Slopes_x, i0, j0, dqX);
         get_state(Slopes_y, i0, j0, dqY);
@@ -1357,13 +1356,12 @@ public:
         qRT[IV] += 0.5 * (+dqX[IV] + dqY[IV]);
         qRT[IW] += 0.5 * (+dqX[IW] + dqY[IW]);
         qRT[IP] += 0.5 * (+dqX[IP] + dqY[IP]);
-        qRT[IA] = AR + (+dARy);
-        qRT[IB] = BR + (+dBRx);
+        qRT[IA] = AR + 0.5 * (+dARy);
+        qRT[IB] = BR + 0.5 * (+dBRx);
         qRT[IC] += 0.5 * (+dqX[IC] + dqY[IC]);
         qRT[ID] = fmax(smallR, qRT[ID]);
         qRT[IP] = fmax(smallp * qRT[ID], qRT[IP]);
       }
-
 
       // RB (i-1,j)
       {
@@ -1372,11 +1370,11 @@ public:
         const real_t ERR = ElecField(i0 + 1, j0 + 1, 0);
         const real_t ERL = ElecField(i0 + 1, j0 + 0, 0);
         const real_t AR = Udata_in(i0 + 1, j0 + 0, IA) + (ERR - ERL) * 0.5 * dtdy;
-        const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 1, j0, IA);
+        const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 1, j0 + 0, IA);
 
         const real_t ELL = ElecField(i0 + 0, j0 + 0, 0);
         const real_t BL = Udata_in(i0 + 0, j0 + 0, IB) - (ERL - ELL) * 0.5 * dtdx;
-        const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0, j0, IB);
+        const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, IB);
 
         get_state(Slopes_x, i0, j0, dqX);
         get_state(Slopes_y, i0, j0, dqY);
@@ -1385,8 +1383,8 @@ public:
         qRB[IV] += 0.5 * (+dqX[IV] - dqY[IV]);
         qRB[IW] += 0.5 * (+dqX[IW] - dqY[IW]);
         qRB[IP] += 0.5 * (+dqX[IP] - dqY[IP]);
-        qRB[IA] = AR + (-dARy);
-        qRB[IB] = BL + (+dBLx);
+        qRB[IA] = AR + 0.5 * (-dARy);
+        qRB[IB] = BL + 0.5 * (+dBLx);
         qRB[IC] += 0.5 * (+dqX[IC] - dqY[IC]);
         qRB[ID] = fmax(smallR, qRB[ID]);
         qRB[IP] = fmax(smallp * qRB[ID], qRB[IP]);
@@ -1399,11 +1397,11 @@ public:
         const real_t ELR = ElecField(i0 + 0, j0 + 1, 0);
         const real_t ELL = ElecField(i0 + 0, j0 + 0, 0);
         const real_t AL = Udata_in(i0 + 0, j0 + 0, IA) + (ELR - ELL) * 0.5 * dtdy;
-        const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0, j0, IA);
+        const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, IA);
 
         const real_t ERR = ElecField(i0 + 1, j0 + 1, 0);
         const real_t BR = Udata_in(i0 + 0, j0 + 1, IB) - (ERR - ELR) * 0.5 * dtdx;
-        const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, i0, j0 + 1, IB);
+        const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 1, IB);
 
         get_state(Slopes_x, i0, j0, dqX);
         get_state(Slopes_y, i0, j0, dqY);
@@ -1412,8 +1410,8 @@ public:
         qLT[IV] += 0.5 * (-dqX[IV] + dqY[IV]);
         qLT[IW] += 0.5 * (-dqX[IW] + dqY[IW]);
         qLT[IP] += 0.5 * (-dqX[IP] + dqY[IP]);
-        qLT[IA] = AL + (+dALy);
-        qLT[IB] = BR + (-dBRx);
+        qLT[IA] = AL + 0.5 * (+dALy);
+        qLT[IB] = BR + 0.5 * (-dBRx);
         qLT[IC] += 0.5 * (-dqX[IC] + dqY[IC]);
         qLT[ID] = fmax(smallR, qLT[ID]);
         qLT[IP] = fmax(smallp * qLT[ID], qLT[IP]);
@@ -1431,13 +1429,13 @@ public:
     }
   } // operator ()
 
-    DataArray2d Udata_in, Udata_out;
-    DataArray2d Qdata, Qdata2;
-    DataArray2d Slopes_x, Slopes_y;
-    DataArray2d ElecField;
-    real_t      dtdx, dtdy;
+  DataArray2d Udata_in, Udata_out;
+  DataArray2d Qdata, Qdata2;
+  DataArray2d Slopes_x, Slopes_y;
+  DataArray2d ElecField;
+  real_t      dtdx, dtdy;
 
-  }; // ComputeEmfAndUpdateFunctor2D_MHD
+}; // ComputeEmfAndUpdateFunctor2D_MHD
 
 /*************************************************/
 /*************************************************/
