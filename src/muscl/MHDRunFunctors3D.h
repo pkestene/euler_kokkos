@@ -722,7 +722,7 @@ public:
     const real_t gamma = params.settings.gamma0;
 
     // clang-format off
-    if (k >= ghostWidth - 2 and k < jsize - ghostWidth + 1 and
+    if (k >= ghostWidth - 2 and k < ksize - ghostWidth + 1 and
         j >= ghostWidth - 2 and j < jsize - ghostWidth + 1 and
         i >= ghostWidth - 2 and i < isize - ghostWidth + 1)
     // clang-format on
