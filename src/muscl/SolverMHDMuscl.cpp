@@ -438,10 +438,10 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
 
     // update at t_{n+1} with hydro flux (across all faces)
     ComputeFluxAndUpdateAlongDirFunctor2D_MHD<DIR_X>::apply(
-      params, data_in, data_out, Q, Q2, dtdx, dtdy);
+      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, ElecField, dtdx, dtdy);
 
     ComputeFluxAndUpdateAlongDirFunctor2D_MHD<DIR_Y>::apply(
-      params, data_in, data_out, Q, Q2, dtdx, dtdy);
+      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, ElecField, dtdx, dtdy);
 
     ReconstructEdgeComputeEmfAndUpdateFunctor2D::apply(
       params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, ElecField, dtdx, dtdy);

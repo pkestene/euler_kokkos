@@ -1013,6 +1013,9 @@ public:
                                             DataArray2d Udata_out,
                                             DataArray2d Qdata,
                                             DataArray2d Qdata2,
+                                            DataArray2d Slopes_x,
+                                            DataArray2d Slopes_y,
+                                            DataArray2d ElecField,
                                             real_t      dtdx,
                                             real_t      dtdy)
     : MHDBaseFunctor2D(params)
@@ -1020,6 +1023,9 @@ public:
     , Udata_out(Udata_out)
     , Qdata(Qdata)
     , Qdata2(Qdata2)
+    , Slopes_x(Slopes_x)
+    , Slopes_y(Slopes_y)
+    , ElecField(ElecField)
     , dtdx(dtdx)
     , dtdy(dtdy){};
 
@@ -1030,11 +1036,14 @@ public:
         DataArray2d Udata_out,
         DataArray2d Qdata,
         DataArray2d Qdata2,
+        DataArray2d Slopes_x,
+        DataArray2d Slopes_y,
+        DataArray2d ElecField,
         real_t      dtdx,
         real_t      dtdy)
   {
     ComputeFluxAndUpdateAlongDirFunctor2D_MHD<dir> functor(
-      params, Udata_in, Udata_out, Qdata, Qdata2, dtdx, dtdy);
+      params, Udata_in, Udata_out, Qdata, Qdata2, Slopes_x, Slopes_y, ElecField, dtdx, dtdy);
     Kokkos::parallel_for(
       "ComputeFluxAndUpdateAlongDirFunctor2D_MHD",
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
@@ -1071,21 +1080,22 @@ public:
       MHDState qN;
       get_state(Qdata, i - delta_i, j - delta_j, qN);
 
-      MHDState qc, qm, qp;
+      // left and right reconstructed state (input for Riemann solver)
       MHDState qR, qL;
 
       //
       // Right state at left interface (current cell)
       //
 
-      // compute hydro slopes along dir
-      // clang-format off
-      get_state(Qdata, i          , j          , qc);
-      get_state(Qdata, i + delta_i, j + delta_j, qp);
-      get_state(Qdata, i - delta_i, j - delta_j, qm);
-      // clang-format on
-
-      slope_unsplit_hydro_2d(qc, qp, qm, dq);
+      // load hydro slopes along dir
+      if constexpr (dir == DIR_X)
+      {
+        get_state(Slopes_x, i, j, dq);
+      }
+      else if constexpr (dir == DIR_Y)
+      {
+        get_state(Slopes_y, i, j, dq);
+      }
 
       // get primitive variable in current cell at t_{n+1/2}
       MHDState q2;
@@ -1100,8 +1110,8 @@ public:
       qR[IP] = fmax(smallp * qR[ID], qR[IP]);
       if constexpr (dir == DIR_X)
       {
-        const real_t ELR = compute_electric_field_2d(Udata_in, Qdata, i, j + 1);
-        const real_t ELL = compute_electric_field_2d(Udata_in, Qdata, i, j);
+        const real_t ELR = ElecField(i, j + 1, 0);
+        const real_t ELL = ElecField(i, j, 0);
         const real_t AL = Udata_in(i, j, IA) + (ELR - ELL) * 0.5 * dtdy;
         qR[IA] = AL;
         qR[IB] = q2[IB] - 0.5 * dq[IB];
@@ -1109,8 +1119,8 @@ public:
       }
       else if constexpr (dir == DIR_Y)
       {
-        const real_t ERL = compute_electric_field_2d(Udata_in, Qdata, i + 1, j);
-        const real_t ELL = compute_electric_field_2d(Udata_in, Qdata, i, j);
+        const real_t ERL = ElecField(i + 1, j, 0);
+        const real_t ELL = ElecField(i, j, 0);
         const real_t BL = Udata_in(i, j, IB) - (ERL - ELL) * 0.5 * dtdx;
         qR[IA] = q2[IA] - 0.5 * dq[IA];
         qR[IB] = BL;
@@ -1121,14 +1131,15 @@ public:
       // Left state at right interface (neighbor cell)
       //
 
-      // compute hydro slopes along dir
-      // clang-format off
-      get_state(Qdata, i -   delta_i, j -   delta_j, qc);
-      get_state(Qdata, i            , j            , qp);
-      get_state(Qdata, i - 2*delta_i, j - 2*delta_j, qm);
-      // clang-format on
-
-      slope_unsplit_hydro_2d(qc, qp, qm, dqN);
+      // load hydro slopes along dir
+      if constexpr (dir == DIR_X)
+      {
+        get_state(Slopes_x, i - delta_i, j - delta_j, dqN);
+      }
+      else if constexpr (dir == DIR_Y)
+      {
+        get_state(Slopes_y, i - delta_i, j - delta_j, dqN);
+      }
 
       // get primitive variable in neighbor cell at t_{n+1/2}
       MHDState q2N;
@@ -1219,6 +1230,8 @@ public:
 
   DataArray2d Udata_in, Udata_out;
   DataArray2d Qdata, Qdata2;
+  DataArray2d Slopes_x, Slopes_y;
+  DataArray2d ElecField;
   real_t      dtdx, dtdy;
 
 }; // ComputeFluxAndUpdateAlongDirFunctor2D_MHD
