@@ -62,9 +62,9 @@ public:
     const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
-    const int i_mpi = 0;
-    const int j_mpi = 0;
-    const int k_mpi = 0;
+    const int                  i_mpi = 0;
+    const int                  j_mpi = 0;
+    const int                  k_mpi = 0;
 #endif
 
     const int nx = params.nx;
@@ -123,9 +123,9 @@ public:
       Udata(i, j, k, IU) = u_out;
       Udata(i, j, k, IV) = v_out;
       Udata(i, j, k, IW) = w_out;
-      Udata(i, j, k, IBX) = Bx_out;
-      Udata(i, j, k, IBY) = By_out;
-      Udata(i, j, k, IBZ) = Bz_out;
+      Udata(i, j, k, IA) = Bx_out;
+      Udata(i, j, k, IB) = By_out;
+      Udata(i, j, k, IC) = Bz_out;
     }
     else
     {
@@ -136,9 +136,9 @@ public:
       Udata(i, j, k, IU) = u_in;
       Udata(i, j, k, IV) = v_in;
       Udata(i, j, k, IW) = w_in;
-      Udata(i, j, k, IBX) = Bx_in;
-      Udata(i, j, k, IBY) = By_in;
-      Udata(i, j, k, IBZ) = Bz_in;
+      Udata(i, j, k, IA) = Bx_in;
+      Udata(i, j, k, IB) = By_in;
+      Udata(i, j, k, IC) = Bz_in;
     }
 
   } // end operator ()
@@ -350,11 +350,11 @@ public:
       Udata(i, j, k, IW) = ZERO_F;
 
       // bx, by, bz
-      Udata(i, j, k, IBX) =
+      Udata(i, j, k, IA) =
         -B0 * cos(2 * TWOPI_F * kt * (zPos - zmin) / (zmax - zmin)) * sin(yPos * TWOPI_F);
-      Udata(i, j, k, IBY) =
+      Udata(i, j, k, IB) =
         B0 * cos(2 * TWOPI_F * kt * (zPos - zmin) / (zmax - zmin)) * sin(2.0 * xPos * TWOPI_F);
-      Udata(i, j, k, IBZ) = 0.0;
+      Udata(i, j, k, IC) = 0.0;
     }
     else if (otParams.vortex_dir == OrszagTangParams::VortexDir::X)
     {
@@ -371,11 +371,11 @@ public:
       Udata(i, j, k, IU) = ZERO_F;
 
       // bx, by, bz
-      Udata(i, j, k, IBY) =
+      Udata(i, j, k, IB) =
         -B0 * cos(2 * TWOPI_F * kt * (xPos - xmin) / (xmax - xmin)) * sin(zPos * TWOPI_F);
-      Udata(i, j, k, IBZ) =
+      Udata(i, j, k, IC) =
         B0 * cos(2 * TWOPI_F * kt * (xPos - xmin) / (xmax - xmin)) * sin(2.0 * yPos * TWOPI_F);
-      Udata(i, j, k, IBX) = 0.0;
+      Udata(i, j, k, IA) = 0.0;
     }
     else if (otParams.vortex_dir == OrszagTangParams::VortexDir::Y)
     {
@@ -392,11 +392,11 @@ public:
       Udata(i, j, k, IV) = ZERO_F;
 
       // bx, by, bz
-      Udata(i, j, k, IBZ) =
+      Udata(i, j, k, IC) =
         -B0 * cos(2 * TWOPI_F * kt * (yPos - ymin) / (ymax - ymin)) * sin(xPos * TWOPI_F);
-      Udata(i, j, k, IBX) =
+      Udata(i, j, k, IA) =
         B0 * cos(2 * TWOPI_F * kt * (yPos - ymin) / (ymax - ymin)) * sin(2.0 * zPos * TWOPI_F);
-      Udata(i, j, k, IBY) = 0.0;
+      Udata(i, j, k, IB) = 0.0;
     }
 
   } // init_all_var_but_energy
@@ -428,8 +428,8 @@ public:
       Udata(i, j, k, IP) =
         p0 / (gamma0 - 1.0) + 0.5 * (SQR(Udata(i, j, k, IU)) / Udata(i, j, k, ID) +
                                      SQR(Udata(i, j, k, IV)) / Udata(i, j, k, ID) +
-                                     0.25 * SQR(Udata(i, j, k, IBX) + Udata(i + 1, j, k, IBX)) +
-                                     0.25 * SQR(Udata(i, j, k, IBY) + Udata(i, j + 1, k, IBY)));
+                                     0.25 * SQR(Udata(i, j, k, IA) + Udata(i + 1, j, k, IA)) +
+                                     0.25 * SQR(Udata(i, j, k, IB) + Udata(i, j + 1, k, IB)));
     }
 
   } // init_energy
@@ -475,9 +475,9 @@ public:
     const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
-    const int i_mpi = 0;
-    const int j_mpi = 0;
-    const int k_mpi = 0;
+    const int                  i_mpi = 0;
+    const int                  j_mpi = 0;
+    const int                  k_mpi = 0;
 #endif
 
     const int nx = params.nx;
@@ -588,9 +588,9 @@ public:
       Udata(i, j, k, IV) = d * v;
       Udata(i, j, k, IW) = d * w;
 
-      Udata(i, j, k, IBX) = bx;
-      Udata(i, j, k, IBY) = by;
-      Udata(i, j, k, IBZ) = bz;
+      Udata(i, j, k, IA) = bx;
+      Udata(i, j, k, IB) = by;
+      Udata(i, j, k, IC) = bz;
 
       Udata(i, j, k, IP) = pressure / (gamma0 - 1.0) + 0.5 * d * (u * u + v * v + w * w) +
                            0.5 * (bx * bx + by * by + bz * bz);
@@ -618,9 +618,9 @@ public:
       Udata(i, j, k, IV) = d * v;
       Udata(i, j, k, IW) = d * w;
 
-      Udata(i, j, k, IBX) = bx;
-      Udata(i, j, k, IBY) = by;
-      Udata(i, j, k, IBZ) = bz;
+      Udata(i, j, k, IA) = bx;
+      Udata(i, j, k, IB) = by;
+      Udata(i, j, k, IC) = bz;
 
       Udata(i, j, k, IP) = pressure / (gamma0 - 1.0) + 0.5 * d * (u * u + v * v + w * w) +
                            0.5 * (bx * bx + by * by + bz * bz);

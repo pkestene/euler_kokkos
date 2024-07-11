@@ -61,9 +61,9 @@ public:
       qLoc[IU] = Qdata(i, j, k, IU);
       qLoc[IV] = Qdata(i, j, k, IV);
       qLoc[IW] = Qdata(i, j, k, IW);
-      qLoc[IBX] = Qdata(i, j, k, IBX);
-      qLoc[IBY] = Qdata(i, j, k, IBY);
-      qLoc[IBZ] = Qdata(i, j, k, IBZ);
+      qLoc[IA] = Qdata(i, j, k, IA);
+      qLoc[IB] = Qdata(i, j, k, IB);
+      qLoc[IC] = Qdata(i, j, k, IC);
 
       // compute fastest information speeds
       real_t fastInfoSpeed[3];
@@ -123,7 +123,7 @@ public:
     // clang-format on
     {
 
-      MHDState uLoc; // conservative    variables in current cell
+      MHDState uLoc; // conservative variables in current cell
       MHDState qLoc; // primitive    variables in current cell
       real_t   c;
 
@@ -133,14 +133,14 @@ public:
       uLoc[IU] = Udata(i, j, k, IU);
       uLoc[IV] = Udata(i, j, k, IV);
       uLoc[IW] = Udata(i, j, k, IW);
-      uLoc[IBX] = Udata(i, j, k, IBX);
-      uLoc[IBY] = Udata(i, j, k, IBY);
-      uLoc[IBZ] = Udata(i, j, k, IBZ);
+      uLoc[IA] = Udata(i, j, k, IA);
+      uLoc[IB] = Udata(i, j, k, IB);
+      uLoc[IC] = Udata(i, j, k, IC);
 
       // get mag field in neighbor cells
-      magFieldNeighbors[IX] = Udata(i + 1, j, k, IBX);
-      magFieldNeighbors[IY] = Udata(i, j + 1, k, IBY);
-      magFieldNeighbors[IZ] = Udata(i, j, k + 1, IBZ);
+      magFieldNeighbors[IX] = Udata(i + 1, j, k, IA);
+      magFieldNeighbors[IY] = Udata(i, j + 1, k, IB);
+      magFieldNeighbors[IZ] = Udata(i, j, k + 1, IC);
 
       // get primitive variables in current cell
       constoprim_mhd(uLoc, magFieldNeighbors, c, qLoc);
@@ -151,9 +151,9 @@ public:
       Qdata(i, j, k, IU) = qLoc[IU];
       Qdata(i, j, k, IV) = qLoc[IV];
       Qdata(i, j, k, IW) = qLoc[IW];
-      Qdata(i, j, k, IBX) = qLoc[IBX];
-      Qdata(i, j, k, IBY) = qLoc[IBY];
-      Qdata(i, j, k, IBZ) = qLoc[IBZ];
+      Qdata(i, j, k, IA) = qLoc[IA];
+      Qdata(i, j, k, IB) = qLoc[IB];
+      Qdata(i, j, k, IC) = qLoc[IC];
     }
   }
 
@@ -307,6 +307,7 @@ public:
       real_t(&dbfZ)[3] = dbfSlopes[IZ];
 
       // get magnetic slopes dbf
+
       bfSlopes[0] = Udata(i, j, k, IA);
       bfSlopes[1] = Udata(i, j + 1, k, IA);
       bfSlopes[2] = Udata(i, j - 1, k, IA);
@@ -923,11 +924,11 @@ public:
       //
       get_state(Qm_y, i, j - 1, k, qleft);
       swapValues(&(qleft[IU]), &(qleft[IV]));
-      swapValues(&(qleft[IBX]), &(qleft[IBY]));
+      swapValues(&(qleft[IA]), &(qleft[IB]));
 
       get_state(Qp_y, i, j, k, qright);
       swapValues(&(qright[IU]), &(qright[IV]));
-      swapValues(&(qright[IBX]), &(qright[IBY]));
+      swapValues(&(qright[IA]), &(qright[IB]));
 
       // compute hydro flux along Y
       riemann_mhd(qleft, qright, flux, params);
@@ -940,11 +941,11 @@ public:
       //
       get_state(Qm_z, i, j, k - 1, qleft);
       swapValues(&(qleft[IU]), &(qleft[IW]));
-      swapValues(&(qleft[IBX]), &(qleft[IBZ]));
+      swapValues(&(qleft[IA]), &(qleft[IC]));
 
       get_state(Qp_z, i, j, k, qright);
       swapValues(&(qright[IU]), &(qright[IW]));
-      swapValues(&(qright[IBX]), &(qright[IBZ]));
+      swapValues(&(qright[IA]), &(qright[IC]));
 
       // compute hydro flux along Z
       riemann_mhd(qleft, qright, flux, params);
@@ -1069,17 +1070,17 @@ public:
       //
       get_state(Qm_y, i, j - 1, k, qleft);
       swapValues(&(qleft[IU]), &(qleft[IV]));
-      swapValues(&(qleft[IBX]), &(qleft[IBY]));
+      swapValues(&(qleft[IA]), &(qleft[IB]));
 
       get_state(Qp_y, i, j, k, qright);
       swapValues(&(qright[IU]), &(qright[IV]));
-      swapValues(&(qright[IBX]), &(qright[IBY]));
+      swapValues(&(qright[IA]), &(qright[IB]));
 
       // compute hydro flux along Y
       riemann_mhd(qleft, qright, flux, params);
 
       swapValues(&(flux[IU]), &(flux[IV]));
-      swapValues(&(flux[IBX]), &(flux[IBY]));
+      swapValues(&(flux[IA]), &(flux[IB]));
 
       //
       // update with fluxes Y
@@ -1106,17 +1107,17 @@ public:
       //
       get_state(Qm_z, i, j, k - 1, qleft);
       swapValues(&(qleft[IU]), &(qleft[IW]));
-      swapValues(&(qleft[IBX]), &(qleft[IBZ]));
+      swapValues(&(qleft[IA]), &(qleft[IC]));
 
       get_state(Qp_z, i, j, k, qright);
       swapValues(&(qright[IU]), &(qright[IW]));
-      swapValues(&(qright[IBX]), &(qright[IBZ]));
+      swapValues(&(qright[IA]), &(qright[IC]));
 
       // compute hydro flux along Z
       riemann_mhd(qleft, qright, flux, params);
 
       swapValues(&(flux[IU]), &(flux[IW]));
-      swapValues(&(flux[IBX]), &(flux[IBZ]));
+      swapValues(&(flux[IA]), &(flux[IC]));
 
       //
       // update with fluxes Z
@@ -1652,25 +1653,25 @@ public:
 
       // if (k < ksize - ghostWidth)
       {
-        udata[IBX] += (Emf(i, j + 1, k, I_EMFZ) - Emf(i, j, k, I_EMFZ)) * dtdy;
+        udata[IA] += (Emf(i, j + 1, k, I_EMFZ) - Emf(i, j, k, I_EMFZ)) * dtdy;
 
-        udata[IBY] -= (Emf(i + 1, j, k, I_EMFZ) - Emf(i, j, k, I_EMFZ)) * dtdx;
+        udata[IB] -= (Emf(i + 1, j, k, I_EMFZ) - Emf(i, j, k, I_EMFZ)) * dtdx;
       }
 
       // update BX
-      udata[IBX] -= (Emf(i, j, k + 1, I_EMFY) - Emf(i, j, k, I_EMFY)) * dtdz;
+      udata[IA] -= (Emf(i, j, k + 1, I_EMFY) - Emf(i, j, k, I_EMFY)) * dtdz;
 
       // update BY
-      udata[IBY] += (Emf(i, j, k + 1, I_EMFX) - Emf(i, j, k, I_EMFX)) * dtdz;
+      udata[IB] += (Emf(i, j, k + 1, I_EMFX) - Emf(i, j, k, I_EMFX)) * dtdz;
 
       // update BZ
-      udata[IBZ] += (Emf(i + 1, j, k, I_EMFY) - Emf(i, j, k, I_EMFY)) * dtdx;
+      udata[IC] += (Emf(i + 1, j, k, I_EMFY) - Emf(i, j, k, I_EMFY)) * dtdx;
 
-      udata[IBZ] -= (Emf(i, j + 1, k, I_EMFX) - Emf(i, j, k, I_EMFX)) * dtdy;
+      udata[IC] -= (Emf(i, j + 1, k, I_EMFX) - Emf(i, j, k, I_EMFX)) * dtdy;
 
-      Udata(i, j, k, IA) = udata[IBX];
-      Udata(i, j, k, IB) = udata[IBY];
-      Udata(i, j, k, IC) = udata[IBZ];
+      Udata(i, j, k, IA) = udata[IA];
+      Udata(i, j, k, IB) = udata[IB];
+      Udata(i, j, k, IC) = udata[IC];
     }
   } // operator()
 

@@ -30,10 +30,10 @@ riemann_hll(MHDState & qleft, MHDState & qright, MHDState & flux, const HydroPar
 {
 
   // enforce continuity of normal component
-  real_t bx_mean = 0.5 * (qleft[IBX] + qright[IBX]);
+  real_t bx_mean = 0.5 * (qleft[IA] + qright[IA]);
 
-  qleft[IBX] = bx_mean;
-  qright[IBX] = bx_mean;
+  qleft[IA] = bx_mean;
+  qright[IA] = bx_mean;
 
   MHDState uleft, fleft;
   MHDState uright, fright;
@@ -56,12 +56,9 @@ riemann_hll(MHDState & qleft, MHDState & qright, MHDState & flux, const HydroPar
   flux[IU] = (sr * fleft[IU] - sl * fright[IU] + sr * sl * (uright[IU] - uleft[IU])) / (sr - sl);
   flux[IV] = (sr * fleft[IV] - sl * fright[IV] + sr * sl * (uright[IV] - uleft[IV])) / (sr - sl);
   flux[IW] = (sr * fleft[IW] - sl * fright[IW] + sr * sl * (uright[IW] - uleft[IW])) / (sr - sl);
-  flux[IBX] =
-    (sr * fleft[IBX] - sl * fright[IBX] + sr * sl * (uright[IBX] - uleft[IBX])) / (sr - sl);
-  flux[IBY] =
-    (sr * fleft[IBY] - sl * fright[IBY] + sr * sl * (uright[IBY] - uleft[IBY])) / (sr - sl);
-  flux[IBZ] =
-    (sr * fleft[IBZ] - sl * fright[IBZ] + sr * sl * (uright[IBZ] - uleft[IBZ])) / (sr - sl);
+  flux[IA] = (sr * fleft[IA] - sl * fright[IA] + sr * sl * (uright[IA] - uleft[IA])) / (sr - sl);
+  flux[IB] = (sr * fleft[IB] - sl * fright[IB] + sr * sl * (uright[IB] - uleft[IB])) / (sr - sl);
+  flux[IC] = (sr * fleft[IC] - sl * fright[IC] + sr * sl * (uright[IC] - uleft[IC])) / (sr - sl);
 
 
 } // riemann_hll
@@ -140,11 +137,11 @@ riemann_hlld(MHDState & qleft, MHDState & qright, MHDState & flux, const HydroPa
   const real_t entho = 1.0 / (gamma0 - 1.0);
 
   // Enforce continuity of normal component of magnetic field
-  real_t a = 0.5 * (qleft[IBX] + qright[IBX]);
+  real_t a = 0.5 * (qleft[IA] + qright[IA]);
   real_t sgnm = (a >= 0) ? ONE_F : -ONE_F;
 
-  qleft[IBX] = a;
-  qright[IBX] = a;
+  qleft[IA] = a;
+  qright[IA] = a;
 
   // ISOTHERMAL
   real_t cIso = params.settings.cIso;
@@ -162,8 +159,8 @@ riemann_hlld(MHDState & qleft, MHDState & qright, MHDState & flux, const HydroPa
   ul = qleft[IU];
   vl = qleft[IV];
   wl = qleft[IW];
-  bl = qleft[IBY];
-  cl = qleft[IBZ];
+  bl = qleft[IB];
+  cl = qleft[IC];
   real_t ecinl = 0.5 * (ul * ul + vl * vl + wl * wl) * rl;
   real_t emagl = 0.5 * (a * a + bl * bl + cl * cl);
   real_t etotl = pl * entho + ecinl + emagl;
@@ -177,8 +174,8 @@ riemann_hlld(MHDState & qleft, MHDState & qright, MHDState & flux, const HydroPa
   ur = qright[IU];
   vr = qright[IV];
   wr = qright[IW];
-  br = qright[IBY];
-  cr = qright[IBZ];
+  br = qright[IB];
+  cr = qright[IC];
   real_t ecinr = 0.5 * (ur * ur + vr * vr + wr * wr) * rr;
   real_t emagr = 0.5 * (a * a + br * br + cr * cr);
   real_t etotr = pr * entho + ecinr + emagr;
@@ -360,9 +357,9 @@ riemann_hlld(MHDState & qleft, MHDState & qright, MHDState & flux, const HydroPa
     ptoto; /* *** WARNING *** : ptoto used here (this is only valid for cartesian geometry) ! */
   flux[IV] = ro * uo * vo - a * bo;
   flux[IW] = ro * uo * wo - a * co;
-  flux[IBX] = 0.0;
-  flux[IBY] = bo * uo - a * vo;
-  flux[IBZ] = co * uo - a * wo;
+  flux[IA] = 0.0;
+  flux[IB] = bo * uo - a * vo;
+  flux[IC] = co * uo - a * wo;
 
 } // riemann_hlld
 
@@ -416,33 +413,33 @@ mag_riemann2d_hlld(const MHDState (&qLLRR)[4], real_t eLLRR[4], const HydroParam
   const real_t & pLL = qLL[IP];
   const real_t & uLL = qLL[IU];
   const real_t & vLL = qLL[IV];
-  const real_t & aLL = qLL[IBX];
-  const real_t & bLL = qLL[IBY];
-  const real_t & cLL = qLL[IBZ];
+  const real_t & aLL = qLL[IA];
+  const real_t & bLL = qLL[IB];
+  const real_t & cLL = qLL[IC];
 
   const real_t & rLR = qLR[ID];
   const real_t & pLR = qLR[IP];
   const real_t & uLR = qLR[IU];
   const real_t & vLR = qLR[IV];
-  const real_t & aLR = qLR[IBX];
-  const real_t & bLR = qLR[IBY];
-  const real_t & cLR = qLR[IBZ];
+  const real_t & aLR = qLR[IA];
+  const real_t & bLR = qLR[IB];
+  const real_t & cLR = qLR[IC];
 
   const real_t & rRL = qRL[ID];
   const real_t & pRL = qRL[IP];
   const real_t & uRL = qRL[IU];
   const real_t & vRL = qRL[IV];
-  const real_t & aRL = qRL[IBX];
-  const real_t & bRL = qRL[IBY];
-  const real_t & cRL = qRL[IBZ];
+  const real_t & aRL = qRL[IA];
+  const real_t & bRL = qRL[IB];
+  const real_t & cRL = qRL[IC];
 
   const real_t & rRR = qRR[ID];
   const real_t & pRR = qRR[IP];
   const real_t & uRR = qRR[IU];
   const real_t & vRR = qRR[IV];
-  const real_t & aRR = qRR[IBX];
-  const real_t & bRR = qRR[IBY];
-  const real_t & cRR = qRR[IBZ];
+  const real_t & aRR = qRR[IA];
+  const real_t & bRR = qRR[IB];
+  const real_t & cRR = qRR[IC];
 
   // Compute 4 fast magnetosonic velocity relative to x direction
   real_t cFastLLx = find_speed_fast<IX>(qLL, params);
@@ -714,16 +711,16 @@ compute_emf(MHDState (&qEdge)[4], const HydroParams & params, real_t xPos = 0)
     qRR[IV] = qLB[IV];
 
     // First parallel magnetic field (enforce continuity)
-    qLL[IBX] = HALF_F * (qRT[IBX] + qLT[IBX]);
-    qRL[IBX] = HALF_F * (qRT[IBX] + qLT[IBX]);
-    qLR[IBX] = HALF_F * (qRB[IBX] + qLB[IBX]);
-    qRR[IBX] = HALF_F * (qRB[IBX] + qLB[IBX]);
+    qLL[IA] = HALF_F * (qRT[IA] + qLT[IA]);
+    qRL[IA] = HALF_F * (qRT[IA] + qLT[IA]);
+    qLR[IA] = HALF_F * (qRB[IA] + qLB[IA]);
+    qRR[IA] = HALF_F * (qRB[IA] + qLB[IA]);
 
     // Second parallel magnetic field (enforce continuity)
-    qLL[IBY] = HALF_F * (qRT[IBY] + qRB[IBY]);
-    qRL[IBY] = HALF_F * (qLT[IBY] + qLB[IBY]);
-    qLR[IBY] = HALF_F * (qRT[IBY] + qRB[IBY]);
-    qRR[IBY] = HALF_F * (qLT[IBY] + qLB[IBY]);
+    qLL[IB] = HALF_F * (qRT[IB] + qRB[IB]);
+    qRL[IB] = HALF_F * (qLT[IB] + qLB[IB]);
+    qLR[IB] = HALF_F * (qRT[IB] + qRB[IB]);
+    qRR[IB] = HALF_F * (qLT[IB] + qLB[IB]);
 
     // Orthogonal velocity
     qLL[IW] = qRT[IW];
@@ -732,10 +729,10 @@ compute_emf(MHDState (&qEdge)[4], const HydroParams & params, real_t xPos = 0)
     qRR[IW] = qLB[IW];
 
     // Orthogonal magnetic Field
-    qLL[IBZ] = qRT[IBZ];
-    qRL[IBZ] = qLT[IBZ];
-    qLR[IBZ] = qRB[IBZ];
-    qRR[IBZ] = qLB[IBZ];
+    qLL[IC] = qRT[IC];
+    qRL[IC] = qLT[IC];
+    qLR[IC] = qRB[IC];
+    qRR[IC] = qLB[IC];
   }
   else if (emfDir == EMFY)
   {
@@ -756,16 +753,16 @@ compute_emf(MHDState (&qEdge)[4], const HydroParams & params, real_t xPos = 0)
     qRR[IV] = qLB[IU];
 
     // First parallel magnetic field (enforce continuity)
-    qLL[IBX] = HALF_F * (qRT[IBZ] + qLT[IBZ]);
-    qRL[IBX] = HALF_F * (qRT[IBZ] + qLT[IBZ]);
-    qLR[IBX] = HALF_F * (qRB[IBZ] + qLB[IBZ]);
-    qRR[IBX] = HALF_F * (qRB[IBZ] + qLB[IBZ]);
+    qLL[IA] = HALF_F * (qRT[IC] + qLT[IC]);
+    qRL[IA] = HALF_F * (qRT[IC] + qLT[IC]);
+    qLR[IA] = HALF_F * (qRB[IC] + qLB[IC]);
+    qRR[IA] = HALF_F * (qRB[IC] + qLB[IC]);
 
     // Second parallel magnetic field (enforce continuity)
-    qLL[IBY] = HALF_F * (qRT[IBX] + qRB[IBX]);
-    qRL[IBY] = HALF_F * (qLT[IBX] + qLB[IBX]);
-    qLR[IBY] = HALF_F * (qRT[IBX] + qRB[IBX]);
-    qRR[IBY] = HALF_F * (qLT[IBX] + qLB[IBX]);
+    qLL[IB] = HALF_F * (qRT[IA] + qRB[IA]);
+    qRL[IB] = HALF_F * (qLT[IA] + qLB[IA]);
+    qLR[IB] = HALF_F * (qRT[IA] + qRB[IA]);
+    qRR[IB] = HALF_F * (qLT[IA] + qLB[IA]);
 
     // Orthogonal velocity
     qLL[IW] = qRT[IV];
@@ -774,10 +771,10 @@ compute_emf(MHDState (&qEdge)[4], const HydroParams & params, real_t xPos = 0)
     qRR[IW] = qLB[IV];
 
     // Orthogonal magnetic Field
-    qLL[IBZ] = qRT[IBY];
-    qRL[IBZ] = qLT[IBY];
-    qLR[IBZ] = qRB[IBY];
-    qRR[IBZ] = qLB[IBY];
+    qLL[IC] = qRT[IB];
+    qRL[IC] = qLT[IB];
+    qLR[IC] = qRB[IB];
+    qRR[IC] = qLB[IB];
   }
   else
   { // emfDir == EMFX
@@ -798,16 +795,16 @@ compute_emf(MHDState (&qEdge)[4], const HydroParams & params, real_t xPos = 0)
     qRR[IV] = qLB[IW];
 
     // First parallel magnetic field (enforce continuity)
-    qLL[IBX] = HALF_F * (qRT[IBY] + qLT[IBY]);
-    qRL[IBX] = HALF_F * (qRT[IBY] + qLT[IBY]);
-    qLR[IBX] = HALF_F * (qRB[IBY] + qLB[IBY]);
-    qRR[IBX] = HALF_F * (qRB[IBY] + qLB[IBY]);
+    qLL[IA] = HALF_F * (qRT[IB] + qLT[IB]);
+    qRL[IA] = HALF_F * (qRT[IB] + qLT[IB]);
+    qLR[IA] = HALF_F * (qRB[IB] + qLB[IB]);
+    qRR[IA] = HALF_F * (qRB[IB] + qLB[IB]);
 
     // Second parallel magnetic field (enforce continuity)
-    qLL[IBY] = HALF_F * (qRT[IBZ] + qRB[IBZ]);
-    qRL[IBY] = HALF_F * (qLT[IBZ] + qLB[IBZ]);
-    qLR[IBY] = HALF_F * (qRT[IBZ] + qRB[IBZ]);
-    qRR[IBY] = HALF_F * (qLT[IBZ] + qLB[IBZ]);
+    qLL[IB] = HALF_F * (qRT[IC] + qRB[IC]);
+    qRL[IB] = HALF_F * (qLT[IC] + qLB[IC]);
+    qLR[IB] = HALF_F * (qRT[IC] + qRB[IC]);
+    qRR[IB] = HALF_F * (qLT[IC] + qLB[IC]);
 
     // Orthogonal velocity
     qLL[IW] = qRT[IU];
@@ -816,10 +813,10 @@ compute_emf(MHDState (&qEdge)[4], const HydroParams & params, real_t xPos = 0)
     qRR[IW] = qLB[IU];
 
     // Orthogonal magnetic Field
-    qLL[IBZ] = qRT[IBX];
-    qRL[IBZ] = qLT[IBX];
-    qLR[IBZ] = qRB[IBX];
-    qRR[IBZ] = qLB[IBX];
+    qLL[IC] = qRT[IA];
+    qRL[IC] = qLT[IA];
+    qLR[IC] = qRB[IA];
+    qRR[IC] = qLB[IA];
   }
 
 
@@ -832,10 +829,10 @@ compute_emf(MHDState (&qEdge)[4], const HydroParams & params, real_t xPos = 0)
   real_t & ELR = eLLRR[ILR];
   real_t & ERR = eLLRR[IRR];
 
-  ELL = qLL[IU] * qLL[IBY] - qLL[IV] * qLL[IBX];
-  ERL = qRL[IU] * qRL[IBY] - qRL[IV] * qRL[IBX];
-  ELR = qLR[IU] * qLR[IBY] - qLR[IV] * qLR[IBX];
-  ERR = qRR[IU] * qRR[IBY] - qRR[IV] * qRR[IBX];
+  ELL = qLL[IU] * qLL[IB] - qLL[IV] * qLL[IA];
+  ERL = qRL[IU] * qRL[IB] - qRL[IV] * qRL[IA];
+  ELR = qLR[IU] * qLR[IB] - qLR[IV] * qLR[IA];
+  ERR = qRR[IU] * qRR[IB] - qRR[IV] * qRR[IA];
 
   real_t emf = 0;
   // mag_riemann2d<>
@@ -854,17 +851,17 @@ compute_emf(MHDState (&qEdge)[4], const HydroParams & params, real_t xPos = 0)
   //   if (emfDir==EMFX) {
   // 	real_t shear = -1.5 * params.Omega0 * xPos;
   // 	if (shear>0) {
-  // 	  emf += shear * qLL[IBY];
+  // 	  emf += shear * qLL[IB];
   // 	} else {
-  // 	  emf += shear * qRR[IBY];
+  // 	  emf += shear * qRR[IB];
   // 	}
   //   }
   //   if (emfDir==EMFZ) {
   // 	real_t shear = -1.5 * params.Omega0 * (xPos - params[ID]x/2);
   // 	if (shear>0) {
-  // 	  emf -= shear * qLL[IBX];
+  // 	  emf -= shear * qLL[IA];
   // 	} else {
-  // 	  emf -= shear * qRR[IBX];
+  // 	  emf -= shear * qRR[IA];
   // 	}
   //   }
   // }

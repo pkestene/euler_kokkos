@@ -113,9 +113,9 @@ public:
       Udata(i, j, IU) = u_out;
       Udata(i, j, IV) = v_out;
       Udata(i, j, IW) = 0.0;
-      Udata(i, j, IBX) = Bx_out;
-      Udata(i, j, IBY) = By_out;
-      Udata(i, j, IBZ) = 0.0;
+      Udata(i, j, IA) = Bx_out;
+      Udata(i, j, IB) = By_out;
+      Udata(i, j, IC) = 0.0;
     }
     else
     {
@@ -125,9 +125,9 @@ public:
       Udata(i, j, IU) = u_in;
       Udata(i, j, IV) = v_in;
       Udata(i, j, IW) = 0.0;
-      Udata(i, j, IBX) = Bx_in;
-      Udata(i, j, IBY) = By_in;
-      Udata(i, j, IBZ) = 0.0;
+      Udata(i, j, IA) = Bx_in;
+      Udata(i, j, IB) = By_in;
+      Udata(i, j, IC) = 0.0;
     }
 
   } // end operator ()
@@ -337,9 +337,9 @@ public:
       Udata(i, j, IW) = ZERO_F;
 
       // bx, by, bz
-      Udata(i, j, IBX) = -B0 * sin(yPos * TWOPI_F);
-      Udata(i, j, IBY) = B0 * sin(2.0 * xPos * TWOPI_F);
-      Udata(i, j, IBZ) = 0.0;
+      Udata(i, j, IA) = -B0 * sin(yPos * TWOPI_F);
+      Udata(i, j, IB) = B0 * sin(2.0 * xPos * TWOPI_F);
+      Udata(i, j, IC) = 0.0;
     }
 
   } // init_all_var_but_energy
@@ -375,8 +375,8 @@ public:
       Udata(i, j, IP) =
         p0 / (gamma0 - 1.0) +
         0.5 * (SQR(Udata(i, j, IU)) / Udata(i, j, ID) + SQR(Udata(i, j, IV)) / Udata(i, j, ID) +
-               0.25 * SQR(Udata(i, j, IBX) + Udata(i + 1, j, IBX)) +
-               0.25 * SQR(Udata(i, j, IBY) + Udata(i, j + 1, IBY)));
+               0.25 * SQR(Udata(i, j, IA) + Udata(i + 1, j, IA)) +
+               0.25 * SQR(Udata(i, j, IB) + Udata(i, j + 1, IB)));
     }
 
   } // init_energy
@@ -487,9 +487,9 @@ public:
       Udata(i, j, IU) = d * u;
       Udata(i, j, IV) = d * v;
 
-      Udata(i, j, IBX) = bx;
-      Udata(i, j, IBY) = by;
-      Udata(i, j, IBZ) = bz;
+      Udata(i, j, IA) = bx;
+      Udata(i, j, IB) = by;
+      Udata(i, j, IC) = bz;
 
       Udata(i, j, IE) =
         pressure / (gamma0 - 1.0) + 0.5 * d * (u * u + v * v) + 0.5 * (bx * bx + by * by + bz * bz);
@@ -525,9 +525,9 @@ public:
       Udata(i, j, IU) = d * u;
       Udata(i, j, IV) = d * v;
 
-      Udata(i, j, IBX) = bx;
-      Udata(i, j, IBY) = by;
-      Udata(i, j, IBZ) = bz;
+      Udata(i, j, IA) = bx;
+      Udata(i, j, IB) = by;
+      Udata(i, j, IC) = bz;
 
       Udata(i, j, IP) =
         pressure / (gamma0 - 1.0) + 0.5 * d * (u * u + v * v) + 0.5 * (bx * bx + by * by + bz * bz);
@@ -553,9 +553,9 @@ public:
       Udata(i, j, IU) = d * u;
       Udata(i, j, IV) = d * v;
 
-      Udata(i, j, IBX) = bx;
-      Udata(i, j, IBY) = by;
-      Udata(i, j, IBZ) = bz;
+      Udata(i, j, IA) = bx;
+      Udata(i, j, IB) = by;
+      Udata(i, j, IC) = bz;
 
       Udata(i, j, IP) =
         pressure / (gamma0 - 1.0) + 0.5 * d * (u * u + v * v) + 0.5 * (bx * bx + by * by + bz * bz);
