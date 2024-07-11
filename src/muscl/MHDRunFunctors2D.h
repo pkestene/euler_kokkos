@@ -166,26 +166,38 @@ class ComputeSlopesFunctor2D_MHD : public MHDBaseFunctor2D
 
 public:
   /**
-   * Compute limited slopes.
+   * Compute limited slopes of primitives variables.
    *
+   * Magnetic field slopes are computed for transverse component at cell center, and for normal
+   * component at cell faces.
+   *
+   * \note Normal magnetic field component slopes are not limited.
+   *
+   * \param[in] Udata conservative variables
    * \param[in] Qdata primitive variables
    * \param[out] Slopes_x limited slopes along direction X
    * \param[out] Slopes_y limited slopes along direction Y
    */
   ComputeSlopesFunctor2D_MHD(HydroParams params,
+                             DataArray2d Udata,
                              DataArray2d Qdata,
                              DataArray2d Slopes_x,
                              DataArray2d Slopes_y)
     : MHDBaseFunctor2D(params)
+    , Udata(Udata)
     , Qdata(Qdata)
     , Slopes_x(Slopes_x)
     , Slopes_y(Slopes_y){};
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams params, DataArray2d Qdata, DataArray2d Slopes_x, DataArray2d Slopes_y)
+  apply(HydroParams params,
+        DataArray2d Udata,
+        DataArray2d Qdata,
+        DataArray2d Slopes_x,
+        DataArray2d Slopes_y)
   {
-    ComputeSlopesFunctor2D_MHD functor(params, Qdata, Slopes_x, Slopes_y);
+    ComputeSlopesFunctor2D_MHD functor(params, Udata, Qdata, Slopes_x, Slopes_y);
     Kokkos::parallel_for(
       "ComputeSlopesFunctor2D_MHD",
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
@@ -216,15 +228,21 @@ public:
       slope_unsplit_hydro_2d(qc, qp, qm, dq);
       set_state(Slopes_x, i, j, dq);
 
+      // modify slopes for normal magnetic field component using face centered value
+      Slopes_x(i, j, IA) = Udata(i + 1, j, IA) - Udata(i, j, IA);
+
       // slopes along Y
       get_state(Qdata, i, j - 1, qm);
       get_state(Qdata, i, j + 1, qp);
       slope_unsplit_hydro_2d(qc, qp, qm, dq);
       set_state(Slopes_y, i, j, dq);
+
+      // modify slopes for normal magnetic field component using face centered value
+      Slopes_y(i, j, IB) = Udata(i, j + 1, IB) - Udata(i, j, IB);
     }
   } // end operator ()
 
-  DataArray2d Qdata;
+  DataArray2d Udata, Qdata;
   DataArray2d Slopes_x, Slopes_y;
 
 }; // ComputeSlopesFunctor2D_MHD
@@ -923,8 +941,9 @@ public:
       real_t dux = dq[IX][IU];
       real_t dvx = dq[IX][IV];
       real_t dwx = dq[IX][IW];
-      real_t dCx = dq[IX][IC];
+      real_t dAx = dq[IX][IA]; // face center slope !
       real_t dBx = dq[IX][IB];
+      real_t dCx = dq[IX][IC];
 
       // Cell centered TVD slopes in Y direction
       real_t dry = dq[IY][ID];
@@ -932,12 +951,9 @@ public:
       real_t duy = dq[IY][IU];
       real_t dvy = dq[IY][IV];
       real_t dwy = dq[IY][IW];
-      real_t dCy = dq[IY][IC];
       real_t dAy = dq[IY][IA];
-
-      const auto   db = compute_normal_mag_field_slopes(Udata, i, j);
-      const auto & dAx = db[IX];
-      const auto & dBy = db[IY];
+      real_t dBy = dq[IY][IB]; // face center slope !
+      real_t dCy = dq[IY][IC];
 
       real_t sr0, su0, sv0, sw0, sp0, sA0, sB0, sC0;
       {

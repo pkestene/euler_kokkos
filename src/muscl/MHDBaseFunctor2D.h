@@ -355,11 +355,13 @@ public:
     };
 
     // aliases to input qState neighbors
-    const MHDState & q = qNb[CENTER][CENTER];
-    const MHDState & qPlusX = qNb[CENTER + 1][CENTER];
-    const MHDState & qMinusX = qNb[CENTER - 1][CENTER];
-    const MHDState & qPlusY = qNb[CENTER][CENTER + 1];
-    const MHDState & qMinusY = qNb[CENTER][CENTER - 1];
+    // clang-format off
+    const MHDState & q       = qNb[CENTER    ][CENTER    ];
+    const MHDState & qPlusX  = qNb[CENTER + 1][CENTER    ];
+    const MHDState & qMinusX = qNb[CENTER - 1][CENTER    ];
+    const MHDState & qPlusY  = qNb[CENTER    ][CENTER + 1];
+    const MHDState & qMinusY = qNb[CENTER    ][CENTER - 1];
+    // clang-format on
 
     MHDState & dqX = dq[IX];
     MHDState & dqY = dq[IY];
@@ -453,13 +455,16 @@ public:
   void
   slope_unsplit_mhd_2d(const real_t (&bfNeighbors)[6], real_t (&dbf)[2][3]) const
   {
-    /* layout for face centered magnetic field */
-    const real_t & bfx = bfNeighbors[0];
-    const real_t & bfx_yplus = bfNeighbors[1];
+    // layout for face centered magnetic field
+
+    // clang-format off
+    const real_t & bfx        = bfNeighbors[0];
+    const real_t & bfx_yplus  = bfNeighbors[1];
     const real_t & bfx_yminus = bfNeighbors[2];
-    const real_t & bfy = bfNeighbors[3];
-    const real_t & bfy_xplus = bfNeighbors[4];
+    const real_t & bfy        = bfNeighbors[3];
+    const real_t & bfy_xplus  = bfNeighbors[4];
     const real_t & bfy_xminus = bfNeighbors[5];
+    // clang-format on
 
     real_t(&dbfX)[3] = dbf[IX];
     real_t(&dbfY)[3] = dbf[IY];
