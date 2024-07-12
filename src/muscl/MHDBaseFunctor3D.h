@@ -55,9 +55,9 @@ public:
     q[IU] = data(i, j, k, IU);
     q[IV] = data(i, j, k, IV);
     q[IW] = data(i, j, k, IW);
-    q[IBX] = data(i, j, k, IBX);
-    q[IBY] = data(i, j, k, IBY);
-    q[IBZ] = data(i, j, k, IBZ);
+    q[IA] = data(i, j, k, IA);
+    q[IB] = data(i, j, k, IB);
+    q[IC] = data(i, j, k, IC);
 
   } // get_state
 
@@ -74,9 +74,9 @@ public:
     data(i, j, k, IU) = q[IU];
     data(i, j, k, IV) = q[IV];
     data(i, j, k, IW) = q[IW];
-    data(i, j, k, IBX) = q[IBX];
-    data(i, j, k, IBY) = q[IBY];
-    data(i, j, k, IBZ) = q[IBZ];
+    data(i, j, k, IA) = q[IA];
+    data(i, j, k, IB) = q[IB];
+    data(i, j, k, IC) = q[IC];
 
   } // set_state
 
@@ -88,11 +88,71 @@ public:
   get_magField(const DataArray & data, int i, int j, int k, BField & b) const
   {
 
-    b[IBFX] = data(i, j, k, IBX);
-    b[IBFY] = data(i, j, k, IBY);
-    b[IBFZ] = data(i, j, k, IBZ);
+    b[IBFX] = data(i, j, k, IA);
+    b[IBFY] = data(i, j, k, IB);
+    b[IBFZ] = data(i, j, k, IC);
 
   } // get_magField
+
+  /**
+   * Compute slopes of face-centered magnetic field along normal direction
+   *
+   * \param[in] data is Conservative data array (which is the one containing face-centered magnetic
+   * field components)
+   * \param[in] i x-coordinate
+   * \param[in] j y-coordinate
+   *
+   * \return db magnetic slopes
+   */
+  KOKKOS_INLINE_FUNCTION
+  BField
+  compute_normal_mag_field_slopes(const DataArray & data, int i, int j, int k) const
+  {
+
+    BField db;
+
+    // clang-format off
+    db[IX] = data(i + 1, j    , k    , IA) - data(i, j, k, IA);
+    db[IY] = data(i    , j + 1, k    , IB) - data(i, j, k, IB);
+    db[IZ] = data(i    , j    , k + 1, IC) - data(i, j, k, IC);
+    // clang-format on
+
+    return db;
+  } // compute_normal_mag_field_slopes
+
+  /**
+   * Compute limited slope of face centered magnetic field component.
+   *
+   * \param[in] udata is a conservative variable array
+   */
+  template <Direction dir>
+  KOKKOS_INLINE_FUNCTION real_t
+  compute_limited_slope(DataArray udata, int i, int j, int k, int component) const
+  {
+    KOKKOS_ASSERT(((component == IA) or (component == IB) or (component == IC)) &&
+                  "Wrong component index for a magnetic field.");
+
+    constexpr auto delta_i = dir == DIR_X ? 1 : 0;
+    constexpr auto delta_j = dir == DIR_Y ? 1 : 0;
+    constexpr auto delta_k = dir == DIR_Z ? 1 : 0;
+
+    // clang-format off
+    const auto b       = udata(i          , j          , k          , component);
+    const auto b_plus  = udata(i + delta_i, j + delta_j, k + delta_k, component);
+    const auto b_minus = udata(i - delta_i, j - delta_j, k + delta_k, component);
+    // clang-format on
+
+    const real_t dlft = params.settings.slope_type * (b - b_minus);
+    const real_t drgt = params.settings.slope_type * (b_plus - b);
+    const real_t dcen = HALF_F * (b_plus - b_minus);
+    const real_t dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
+    const real_t slop = fmin(fabs(dlft), fabs(drgt));
+    real_t       dlim = slop;
+    if ((dlft * drgt) <= ZERO_F)
+      dlim = ZERO_F;
+    return dsgn * fmin(dlim, fabs(dcen));
+
+  } // compute_limited_slope
 
   /**
    * Equation of state:
@@ -147,13 +207,13 @@ public:
     q[IW] = u[IW] / q[ID];
 
     // compute cell-centered magnetic field
-    q[IBX] = 0.5 * (u[IBX] + magFieldNeighbors[0]);
-    q[IBY] = 0.5 * (u[IBY] + magFieldNeighbors[1]);
-    q[IBZ] = 0.5 * (u[IBZ] + magFieldNeighbors[2]);
+    q[IA] = 0.5 * (u[IA] + magFieldNeighbors[0]);
+    q[IB] = 0.5 * (u[IB] + magFieldNeighbors[1]);
+    q[IC] = 0.5 * (u[IC] + magFieldNeighbors[2]);
 
     // compute specific kinetic energy and magnetic energy
     real_t eken = 0.5 * (q[IU] * q[IU] + q[IV] * q[IV] + q[IW] * q[IW]);
-    real_t emag = 0.5 * (q[IBX] * q[IBX] + q[IBY] * q[IBY] + q[IBZ] * q[IBZ]);
+    real_t emag = 0.5 * (q[IA] * q[IA] + q[IB] * q[IB] + q[IC] * q[IC]);
 
     // compute pressure
 
@@ -251,6 +311,37 @@ public:
 
   } // slope_unsplit_hydro_3d_scalar
 
+  /**
+   * Compute primitive variables slopes (dqX,dqY,dqZ) for one component from q and its neighbors.
+   * This routine is only used in the 3D UNSPLIT integration and slope_type = 0,1 and 2.
+   *
+   * Only slope_type 1 and 2 are supported.
+   *
+   * \param[in]  q      : current primitive variable
+   * \param[in]  qPlus  : value in the next neighbor cell
+   * \param[in]  qMinus : value in the previous neighbor cell
+   *
+   */
+  KOKKOS_INLINE_FUNCTION
+  real_t
+  slope_unsplit_hydro_3d_scalar(real_t q, real_t qPlus, real_t qMinus) const
+  {
+    real_t slope_type = params.settings.slope_type;
+
+    real_t dlft, drgt, dcen, dsgn, slop, dlim;
+
+    // slopes in first coordinate direction
+    dlft = slope_type * (q - qMinus);
+    drgt = slope_type * (qPlus - q);
+    dcen = 0.5 * (qPlus - qMinus);
+    dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
+    slop = fmin(fabs(dlft), fabs(drgt));
+    dlim = slop;
+    if ((dlft * drgt) <= ZERO_F)
+      dlim = ZERO_F;
+    return dsgn * fmin(dlim, fabs(dcen));
+
+  } // slope_unsplit_hydro_3d_scalar
 
   /**
    * Compute primitive variables slope (vector dq) from q and its neighbors.
@@ -338,36 +429,36 @@ public:
                                     &(dqX[IW]),
                                     &(dqY[IW]),
                                     &(dqZ[IW]));
-      slope_unsplit_hydro_3d_scalar(q[IBX],
-                                    qPlusX[IBX],
-                                    qMinusX[IBX],
-                                    qPlusY[IBX],
-                                    qMinusY[IBX],
-                                    qPlusZ[IBX],
-                                    qMinusZ[IBX],
-                                    &(dqX[IBX]),
-                                    &(dqY[IBX]),
-                                    &(dqZ[IBX]));
-      slope_unsplit_hydro_3d_scalar(q[IBY],
-                                    qPlusX[IBY],
-                                    qMinusX[IBY],
-                                    qPlusY[IBY],
-                                    qMinusY[IBY],
-                                    qPlusZ[IBY],
-                                    qMinusZ[IBY],
-                                    &(dqX[IBY]),
-                                    &(dqY[IBY]),
-                                    &(dqZ[IBY]));
-      slope_unsplit_hydro_3d_scalar(q[IBZ],
-                                    qPlusX[IBZ],
-                                    qMinusX[IBZ],
-                                    qPlusY[IBZ],
-                                    qMinusY[IBZ],
-                                    qPlusZ[IBZ],
-                                    qMinusY[IBZ],
-                                    &(dqX[IBZ]),
-                                    &(dqY[IBZ]),
-                                    &(dqZ[IBZ]));
+      slope_unsplit_hydro_3d_scalar(q[IA],
+                                    qPlusX[IA],
+                                    qMinusX[IA],
+                                    qPlusY[IA],
+                                    qMinusY[IA],
+                                    qPlusZ[IA],
+                                    qMinusZ[IA],
+                                    &(dqX[IA]),
+                                    &(dqY[IA]),
+                                    &(dqZ[IA]));
+      slope_unsplit_hydro_3d_scalar(q[IB],
+                                    qPlusX[IB],
+                                    qMinusX[IB],
+                                    qPlusY[IB],
+                                    qMinusY[IB],
+                                    qPlusZ[IB],
+                                    qMinusZ[IB],
+                                    &(dqX[IB]),
+                                    &(dqY[IB]),
+                                    &(dqZ[IB]));
+      slope_unsplit_hydro_3d_scalar(q[IC],
+                                    qPlusX[IC],
+                                    qMinusX[IC],
+                                    qPlusY[IC],
+                                    qMinusY[IC],
+                                    qPlusZ[IC],
+                                    qMinusY[IC],
+                                    &(dqX[IC]),
+                                    &(dqY[IC]),
+                                    &(dqZ[IC]));
     }
     else
     {
@@ -388,17 +479,60 @@ public:
       dqX[IW] = ZERO_F;
       dqY[IW] = ZERO_F;
       dqZ[IW] = ZERO_F;
-      dqX[IBX] = ZERO_F;
-      dqY[IBX] = ZERO_F;
-      dqZ[IBX] = ZERO_F;
-      dqX[IBY] = ZERO_F;
-      dqY[IBY] = ZERO_F;
-      dqZ[IBY] = ZERO_F;
-      dqX[IBZ] = ZERO_F;
-      dqY[IBZ] = ZERO_F;
-      dqZ[IBZ] = ZERO_F;
+      dqX[IA] = ZERO_F;
+      dqY[IA] = ZERO_F;
+      dqZ[IA] = ZERO_F;
+      dqX[IB] = ZERO_F;
+      dqY[IB] = ZERO_F;
+      dqZ[IB] = ZERO_F;
+      dqX[IC] = ZERO_F;
+      dqY[IC] = ZERO_F;
+      dqZ[IC] = ZERO_F;
 
       return;
+    }
+
+  } // slope_unsplit_hydro_3d
+
+  /**
+   * Compute primitive variables slopes (vector dq) from q and its neighbors using cell-centered
+   * values.
+   * This routine is only used in the 3D UNSPLIT integration and slope_type = 1 or 2.
+   *
+   * Only slope_type 1 and 2 are supported.
+   *
+   * \param[in]  q     : primitive variable state in center cell
+   * \param[in]  qp    : primitive variable state in center cell plus one
+   * \param[in]  qm    : primitive variable state in center cell minus one
+   * \param[out] dq    : reference to a slope state
+   *
+   */
+  KOKKOS_INLINE_FUNCTION void
+  slope_unsplit_hydro_3d(MHDState const & q,
+                         MHDState const & qp,
+                         MHDState const & qm,
+                         MHDState &       dq) const
+  {
+    real_t slope_type = params.settings.slope_type;
+
+    // index of current cell in the neighborhood
+    enum
+    {
+      CENTER = 1
+    };
+
+
+    if (slope_type == 1 or slope_type == 2)
+    { // minmod or average
+
+      dq[ID] = slope_unsplit_hydro_3d_scalar(q[ID], qp[ID], qm[ID]);
+      dq[IP] = slope_unsplit_hydro_3d_scalar(q[IP], qp[IP], qm[IP]);
+      dq[IU] = slope_unsplit_hydro_3d_scalar(q[IU], qp[IU], qm[IU]);
+      dq[IV] = slope_unsplit_hydro_3d_scalar(q[IV], qp[IV], qm[IV]);
+      dq[IW] = slope_unsplit_hydro_3d_scalar(q[IW], qp[IW], qm[IW]);
+      dq[IA] = slope_unsplit_hydro_3d_scalar(q[IA], qp[IA], qm[IA]);
+      dq[IB] = slope_unsplit_hydro_3d_scalar(q[IB], qp[IB], qm[IB]);
+      dq[IC] = slope_unsplit_hydro_3d_scalar(q[IC], qp[IC], qm[IC]);
     }
 
   } // slope_unsplit_hydro_3d
@@ -618,9 +752,9 @@ public:
     real_t u = q[IU];
     real_t v = q[IV];
     real_t w = q[IW];
-    real_t A = q[IBX];
-    real_t B = q[IBY];
-    real_t C = q[IBZ];
+    real_t A = q[IA];
+    real_t B = q[IB];
+    real_t C = q[IC];
 
     // Face centered variables
     real_t AL = bfNb[0];
@@ -641,9 +775,9 @@ public:
     dvx *= HALF_F;
     real_t & dwx = dq[IX][IW];
     dwx *= HALF_F;
-    real_t & dCx = dq[IX][IBZ];
+    real_t & dCx = dq[IX][IC];
     dCx *= HALF_F;
-    real_t & dBx = dq[IX][IBY];
+    real_t & dBx = dq[IX][IB];
     dBx *= HALF_F;
 
     // Cell centered TVD slopes in Y direction
@@ -657,9 +791,9 @@ public:
     dvy *= HALF_F;
     real_t & dwy = dq[IY][IW];
     dwy *= HALF_F;
-    real_t & dCy = dq[IY][IBZ];
+    real_t & dCy = dq[IY][IC];
     dCy *= HALF_F;
-    real_t & dAy = dq[IY][IBX];
+    real_t & dAy = dq[IY][IA];
     dAy *= HALF_F;
 
     // Cell centered TVD slopes in Z direction
@@ -673,9 +807,9 @@ public:
     dvz *= HALF_F;
     real_t & dwz = dq[IZ][IW];
     dwz *= HALF_F;
-    real_t & dAz = dq[IZ][IBX];
+    real_t & dAz = dq[IZ][IA];
     dAz *= HALF_F;
-    real_t & dBz = dq[IZ][IBY];
+    real_t & dBz = dq[IZ][IB];
     dBz *= HALF_F;
 
 
@@ -767,9 +901,9 @@ public:
     qp[0][IV] = v - dvx;
     qp[0][IW] = w - dwx;
     qp[0][IP] = p - dpx;
-    qp[0][IBX] = AL;
-    qp[0][IBY] = B - dBx;
-    qp[0][IBZ] = C - dCx;
+    qp[0][IA] = AL;
+    qp[0][IB] = B - dBx;
+    qp[0][IC] = C - dCx;
     qp[0][ID] = fmax(smallR, qp[0][ID]);
     qp[0][IP] = fmax(smallp /** qp[0][ID]*/, qp[0][IP]);
 
@@ -779,9 +913,9 @@ public:
     qm[0][IV] = v + dvx;
     qm[0][IW] = w + dwx;
     qm[0][IP] = p + dpx;
-    qm[0][IBX] = AR;
-    qm[0][IBY] = B + dBx;
-    qm[0][IBZ] = C + dCx;
+    qm[0][IA] = AR;
+    qm[0][IB] = B + dBx;
+    qm[0][IC] = C + dCx;
     qm[0][ID] = fmax(smallR, qm[0][ID]);
     qm[0][IP] = fmax(smallp /** qm[0][ID]*/, qm[0][IP]);
 
@@ -791,9 +925,9 @@ public:
     qp[1][IV] = v - dvy;
     qp[1][IW] = w - dwy;
     qp[1][IP] = p - dpy;
-    qp[1][IBX] = A - dAy;
-    qp[1][IBY] = BL;
-    qp[1][IBZ] = C - dCy;
+    qp[1][IA] = A - dAy;
+    qp[1][IB] = BL;
+    qp[1][IC] = C - dCy;
     qp[1][ID] = fmax(smallR, qp[1][ID]);
     qp[1][IP] = fmax(smallp /** qp[1][ID]*/, qp[1][IP]);
 
@@ -803,9 +937,9 @@ public:
     qm[1][IV] = v + dvy;
     qm[1][IW] = w + dwy;
     qm[1][IP] = p + dpy;
-    qm[1][IBX] = A + dAy;
-    qm[1][IBY] = BR;
-    qm[1][IBZ] = C + dCy;
+    qm[1][IA] = A + dAy;
+    qm[1][IB] = BR;
+    qm[1][IC] = C + dCy;
     qm[1][ID] = fmax(smallR, qm[1][ID]);
     qm[1][IP] = fmax(smallp /** qm[1][ID]*/, qm[1][IP]);
 
@@ -815,9 +949,9 @@ public:
     qp[2][IV] = v - dvz;
     qp[2][IW] = w - dwz;
     qp[2][IP] = p - dpz;
-    qp[2][IBX] = A - dAz;
-    qp[2][IBY] = B - dBz;
-    qp[2][IBZ] = CL;
+    qp[2][IA] = A - dAz;
+    qp[2][IB] = B - dBz;
+    qp[2][IC] = CL;
     qp[2][ID] = fmax(smallR, qp[2][ID]);
     qp[2][IP] = fmax(smallp /** qp[2][ID]*/, qp[2][IP]);
 
@@ -827,9 +961,9 @@ public:
     qm[2][IV] = v + dvz;
     qm[2][IW] = w + dwz;
     qm[2][IP] = p + dpz;
-    qm[2][IBX] = A + dAz;
-    qm[2][IBY] = B + dBz;
-    qm[2][IBZ] = CR;
+    qm[2][IA] = A + dAz;
+    qm[2][IB] = B + dBz;
+    qm[2][IC] = CR;
     qm[2][ID] = fmax(smallR, qm[2][ID]);
     qm[2][IP] = fmax(smallp /** qm[2][ID]*/, qm[2][IP]);
 
@@ -839,9 +973,9 @@ public:
     qRT_X[IV] = v + (+dvy + dvz);
     qRT_X[IW] = w + (+dwy + dwz);
     qRT_X[IP] = p + (+dpy + dpz);
-    qRT_X[IBX] = A + (+dAy + dAz);
-    qRT_X[IBY] = BR + (+dBRz);
-    qRT_X[IBZ] = CR + (+dCRy);
+    qRT_X[IA] = A + (+dAy + dAz);
+    qRT_X[IB] = BR + (+dBRz);
+    qRT_X[IC] = CR + (+dCRy);
     qRT_X[ID] = fmax(smallR, qRT_X[ID]);
     qRT_X[IP] = fmax(smallp /** qRT_X[ID]*/, qRT_X[IP]);
 
@@ -851,9 +985,9 @@ public:
     qRB_X[IV] = v + (+dvy - dvz);
     qRB_X[IW] = w + (+dwy - dwz);
     qRB_X[IP] = p + (+dpy - dpz);
-    qRB_X[IBX] = A + (+dAy - dAz);
-    qRB_X[IBY] = BR + (-dBRz);
-    qRB_X[IBZ] = CL + (+dCLy);
+    qRB_X[IA] = A + (+dAy - dAz);
+    qRB_X[IB] = BR + (-dBRz);
+    qRB_X[IC] = CL + (+dCLy);
     qRB_X[ID] = fmax(smallR, qRB_X[ID]);
     qRB_X[IP] = fmax(smallp /** qRB_X[ID]*/, qRB_X[IP]);
 
@@ -863,9 +997,9 @@ public:
     qLT_X[IV] = v + (-dvy + dvz);
     qLT_X[IW] = w + (-dwy + dwz);
     qLT_X[IP] = p + (-dpy + dpz);
-    qLT_X[IBX] = A + (-dAy + dAz);
-    qLT_X[IBY] = BL + (+dBLz);
-    qLT_X[IBZ] = CR + (-dCRy);
+    qLT_X[IA] = A + (-dAy + dAz);
+    qLT_X[IB] = BL + (+dBLz);
+    qLT_X[IC] = CR + (-dCRy);
     qLT_X[ID] = fmax(smallR, qLT_X[ID]);
     qLT_X[IP] = fmax(smallp /** qLT_X[ID]*/, qLT_X[IP]);
 
@@ -875,9 +1009,9 @@ public:
     qLB_X[IV] = v + (-dvy - dvz);
     qLB_X[IW] = w + (-dwy - dwz);
     qLB_X[IP] = p + (-dpy - dpz);
-    qLB_X[IBX] = A + (-dAy - dAz);
-    qLB_X[IBY] = BL + (-dBLz);
-    qLB_X[IBZ] = CL + (-dCLy);
+    qLB_X[IA] = A + (-dAy - dAz);
+    qLB_X[IB] = BL + (-dBLz);
+    qLB_X[IC] = CL + (-dCLy);
     qLB_X[ID] = fmax(smallR, qLB_X[ID]);
     qLB_X[IP] = fmax(smallp /** qLB_X[ID]*/, qLB_X[IP]);
 
@@ -887,9 +1021,9 @@ public:
     qRT_Y[IV] = v + (+dvx + dvz);
     qRT_Y[IW] = w + (+dwx + dwz);
     qRT_Y[IP] = p + (+dpx + dpz);
-    qRT_Y[IBX] = AR + (+dARz);
-    qRT_Y[IBY] = B + (+dBx + dBz);
-    qRT_Y[IBZ] = CR + (+dCRx);
+    qRT_Y[IA] = AR + (+dARz);
+    qRT_Y[IB] = B + (+dBx + dBz);
+    qRT_Y[IC] = CR + (+dCRx);
     qRT_Y[ID] = fmax(smallR, qRT_Y[ID]);
     qRT_Y[IP] = fmax(smallp /** qRT_Y[ID]*/, qRT_Y[IP]);
 
@@ -899,9 +1033,9 @@ public:
     qRB_Y[IV] = v + (+dvx - dvz);
     qRB_Y[IW] = w + (+dwx - dwz);
     qRB_Y[IP] = p + (+dpx - dpz);
-    qRB_Y[IBX] = AR + (-dARz);
-    qRB_Y[IBY] = B + (+dBx - dBz);
-    qRB_Y[IBZ] = CL + (+dCLx);
+    qRB_Y[IA] = AR + (-dARz);
+    qRB_Y[IB] = B + (+dBx - dBz);
+    qRB_Y[IC] = CL + (+dCLx);
     qRB_Y[ID] = fmax(smallR, qRB_Y[ID]);
     qRB_Y[IP] = fmax(smallp /** qRB_Y[ID]*/, qRB_Y[IP]);
 
@@ -911,9 +1045,9 @@ public:
     qLT_Y[IV] = v + (-dvx + dvz);
     qLT_Y[IW] = w + (-dwx + dwz);
     qLT_Y[IP] = p + (-dpx + dpz);
-    qLT_Y[IBX] = AL + (+dALz);
-    qLT_Y[IBY] = B + (-dBx + dBz);
-    qLT_Y[IBZ] = CR + (-dCRx);
+    qLT_Y[IA] = AL + (+dALz);
+    qLT_Y[IB] = B + (-dBx + dBz);
+    qLT_Y[IC] = CR + (-dCRx);
     qLT_Y[ID] = fmax(smallR, qLT_Y[ID]);
     qLT_Y[IP] = fmax(smallp /** qLT_Y[ID]*/, qLT_Y[IP]);
 
@@ -923,9 +1057,9 @@ public:
     qLB_Y[IV] = v + (-dvx - dvz);
     qLB_Y[IW] = w + (-dwx - dwz);
     qLB_Y[IP] = p + (-dpx - dpz);
-    qLB_Y[IBX] = AL + (-dALz);
-    qLB_Y[IBY] = B + (-dBx - dBz);
-    qLB_Y[IBZ] = CL + (-dCLx);
+    qLB_Y[IA] = AL + (-dALz);
+    qLB_Y[IB] = B + (-dBx - dBz);
+    qLB_Y[IC] = CL + (-dCLx);
     qLB_Y[ID] = fmax(smallR, qLB_Y[ID]);
     qLB_Y[IP] = fmax(smallp /** qLB_Y[ID]*/, qLB_Y[IP]);
 
@@ -935,9 +1069,9 @@ public:
     qRT_Z[IV] = v + (+dvx + dvy);
     qRT_Z[IW] = w + (+dwx + dwy);
     qRT_Z[IP] = p + (+dpx + dpy);
-    qRT_Z[IBX] = AR + (+dARy);
-    qRT_Z[IBY] = BR + (+dBRx);
-    qRT_Z[IBZ] = C + (+dCx + dCy);
+    qRT_Z[IA] = AR + (+dARy);
+    qRT_Z[IB] = BR + (+dBRx);
+    qRT_Z[IC] = C + (+dCx + dCy);
     qRT_Z[ID] = fmax(smallR, qRT_Z[ID]);
     qRT_Z[IP] = fmax(smallp /** qRT_Z[ID]*/, qRT_Z[IP]);
 
@@ -947,9 +1081,9 @@ public:
     qRB_Z[IV] = v + (+dvx - dvy);
     qRB_Z[IW] = w + (+dwx - dwy);
     qRB_Z[IP] = p + (+dpx - dpy);
-    qRB_Z[IBX] = AR + (-dARy);
-    qRB_Z[IBY] = BL + (+dBLx);
-    qRB_Z[IBZ] = C + (+dCx - dCy);
+    qRB_Z[IA] = AR + (-dARy);
+    qRB_Z[IB] = BL + (+dBLx);
+    qRB_Z[IC] = C + (+dCx - dCy);
     qRB_Z[ID] = fmax(smallR, qRB_Z[ID]);
     qRB_Z[IP] = fmax(smallp /** qRB_Z[ID]*/, qRB_Z[IP]);
 
@@ -959,9 +1093,9 @@ public:
     qLT_Z[IV] = v + (-dvx + dvy);
     qLT_Z[IW] = w + (-dwx + dwy);
     qLT_Z[IP] = p + (-dpx + dpy);
-    qLT_Z[IBX] = AL + (+dALy);
-    qLT_Z[IBY] = BR + (-dBRx);
-    qLT_Z[IBZ] = C + (-dCx + dCy);
+    qLT_Z[IA] = AL + (+dALy);
+    qLT_Z[IB] = BR + (-dBRx);
+    qLT_Z[IC] = C + (-dCx + dCy);
     qLT_Z[ID] = fmax(smallR, qLT_Z[ID]);
     qLT_Z[IP] = fmax(smallp /** qLT_Z[ID]*/, qLT_Z[IP]);
 
@@ -971,9 +1105,9 @@ public:
     qLB_Z[IV] = v + (-dvx - dvy);
     qLB_Z[IW] = w + (-dwx - dwy);
     qLB_Z[IP] = p + (-dpx - dpy);
-    qLB_Z[IBX] = AL + (-dALy);
-    qLB_Z[IBY] = BL + (-dBLx);
-    qLB_Z[IBZ] = C + (-dCx - dCy);
+    qLB_Z[IA] = AL + (-dALy);
+    qLB_Z[IB] = BL + (-dBLx);
+    qLB_Z[IC] = C + (-dCx - dCy);
     qLB_Z[ID] = fmax(smallR, qLB_Z[ID]);
     qLB_Z[IP] = fmax(smallp /** qLB_Z[ID]*/, qLB_Z[IP]);
 

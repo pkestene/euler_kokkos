@@ -70,6 +70,16 @@ SolverMHDMuscl<3>::make_boundaries(DataArray Udata)
 // ///////////////////////////////////////////////////////////////////
 template <>
 void
+SolverMHDMuscl<2>::computeElectricField(DataArray Udata)
+{
+
+  // call device functor
+  // ComputeElecFieldFunctor2D::apply(params, Udata, Q, ElecField);
+
+} // SolverMHDMuscl<2>::computeElectricField
+
+template <>
+void
 SolverMHDMuscl<3>::computeElectricField(DataArray Udata)
 {
 
@@ -212,6 +222,44 @@ SolverMHDMuscl<3>::computeFluxesAndStore(real_t dt)
 // =======================================================
 // =======================================================
 // //////////////////////////////////////////////////////////////////
+// Compute flux via Riemann solver and update
+// //////////////////////////////////////////////////////////////////
+template <>
+void
+SolverMHDMuscl<2>::computeFluxesAndUpdate(real_t dt, DataArray Udata)
+{
+
+  real_t dtdx = dt / params.dx;
+  real_t dtdy = dt / params.dy;
+
+  // call device functor
+  ComputeFluxesAndUpdateFunctor2D_MHD::apply(params, Qm_x, Qm_y, Qp_x, Qp_y, Udata, dtdx, dtdy);
+
+} // SolverMHDMuscl<2>::computeFluxesAndUpdate
+
+// =======================================================
+// =======================================================
+// //////////////////////////////////////////////////////////////////
+// Compute flux via Riemann solver and update
+// //////////////////////////////////////////////////////////////////
+template <>
+void
+SolverMHDMuscl<3>::computeFluxesAndUpdate(real_t dt, DataArray Udata)
+{
+
+  real_t dtdx = dt / params.dx;
+  real_t dtdy = dt / params.dy;
+  real_t dtdz = dt / params.dz;
+
+  // call device functor
+  ComputeFluxesAndUpdateFunctor3D_MHD::apply(
+    params, Qm_x, Qm_y, Qm_z, Qp_x, Qp_y, Qp_z, Udata, dtdx, dtdy, dtdz);
+
+} // SolverMHDMuscl<3>::computeFluxesAndUpdate
+
+// =======================================================
+// =======================================================
+// //////////////////////////////////////////////////////////////////
 // Compute EMF via 2D Riemann solver and store
 // //////////////////////////////////////////////////////////////////
 template <>
@@ -265,6 +313,60 @@ SolverMHDMuscl<3>::computeEmfAndStore(real_t dt)
 
 // =======================================================
 // =======================================================
+// //////////////////////////////////////////////////////////////////
+// Compute EMF via 2D Riemann solver and update magnetic field
+// //////////////////////////////////////////////////////////////////
+template <>
+void
+SolverMHDMuscl<2>::computeEmfAndUpdate(real_t dt, DataArray Udata)
+{
+
+  real_t dtdx = dt / params.dx;
+  real_t dtdy = dt / params.dy;
+
+  // call device functor
+  ComputeEmfAndUpdateFunctor2D::apply(
+    params, QEdge_RT, QEdge_RB, QEdge_LT, QEdge_LB, Udata, dtdx, dtdy);
+
+} // SolverMHSMuscl<2>::computeEmfAndUpdate
+
+// =======================================================
+// =======================================================
+// //////////////////////////////////////////////////////////////////
+// Compute EMF via 2D Riemann solver and update magnetic field
+// //////////////////////////////////////////////////////////////////
+template <>
+void
+SolverMHDMuscl<3>::computeEmfAndUpdate(real_t dt, DataArray Udata)
+{
+
+  real_t dtdx = dt / params.dx;
+  real_t dtdy = dt / params.dy;
+  real_t dtdz = dt / params.dz;
+
+  // call device functor
+  ComputeEmfAndUpdateFunctor3D::apply(params,
+                                      QEdge_RT,
+                                      QEdge_RB,
+                                      QEdge_LT,
+                                      QEdge_LB,
+                                      QEdge_RT2,
+                                      QEdge_RB2,
+                                      QEdge_LT2,
+                                      QEdge_LB2,
+                                      QEdge_RT3,
+                                      QEdge_RB3,
+                                      QEdge_LT3,
+                                      QEdge_LB3,
+                                      Udata,
+                                      dtdx,
+                                      dtdy,
+                                      dtdz);
+
+} // SolverMHSMuscl<2>::computeEmfAndUpdate
+
+// =======================================================
+// =======================================================
 // ///////////////////////////////////////////
 // Actual computation of Godunov scheme - 2d
 // ///////////////////////////////////////////
@@ -312,6 +414,42 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
     // actual update with emf
     UpdateEmfFunctor2D::apply(params, data_out, Emf1, dtdx, dtdy);
   }
+  else if (params.implementationVersion == 1)
+  {
+    // trace computation: fill arrays qm_x, qm_y, qp_x, qp_y
+    computeTrace(data_in, dt);
+
+    // Compute flux via Riemann solver and update (time integration)
+    computeFluxesAndUpdate(dt, data_out);
+
+    // Compute Emf and update magnetic field
+    computeEmfAndUpdate(dt, data_out);
+  }
+  else if (params.implementationVersion == 2)
+  {
+    // compute limited slopes (for reconstruction)
+    ComputeSlopesFunctor2D_MHD::apply(params, data_in, Q, Slopes_x, Slopes_y);
+
+    // update (cell-centered) primitive variables, perform 1/2 time step
+    ComputeUpdatedPrimVarFunctor2D_MHD::apply(params, data_in, Q, Q2, dtdx, dtdy);
+
+    // compute electric field (v wedge B)
+    ComputeElecFieldFunctor2D::apply(params, data_in, Q, ElecField);
+
+    // compute source term to update face centered magnetic field component at t_{n+1/2}
+    ComputeSourceFaceMagFunctor2D::apply(params, ElecField, sFaceMag, dtdx, dtdy);
+
+    // update at t_{n+1} with hydro flux (across all faces)
+    ComputeFluxAndUpdateAlongDirFunctor2D_MHD<DIR_X>::apply(
+      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
+
+    ComputeFluxAndUpdateAlongDirFunctor2D_MHD<DIR_Y>::apply(
+      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
+
+    ReconstructEdgeComputeEmfAndUpdateFunctor2D::apply(
+      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
+  }
+
   timers[TIMER_NUM_SCHEME]->stop();
 
 } // SolverMHDMuscl2D::godunov_unsplit_impl
@@ -326,13 +464,9 @@ void
 SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, real_t dt)
 {
 
-  real_t dtdx;
-  real_t dtdy;
-  real_t dtdz;
-
-  dtdx = dt / params.dx;
-  dtdy = dt / params.dy;
-  dtdz = dt / params.dz;
+  const real_t dtdx = dt / params.dx;
+  const real_t dtdy = dt / params.dy;
+  const real_t dtdz = dt / params.dz;
 
   // fill ghost cell in data_in
   timers[TIMER_BOUNDARIES]->start();
@@ -372,6 +506,57 @@ SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
 
     // actual update with emf
     UpdateEmfFunctor3D::apply(params, data_out, Emf, dtdx, dtdy, dtdz);
+  }
+  else if (params.implementationVersion == 1)
+  {
+    // compute electric field
+    computeElectricField(data_in);
+
+    // compute magnetic slopes
+    computeMagSlopes(data_in);
+
+    // trace computation: fill arrays qm_x, qm_y, qm_z, qp_x, qp_y, qp_z
+    computeTrace(data_in, dt);
+
+    // Compute flux via Riemann solver and update (time integration)
+    computeFluxesAndUpdate(dt, data_out);
+
+    // Compute Emf and update magnetic field
+    computeEmfAndUpdate(dt, data_out);
+  }
+  else if (params.implementationVersion == 2)
+  {
+    // compute limited slopes (for reconstruction)
+    ComputeSlopesFunctor3D_MHD::apply(params, data_in, Q, Slopes_x, Slopes_y, Slopes_z);
+
+    // update (cell-centered) primitive variables, perform 1/2 time step
+    ComputeUpdatedPrimVarFunctor3D_MHD::apply(params, data_in, Q, Q2, dtdx, dtdy, dtdz);
+
+    // compute electric field (v wedge B)
+    ComputeElecFieldFunctor3D::apply(params, data_in, Q, ElecField);
+
+    // compute source term to update face centered magnetic field component at t_{n+1/2}
+    ComputeSourceFaceMagFunctor3D::apply(params, ElecField, sFaceMag, dtdx, dtdy, dtdz);
+
+    // update hydro variables at t_{n+1}
+    ComputeFluxAndUpdateAlongDirFunctor3D_MHD<DIR_X>::apply(
+      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
+
+    ComputeFluxAndUpdateAlongDirFunctor3D_MHD<DIR_Y>::apply(
+      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
+
+    ComputeFluxAndUpdateAlongDirFunctor3D_MHD<DIR_Z>::apply(
+      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
+
+    // update magnetic field at t_{n+1}
+    ReconstructEdgeComputeEmfAndUpdateFunctor3D<DIR_Z>::apply(
+      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
+
+    ReconstructEdgeComputeEmfAndUpdateFunctor3D<DIR_Y>::apply(
+      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
+
+    ReconstructEdgeComputeEmfAndUpdateFunctor3D<DIR_X>::apply(
+      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
   }
   timers[TIMER_NUM_SCHEME]->stop();
 

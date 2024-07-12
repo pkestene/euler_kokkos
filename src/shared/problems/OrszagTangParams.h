@@ -10,11 +10,22 @@ namespace euler_kokkos
 
 struct OrszagTangParams
 {
+  enum VortexDir : int
+  {
+    X,
+    Y,
+    Z
+  };
 
   // transverse wave vector
   real_t kt;
+  int    vortex_dir;
 
-  OrszagTangParams(ConfigMap & configMap) { kt = configMap.getFloat("OrszagTang", "kt", 0.0); }
+  OrszagTangParams(ConfigMap & configMap)
+  {
+    kt = configMap.getFloat("OrszagTang", "kt", 0.0);
+    vortex_dir = configMap.getInteger("OrszagTang", "vortex_dir", VortexDir::Z);
+  }
 
 }; // struct OrszagTangParams
 

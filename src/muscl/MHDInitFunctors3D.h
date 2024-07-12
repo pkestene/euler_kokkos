@@ -62,9 +62,9 @@ public:
     const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
-    const int i_mpi = 0;
-    const int j_mpi = 0;
-    const int k_mpi = 0;
+    const int                  i_mpi = 0;
+    const int                  j_mpi = 0;
+    const int                  k_mpi = 0;
 #endif
 
     const int nx = params.nx;
@@ -123,9 +123,9 @@ public:
       Udata(i, j, k, IU) = u_out;
       Udata(i, j, k, IV) = v_out;
       Udata(i, j, k, IW) = w_out;
-      Udata(i, j, k, IBX) = Bx_out;
-      Udata(i, j, k, IBY) = By_out;
-      Udata(i, j, k, IBZ) = Bz_out;
+      Udata(i, j, k, IA) = Bx_out;
+      Udata(i, j, k, IB) = By_out;
+      Udata(i, j, k, IC) = Bz_out;
     }
     else
     {
@@ -136,9 +136,9 @@ public:
       Udata(i, j, k, IU) = u_in;
       Udata(i, j, k, IV) = v_in;
       Udata(i, j, k, IW) = w_in;
-      Udata(i, j, k, IBX) = Bx_in;
-      Udata(i, j, k, IBY) = By_in;
-      Udata(i, j, k, IBZ) = Bz_in;
+      Udata(i, j, k, IA) = Bx_in;
+      Udata(i, j, k, IB) = By_in;
+      Udata(i, j, k, IC) = Bz_in;
     }
 
   } // end operator ()
@@ -215,9 +215,9 @@ public:
     const real_t blast_pressure_in = bParams.blast_pressure_in;
     const real_t blast_pressure_out = bParams.blast_pressure_out;
 
-    real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
-    real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
-    real_t z = zmin + dz / 2 + (k + nz * k_mpi - ghostWidth) * dz;
+    const real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
+    const real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
+    const real_t z = zmin + dz / 2 + (k + nz * k_mpi - ghostWidth) * dz;
 
     real_t d2 = (x - blast_center_x) * (x - blast_center_x) +
                 (y - blast_center_y) * (y - blast_center_y) +
@@ -229,9 +229,9 @@ public:
       Udata(i, j, k, IU) = 0.0;
       Udata(i, j, k, IV) = 0.0;
       Udata(i, j, k, IW) = 0.0;
-      Udata(i, j, k, IA) = 0.5;
-      Udata(i, j, k, IB) = 0.5;
-      Udata(i, j, k, IC) = 0.5;
+      Udata(i, j, k, IA) = bParams.blast_bx_in;
+      Udata(i, j, k, IB) = bParams.blast_by_in;
+      Udata(i, j, k, IC) = bParams.blast_bz_in;
       Udata(i, j, k, IP) =
         blast_pressure_in / (gamma0 - 1.0) +
         0.5 * (SQR(Udata(i, j, k, IA)) + SQR(Udata(i, j, k, IB)) + SQR(Udata(i, j, k, IC)));
@@ -242,9 +242,9 @@ public:
       Udata(i, j, k, IU) = 0.0;
       Udata(i, j, k, IV) = 0.0;
       Udata(i, j, k, IW) = 0.0;
-      Udata(i, j, k, IA) = 0.5;
-      Udata(i, j, k, IB) = 0.5;
-      Udata(i, j, k, IC) = 0.5;
+      Udata(i, j, k, IA) = bParams.blast_bx_out;
+      Udata(i, j, k, IB) = bParams.blast_by_out;
+      Udata(i, j, k, IC) = bParams.blast_bz_out;
       Udata(i, j, k, IP) =
         blast_pressure_out / (gamma0 - 1.0) +
         0.5 * (SQR(Udata(i, j, k, IA)) + SQR(Udata(i, j, k, IB)) + SQR(Udata(i, j, k, IC)));
@@ -263,14 +263,12 @@ public:
 class InitOrszagTangFunctor3D : public MHDBaseFunctor3D
 {
 
-private:
-  enum PhaseType
-  {
-    INIT_ALL_VAR_BUT_ENERGY = 0,
-    INIT_ENERGY = 1
-  };
-
 public:
+  struct TagInitTotalEnergy
+  {};
+  struct TagInitOtherVars
+  {};
+
   InitOrszagTangFunctor3D(HydroParams params, OrszagTangParams otParams, DataArray3d Udata)
     : MHDBaseFunctor3D(params)
     , otParams(otParams)
@@ -282,64 +280,48 @@ public:
   {
     InitOrszagTangFunctor3D functor(params, otParams, Udata);
 
-    functor.phase = INIT_ALL_VAR_BUT_ENERGY;
     Kokkos::parallel_for("InitOrszagTangFunctor3D",
-                         Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                         Kokkos::MDRangePolicy<Kokkos::Rank<3>, TagInitOtherVars>(
                            { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
                          functor);
 
-    functor.phase = INIT_ENERGY;
     Kokkos::parallel_for("InitOrszagTangFunctor3D - energy",
-                         Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                         Kokkos::MDRangePolicy<Kokkos::Rank<3>, TagInitTotalEnergy>(
                            { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
                          functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & i, const int & j, const int & k) const
-  {
-
-    if (phase == INIT_ALL_VAR_BUT_ENERGY)
-      init_all_var_but_energy(i, j, k);
-    else if (phase == INIT_ENERGY)
-      init_energy(i, j, k);
-
-  } // end operator ()
-
-  KOKKOS_INLINE_FUNCTION
-  void
-  init_all_var_but_energy(const int & i, const int & j, const int & k) const
+  operator()(TagInitOtherVars const &, const int & i, const int & j, const int & k) const
   {
 
     const int ghostWidth = params.ghostWidth;
 
 #ifdef USE_MPI
-    const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IY];
-    const int k_mpi = params.myMpiPos[IZ];
+    [[maybe_unused]] const int i_mpi = params.myMpiPos[IX];
+    [[maybe_unused]] const int j_mpi = params.myMpiPos[IY];
+    [[maybe_unused]] const int k_mpi = params.myMpiPos[IZ];
 #else
-    const int i_mpi = 0;
-    const int j_mpi = 0;
-    const int k_mpi = 0;
+    [[maybe_unused]] const int i_mpi = 0;
+    [[maybe_unused]] const int j_mpi = 0;
+    [[maybe_unused]] const int k_mpi = 0;
 #endif
-    UNUSED(k_mpi);
 
-    const int nx = params.nx;
-    const int ny = params.ny;
-    const int nz = params.nz;
-    UNUSED(nz);
+    [[maybe_unused]] const int nx = params.nx;
+    [[maybe_unused]] const int ny = params.ny;
+    [[maybe_unused]] const int nz = params.nz;
 
-    const real_t xmin = params.xmin;
-    const real_t ymin = params.ymin;
-    const real_t zmin = params.zmin;
-    const real_t zmax = params.zmax;
-    UNUSED(zmin);
+    [[maybe_unused]] const real_t xmin = params.xmin;
+    [[maybe_unused]] const real_t xmax = params.xmax;
+    [[maybe_unused]] const real_t ymin = params.ymin;
+    [[maybe_unused]] const real_t ymax = params.ymax;
+    [[maybe_unused]] const real_t zmin = params.zmin;
+    [[maybe_unused]] const real_t zmax = params.zmax;
 
-    const double dx = params.dx;
-    const double dy = params.dy;
-    const double dz = params.dz;
-    UNUSED(dz);
+    [[maybe_unused]] const double dx = params.dx;
+    [[maybe_unused]] const double dy = params.dy;
+    [[maybe_unused]] const double dz = params.dz;
 
     const real_t gamma0 = params.settings.gamma0;
 
@@ -353,30 +335,75 @@ public:
     double yPos = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
     double zPos = zmin + dz / 2 + (k + nz * k_mpi - ghostWidth) * dz;
 
-    // density
-    Udata(i, j, k, ID) = d0;
+    if (otParams.vortex_dir == OrszagTangParams::VortexDir::Z)
+    {
+      // density
+      Udata(i, j, k, ID) = d0;
 
-    // rho*vx
-    Udata(i, j, k, IU) = static_cast<real_t>(-d0 * v0 * sin(yPos * TWOPI_F));
+      // rho*vx
+      Udata(i, j, k, IU) = static_cast<real_t>(-d0 * v0 * sin(yPos * TWOPI_F));
 
-    // rho*vy
-    Udata(i, j, k, IV) = static_cast<real_t>(d0 * v0 * sin(xPos * TWOPI_F));
+      // rho*vy
+      Udata(i, j, k, IV) = static_cast<real_t>(d0 * v0 * sin(xPos * TWOPI_F));
 
-    // rho*vz
-    Udata(i, j, k, IW) = ZERO_F;
+      // rho*vz
+      Udata(i, j, k, IW) = ZERO_F;
 
-    // bx, by, bz
-    Udata(i, j, k, IBX) =
-      -B0 * cos(2 * TWOPI_F * kt * (zPos - zmin) / (zmax - zmin)) * sin(yPos * TWOPI_F);
-    Udata(i, j, k, IBY) =
-      B0 * cos(2 * TWOPI_F * kt * (zPos - zmin) / (zmax - zmin)) * sin(2.0 * xPos * TWOPI_F);
-    Udata(i, j, k, IBZ) = 0.0;
+      // bx, by, bz
+      Udata(i, j, k, IA) =
+        -B0 * cos(2 * TWOPI_F * kt * (zPos - zmin) / (zmax - zmin)) * sin(yPos * TWOPI_F);
+      Udata(i, j, k, IB) =
+        B0 * cos(2 * TWOPI_F * kt * (zPos - zmin) / (zmax - zmin)) * sin(2.0 * xPos * TWOPI_F);
+      Udata(i, j, k, IC) = 0.0;
+    }
+    else if (otParams.vortex_dir == OrszagTangParams::VortexDir::X)
+    {
+      // density
+      Udata(i, j, k, ID) = d0;
+
+      // rho*vx
+      Udata(i, j, k, IV) = static_cast<real_t>(-d0 * v0 * sin(zPos * TWOPI_F));
+
+      // rho*vy
+      Udata(i, j, k, IW) = static_cast<real_t>(d0 * v0 * sin(yPos * TWOPI_F));
+
+      // rho*vz
+      Udata(i, j, k, IU) = ZERO_F;
+
+      // bx, by, bz
+      Udata(i, j, k, IB) =
+        -B0 * cos(2 * TWOPI_F * kt * (xPos - xmin) / (xmax - xmin)) * sin(zPos * TWOPI_F);
+      Udata(i, j, k, IC) =
+        B0 * cos(2 * TWOPI_F * kt * (xPos - xmin) / (xmax - xmin)) * sin(2.0 * yPos * TWOPI_F);
+      Udata(i, j, k, IA) = 0.0;
+    }
+    else if (otParams.vortex_dir == OrszagTangParams::VortexDir::Y)
+    {
+      // density
+      Udata(i, j, k, ID) = d0;
+
+      // rho*vx
+      Udata(i, j, k, IW) = static_cast<real_t>(-d0 * v0 * sin(xPos * TWOPI_F));
+
+      // rho*vy
+      Udata(i, j, k, IU) = static_cast<real_t>(d0 * v0 * sin(zPos * TWOPI_F));
+
+      // rho*vz
+      Udata(i, j, k, IV) = ZERO_F;
+
+      // bx, by, bz
+      Udata(i, j, k, IC) =
+        -B0 * cos(2 * TWOPI_F * kt * (yPos - ymin) / (ymax - ymin)) * sin(xPos * TWOPI_F);
+      Udata(i, j, k, IA) =
+        B0 * cos(2 * TWOPI_F * kt * (yPos - ymin) / (ymax - ymin)) * sin(2.0 * zPos * TWOPI_F);
+      Udata(i, j, k, IB) = 0.0;
+    }
 
   } // init_all_var_but_energy
 
   KOKKOS_INLINE_FUNCTION
   void
-  init_energy(const int & i, const int & j, const int & k) const
+  operator()(TagInitTotalEnergy const &, const int & i, const int & j, const int & k) const
   {
 
     const int isize = params.isize;
@@ -401,15 +428,14 @@ public:
       Udata(i, j, k, IP) =
         p0 / (gamma0 - 1.0) + 0.5 * (SQR(Udata(i, j, k, IU)) / Udata(i, j, k, ID) +
                                      SQR(Udata(i, j, k, IV)) / Udata(i, j, k, ID) +
-                                     0.25 * SQR(Udata(i, j, k, IBX) + Udata(i + 1, j, k, IBX)) +
-                                     0.25 * SQR(Udata(i, j, k, IBY) + Udata(i, j + 1, k, IBY)));
+                                     0.25 * SQR(Udata(i, j, k, IA) + Udata(i + 1, j, k, IA)) +
+                                     0.25 * SQR(Udata(i, j, k, IB) + Udata(i, j + 1, k, IB)));
     }
 
   } // init_energy
 
-  OrszagTangParams otParams;
+  const OrszagTangParams otParams;
   DataArray3d      Udata;
-  PhaseType        phase;
 
 }; // InitOrszagTangFunctor3D
 
@@ -449,9 +475,9 @@ public:
     const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
-    const int i_mpi = 0;
-    const int j_mpi = 0;
-    const int k_mpi = 0;
+    const int                  i_mpi = 0;
+    const int                  j_mpi = 0;
+    const int                  k_mpi = 0;
 #endif
 
     const int nx = params.nx;
@@ -562,9 +588,9 @@ public:
       Udata(i, j, k, IV) = d * v;
       Udata(i, j, k, IW) = d * w;
 
-      Udata(i, j, k, IBX) = bx;
-      Udata(i, j, k, IBY) = by;
-      Udata(i, j, k, IBZ) = bz;
+      Udata(i, j, k, IA) = bx;
+      Udata(i, j, k, IB) = by;
+      Udata(i, j, k, IC) = bz;
 
       Udata(i, j, k, IP) = pressure / (gamma0 - 1.0) + 0.5 * d * (u * u + v * v + w * w) +
                            0.5 * (bx * bx + by * by + bz * bz);
@@ -592,9 +618,9 @@ public:
       Udata(i, j, k, IV) = d * v;
       Udata(i, j, k, IW) = d * w;
 
-      Udata(i, j, k, IBX) = bx;
-      Udata(i, j, k, IBY) = by;
-      Udata(i, j, k, IBZ) = bz;
+      Udata(i, j, k, IA) = bx;
+      Udata(i, j, k, IB) = by;
+      Udata(i, j, k, IC) = bz;
 
       Udata(i, j, k, IP) = pressure / (gamma0 - 1.0) + 0.5 * d * (u * u + v * v + w * w) +
                            0.5 * (bx * bx + by * by + bz * bz);

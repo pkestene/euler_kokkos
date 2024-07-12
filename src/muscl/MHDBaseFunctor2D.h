@@ -48,7 +48,7 @@ public:
    */
   KOKKOS_INLINE_FUNCTION
   void
-  get_state(DataArray data, int i, int j, MHDState & q) const
+  get_state(DataArray const & data, int i, int j, MHDState & q) const
   {
 
     q[ID] = data(i, j, ID);
@@ -56,9 +56,9 @@ public:
     q[IU] = data(i, j, IU);
     q[IV] = data(i, j, IV);
     q[IW] = data(i, j, IW);
-    q[IBX] = data(i, j, IBX);
-    q[IBY] = data(i, j, IBY);
-    q[IBZ] = data(i, j, IBZ);
+    q[IA] = data(i, j, IA);
+    q[IB] = data(i, j, IB);
+    q[IC] = data(i, j, IC);
 
   } // get_state
 
@@ -75,9 +75,9 @@ public:
     data(i, j, IU) = q[IU];
     data(i, j, IV) = q[IV];
     data(i, j, IW) = q[IW];
-    data(i, j, IBX) = q[IBX];
-    data(i, j, IBY) = q[IBY];
-    data(i, j, IBZ) = q[IBZ];
+    data(i, j, IA) = q[IA];
+    data(i, j, IB) = q[IB];
+    data(i, j, IC) = q[IC];
 
   } // set_state
 
@@ -89,11 +89,70 @@ public:
   get_magField(const DataArray & data, int i, int j, BField & b) const
   {
 
-    b[IBFX] = data(i, j, IBX);
-    b[IBFY] = data(i, j, IBY);
-    b[IBFZ] = data(i, j, IBZ);
+    b[IBFX] = data(i, j, IA);
+    b[IBFY] = data(i, j, IB);
+    b[IBFZ] = data(i, j, IC);
 
   } // get_magField
+
+  /**
+   * Compute slopes of face-centered magnetic field along normal direction
+   *
+   * \param[in] data is Conservative data array (which is the one containing face-centered magnetic
+   * field components)
+   * \param[in] i x-coordinate
+   * \param[in] j y-coordinate
+   *
+   * \return db magnetic slopes
+   */
+  KOKKOS_INLINE_FUNCTION
+  BField
+  compute_normal_mag_field_slopes(const DataArray & data, int i, int j) const
+  {
+
+    BField db;
+
+    // clang-format off
+    db[IX] = data(i + 1, j    , IA) - data(i, j, IA);
+    db[IY] = data(i    , j + 1, IB) - data(i, j, IB);
+    db[IZ] = 0.0;
+    // clang-format on
+
+    return db;
+  } // compute_normal_mag_field_slopes
+
+  /**
+   * Compute limited slope of face centered magnetic field component.
+   *
+   * \param[in] udata is a conservative variable array
+   */
+  template <Direction dir>
+  KOKKOS_INLINE_FUNCTION real_t
+  compute_limited_slope(DataArray udata, int i, int j, int component) const
+  {
+    KOKKOS_ASSERT(((component == IA) or (component == IB) or (component == IC)) &&
+                  "Wrong component index for a magnetic field.");
+
+    constexpr auto delta_i = dir == DIR_X ? 1 : 0;
+    constexpr auto delta_j = dir == DIR_Y ? 1 : 0;
+
+    // clang-format off
+    const auto b       = udata(i          , j          , component);
+    const auto b_plus  = udata(i + delta_i, j + delta_j, component);
+    const auto b_minus = udata(i - delta_i, j - delta_j, component);
+    // clang-format on
+
+    const real_t dlft = params.settings.slope_type * (b - b_minus);
+    const real_t drgt = params.settings.slope_type * (b_plus - b);
+    const real_t dcen = HALF_F * (b_plus - b_minus);
+    const real_t dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
+    const real_t slop = fmin(fabs(dlft), fabs(drgt));
+    real_t       dlim = slop;
+    if ((dlft * drgt) <= ZERO_F)
+      dlim = ZERO_F;
+    return dsgn * fmin(dlim, fabs(dcen));
+
+  } // compute_limited_slope
 
   /**
    * Equation of state:
@@ -148,13 +207,13 @@ public:
     q[IW] = u[IW] / q[ID];
 
     // compute cell-centered magnetic field
-    q[IBX] = 0.5 * (u[IBX] + magFieldNeighbors[0]);
-    q[IBY] = 0.5 * (u[IBY] + magFieldNeighbors[1]);
-    q[IBZ] = 0.5 * (u[IBZ] + magFieldNeighbors[2]);
+    q[IA] = 0.5 * (u[IA] + magFieldNeighbors[0]);
+    q[IB] = 0.5 * (u[IB] + magFieldNeighbors[1]);
+    q[IC] = 0.5 * (u[IC] + magFieldNeighbors[2]);
 
     // compute specific kinetic energy and magnetic energy
     real_t eken = 0.5 * (q[IU] * q[IU] + q[IV] * q[IV] + q[IW] * q[IW]);
-    real_t emag = 0.5 * (q[IBX] * q[IBX] + q[IBY] * q[IBY] + q[IBZ] * q[IBZ]);
+    real_t emag = 0.5 * (q[IA] * q[IA] + q[IB] * q[IB] + q[IC] * q[IC]);
 
     // compute pressure
 
@@ -236,6 +295,38 @@ public:
   } // slope_unsplit_hydro_2d_scalar
 
   /**
+   * Compute primitive variables slopes (dqX,dqY) for one component from q and its neighbors.
+   * This routine is only used in the 2D UNSPLIT integration and slope_type = 0,1 and 2.
+   *
+   * Only slope_type 1 and 2 are supported.
+   *
+   * \param[in]  q      : current primitive variable
+   * \param[in]  qPlus  : value in the next neighbor cell
+   * \param[in]  qMinus : value in the previous neighbor cell
+   *
+   */
+  KOKKOS_INLINE_FUNCTION
+  real_t
+  slope_unsplit_hydro_2d_scalar(real_t q, real_t qPlus, real_t qMinus) const
+  {
+    real_t slope_type = params.settings.slope_type;
+
+    real_t dlft, drgt, dcen, dsgn, slop, dlim;
+
+    // slopes in first coordinate direction
+    dlft = slope_type * (q - qMinus);
+    drgt = slope_type * (qPlus - q);
+    dcen = 0.5 * (qPlus - qMinus);
+    dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
+    slop = fmin(fabs(dlft), fabs(drgt));
+    dlim = slop;
+    if ((dlft * drgt) <= ZERO_F)
+      dlim = ZERO_F;
+    return dsgn * fmin(dlim, fabs(dcen));
+
+  } // slope_unsplit_hydro_2d_scalar
+
+  /**
    * Compute primitive variables slope (vector dq) from q and its neighbors.
    * This routine is only used in the 2D UNSPLIT integration and slope_type = 0,1,2 and 3.
    *
@@ -264,11 +355,13 @@ public:
     };
 
     // aliases to input qState neighbors
-    const MHDState & q = qNb[CENTER][CENTER];
-    const MHDState & qPlusX = qNb[CENTER + 1][CENTER];
-    const MHDState & qMinusX = qNb[CENTER - 1][CENTER];
-    const MHDState & qPlusY = qNb[CENTER][CENTER + 1];
-    const MHDState & qMinusY = qNb[CENTER][CENTER - 1];
+    // clang-format off
+    const MHDState & q       = qNb[CENTER    ][CENTER    ];
+    const MHDState & qPlusX  = qNb[CENTER + 1][CENTER    ];
+    const MHDState & qMinusX = qNb[CENTER - 1][CENTER    ];
+    const MHDState & qPlusY  = qNb[CENTER    ][CENTER + 1];
+    const MHDState & qMinusY = qNb[CENTER    ][CENTER - 1];
+    // clang-format on
 
     MHDState & dqX = dq[IX];
     MHDState & dqY = dq[IY];
@@ -287,52 +380,55 @@ public:
       slope_unsplit_hydro_2d_scalar(
         q[IW], qPlusX[IW], qMinusX[IW], qPlusY[IW], qMinusY[IW], &(dqX[IW]), &(dqY[IW]));
       slope_unsplit_hydro_2d_scalar(
-        q[IBX], qPlusX[IBX], qMinusX[IBX], qPlusY[IBX], qMinusY[IBX], &(dqX[IBX]), &(dqY[IBX]));
+        q[IA], qPlusX[IA], qMinusX[IA], qPlusY[IA], qMinusY[IA], &(dqX[IA]), &(dqY[IA]));
       slope_unsplit_hydro_2d_scalar(
-        q[IBY], qPlusX[IBY], qMinusX[IBY], qPlusY[IBY], qMinusY[IBY], &(dqX[IBY]), &(dqY[IBY]));
+        q[IB], qPlusX[IB], qMinusX[IB], qPlusY[IB], qMinusY[IB], &(dqX[IB]), &(dqY[IB]));
       slope_unsplit_hydro_2d_scalar(
-        q[IBZ], qPlusX[IBZ], qMinusX[IBZ], qPlusY[IBZ], qMinusY[IBZ], &(dqX[IBZ]), &(dqY[IBZ]));
+        q[IC], qPlusX[IC], qMinusX[IC], qPlusY[IC], qMinusY[IC], &(dqX[IC]), &(dqY[IC]));
     }
-    // else if (::gParams.slope_type == 3) {
 
-    //   real_t slop, dlim;
-    //   real_t dfll, dflm, dflr, dfml, dfmm, dfmr, dfrl, dfrm, dfrr;
-    //   real_t vmin, vmax;
-    //   real_t dfx, dfy, dff;
+  } // slope_unsplit_hydro_2d
 
-    //   for (int nVar=0; nVar<NVAR_MHD; ++nVar) {
+  /**
+   * Compute primitive variables slopes (vector dq) from q and its neighbors using cell-centered
+   * values.
+   * This routine is only used in the 2D UNSPLIT integration and slope_type = 1 or 2.
+   *
+   * Only slope_type 1 and 2 are supported.
+   *
+   * \param[in]  q     : primitive variable state in center cell
+   * \param[in]  qp    : primitive variable state in center cell plus one
+   * \param[in]  qm    : primitive variable state in center cell minus one
+   * \param[out] dq    : reference to a slope state
+   *
+   */
+  KOKKOS_INLINE_FUNCTION void
+  slope_unsplit_hydro_2d(MHDState const & q,
+                         MHDState const & qp,
+                         MHDState const & qm,
+                         MHDState &       dq) const
+  {
+    real_t slope_type = params.settings.slope_type;
 
-    // 	dfll = qNb[CENTER-1][CENTER-1][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dflm = qNb[CENTER-1][CENTER  ][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dflr = qNb[CENTER-1][CENTER+1][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dfml = qNb[CENTER  ][CENTER-1][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dfmm = qNb[CENTER  ][CENTER  ][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dfmr = qNb[CENTER  ][CENTER+1][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dfrl = qNb[CENTER+1][CENTER-1][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dfrm = qNb[CENTER+1][CENTER  ][nVar]-qNb[CENTER][CENTER][nVar];
-    // 	dfrr = qNb[CENTER+1][CENTER+1][nVar]-qNb[CENTER][CENTER][nVar];
+    // index of current cell in the neighborhood
+    enum
+    {
+      CENTER = 1
+    };
 
-    // 	vmin = FMIN9_(dfll,dflm,dflr,dfml,dfmm,dfmr,dfrl,dfrm,dfrr);
-    // 	vmax = FMAX9_(dfll,dflm,dflr,dfml,dfmm,dfmr,dfrl,dfrm,dfrr);
 
-    // 	dfx  = HALF_F * (qNb[CENTER+1][CENTER  ][nVar] - qNb[CENTER-1][CENTER  ][nVar]);
-    // 	dfy  = HALF_F * (qNb[CENTER  ][CENTER+1][nVar] - qNb[CENTER  ][CENTER-1][nVar]);
-    // 	dff  = HALF_F * (fabs(dfx) + fabs(dfy));
+    if (slope_type == 1 or slope_type == 2)
+    { // minmod or average
 
-    // 	if (dff>ZERO_F) {
-    // 	  slop = fmin(ONE_F, fmin(fabs(vmin), fabs(vmax))/dff);
-    // 	} else {
-    // 	  slop = ONE_F;
-    // 	}
-
-    // 	dlim = slop;
-
-    // 	dqX[nVar] = dlim*dfx;
-    // 	dqY[nVar] = dlim*dfy;
-
-    //   } // end for nVar
-
-    // } // end slope_type
+      dq[ID] = slope_unsplit_hydro_2d_scalar(q[ID], qp[ID], qm[ID]);
+      dq[IP] = slope_unsplit_hydro_2d_scalar(q[IP], qp[IP], qm[IP]);
+      dq[IU] = slope_unsplit_hydro_2d_scalar(q[IU], qp[IU], qm[IU]);
+      dq[IV] = slope_unsplit_hydro_2d_scalar(q[IV], qp[IV], qm[IV]);
+      dq[IW] = slope_unsplit_hydro_2d_scalar(q[IW], qp[IW], qm[IW]);
+      dq[IA] = slope_unsplit_hydro_2d_scalar(q[IA], qp[IA], qm[IA]);
+      dq[IB] = slope_unsplit_hydro_2d_scalar(q[IB], qp[IB], qm[IB]);
+      dq[IC] = slope_unsplit_hydro_2d_scalar(q[IC], qp[IC], qm[IC]);
+    }
 
   } // slope_unsplit_hydro_2d
 
@@ -359,13 +455,16 @@ public:
   void
   slope_unsplit_mhd_2d(const real_t (&bfNeighbors)[6], real_t (&dbf)[2][3]) const
   {
-    /* layout for face centered magnetic field */
-    const real_t & bfx = bfNeighbors[0];
-    const real_t & bfx_yplus = bfNeighbors[1];
+    // layout for face centered magnetic field
+
+    // clang-format off
+    const real_t & bfx        = bfNeighbors[0];
+    const real_t & bfx_yplus  = bfNeighbors[1];
     const real_t & bfx_yminus = bfNeighbors[2];
-    const real_t & bfy = bfNeighbors[3];
-    const real_t & bfy_xplus = bfNeighbors[4];
+    const real_t & bfy        = bfNeighbors[3];
+    const real_t & bfy_xplus  = bfNeighbors[4];
     const real_t & bfy_xminus = bfNeighbors[5];
+    // clang-format on
 
     real_t(&dbfX)[3] = dbf[IX];
     real_t(&dbfY)[3] = dbf[IY];
@@ -408,6 +507,39 @@ public:
     }
 
   } // slope_unsplit_mhd_2d
+
+  /**
+   * Compute electric field E = U ^ B at mid-edge
+   *
+   * \param[in] conservative data array
+   * \param[in] primitive data array
+   * \param[in] x-coordinate
+   * \param[in] y-coordinate
+   *
+   * \return electric field at mid-edge
+   */
+  KOKKOS_INLINE_FUNCTION real_t
+  compute_electric_field_2d(DataArray const & udata, DataArray const & qdata, int i, int j) const
+  {
+    // clang-format off
+    const real_t u = ONE_FOURTH_F * (qdata(i - 1, j - 1, IU) +
+                                     qdata(i - 1, j    , IU) +
+                                     qdata(i    , j - 1, IU) +
+                                     qdata(i    , j    , IU));
+
+    const real_t v = ONE_FOURTH_F * (qdata(i - 1, j - 1, IV) +
+                                     qdata(i - 1, j    , IV) +
+                                     qdata(i    , j - 1, IV) +
+                                     qdata(i    , j    , IV));
+
+
+    const real_t A = HALF_F * (udata(i,j-1,IA) + udata(i,j,IA));
+
+    const real_t B = HALF_F * (udata(i-1,j,IB) + udata(i,j,IB));
+    // clang-format on
+
+    return u * B - v * A;
+  }
 
   /**
    * Trace computations for unsplit Godunov scheme.
@@ -621,11 +753,21 @@ public:
    * computation.
    *
    * \param[in]  qNb        state in neighbor cells (3-by-3 neighborhood indexed as qNb[i][j], for
-   * i,j=0,1,2); current center cell is at index (i=j=1). \param[in]  bfNb       face centered
-   * magnetic field in neighbor cells (4-by-4 neighborhood indexed as bfNb[i][j] for i,j=0,1,2,3);
-   * current cell is located at index (i=j=1) \param[in]  c          local sound speed. \param[in]
-   * dtdx       dt over dx \param[in]  dtdy       dt over dy \param[in]  xPos       x location of
-   * current cell (needed for shear computation) \param[out] qm         qm state (one per dimension)
+   * i,j=0,1,2); current center cell is at index (i=j=1).
+   *
+   * \param[in]  bfNb       face centered
+   * magnetic field in neighbor cells (4-by-4 neighborhood indexed as bfNb[i][j]
+   * for i,j=0,1,2,3); current cell is located at index (i=j=1)
+   *
+   * \param[in]  c          local sound speed.
+   *
+   * \param[in]  dtdx       dt over dx
+   *
+   * \param[in]  dtdy       dt over dy
+   *
+   * \param[in]  xPos       x location of current cell (needed for shear computation)
+   *
+   * \param[out] qm         qm state (one per dimension)
    * \param[out] qp         qp state (one per dimension)
    * \param[out] qEdge      q state on cell edges (qRT, qRB, qLT, qLB)
    */
@@ -673,23 +815,27 @@ public:
     // compute u,v,A,B,Ez (electric field)
     real_t Ez[2][2];
     for (int di = 0; di < 2; di++)
+    {
       for (int dj = 0; dj < 2; dj++)
       {
 
-        int    centerX = CENTER + di;
-        int    centerY = CENTER + dj;
+        int centerX = CENTER + di;
+        int centerY = CENTER + dj;
+        // clang-format off
         real_t u = 0.25f * (qNb[centerX - 1][centerY - 1][IU] + qNb[centerX - 1][centerY][IU] +
-                            qNb[centerX][centerY - 1][IU] + qNb[centerX][centerY][IU]);
+                            qNb[centerX    ][centerY - 1][IU] + qNb[centerX    ][centerY][IU]);
 
         real_t v = 0.25f * (qNb[centerX - 1][centerY - 1][IV] + qNb[centerX - 1][centerY][IV] +
-                            qNb[centerX][centerY - 1][IV] + qNb[centerX][centerY][IV]);
+                            qNb[centerX    ][centerY - 1][IV] + qNb[centerX    ][centerY][IV]);
 
-        real_t A = 0.5f * (bfNb[centerX][centerY - 1][IBFX] + bfNb[centerX][centerY][IBFX]);
+        real_t A = 0.5f * (bfNb[centerX    ][centerY - 1][IBFX] + bfNb[centerX][centerY][IBFX]);
 
-        real_t B = 0.5f * (bfNb[centerX - 1][centerY][IBFY] + bfNb[centerX][centerY][IBFY]);
+        real_t B = 0.5f * (bfNb[centerX - 1][centerY    ][IBFY] + bfNb[centerX][centerY][IBFY]);
+        // clang-format on
 
         Ez[di][dj] = u * B - v * A;
       }
+    }
 
     // Electric field
     real_t & ELL = Ez[0][0];
@@ -703,21 +849,23 @@ public:
     real_t u = q[IU];
     real_t v = q[IV];
     real_t w = q[IW];
-    real_t A = q[IBX];
-    real_t B = q[IBY];
-    real_t C = q[IBZ];
+    real_t A = q[IA];
+    real_t B = q[IB];
+    real_t C = q[IC];
 
     // Face centered variables
-    real_t AL = bfNb[CENTER][CENTER][IBFX];
-    real_t AR = bfNb[CENTER + 1][CENTER][IBFX];
-    real_t BL = bfNb[CENTER][CENTER][IBFY];
-    real_t BR = bfNb[CENTER][CENTER + 1][IBFY];
+    // clang-format off
+    real_t AL = bfNb[CENTER    ][CENTER    ][IBFX];
+    real_t AR = bfNb[CENTER + 1][CENTER    ][IBFX];
+    real_t BL = bfNb[CENTER    ][CENTER    ][IBFY];
+    real_t BR = bfNb[CENTER    ][CENTER + 1][IBFY];
+    // clang-format on
 
     // TODO LATER : compute xL, xR and xC using ::gParam
     // this is only needed when doing cylindrical or spherical coordinates
 
     /*
-     * compute dq slopes
+     * compute hydro slopes
      */
     MHDState dq[2];
 
@@ -738,9 +886,9 @@ public:
     dvx *= 0.5;
     real_t dwx = dq[IX][IW];
     dwx *= 0.5;
-    real_t dCx = dq[IX][IBZ];
+    real_t dCx = dq[IX][IC];
     dCx *= 0.5;
-    real_t dBx = dq[IX][IBY];
+    real_t dBx = dq[IX][IB];
     dBx *= 0.5;
 
     // Cell centered TVD slopes in Y direction
@@ -754,9 +902,9 @@ public:
     dvy *= 0.5;
     real_t dwy = dq[IY][IW];
     dwy *= 0.5;
-    real_t dCy = dq[IY][IBZ];
+    real_t dCy = dq[IY][IC];
     dCy *= 0.5;
-    real_t dAy = dq[IY][IBX];
+    real_t dAy = dq[IY][IA];
     dAy *= 0.5;
 
     /*
@@ -767,12 +915,14 @@ public:
     real_t(&dbfX)[3] = dbf[IX];
     real_t(&dbfY)[3] = dbf[IY];
 
-    bfNeighbors[0] = bfNb[CENTER][CENTER][IBFX];
-    bfNeighbors[1] = bfNb[CENTER][CENTER + 1][IBFX];
-    bfNeighbors[2] = bfNb[CENTER][CENTER - 1][IBFX];
-    bfNeighbors[3] = bfNb[CENTER][CENTER][IBFY];
-    bfNeighbors[4] = bfNb[CENTER + 1][CENTER][IBFY];
-    bfNeighbors[5] = bfNb[CENTER - 1][CENTER][IBFY];
+    // clang-format off
+    bfNeighbors[0] = bfNb[CENTER    ][CENTER    ][IBFX];
+    bfNeighbors[1] = bfNb[CENTER    ][CENTER + 1][IBFX];
+    bfNeighbors[2] = bfNb[CENTER    ][CENTER - 1][IBFX];
+    bfNeighbors[3] = bfNb[CENTER    ][CENTER    ][IBFY];
+    bfNeighbors[4] = bfNb[CENTER + 1][CENTER    ][IBFY];
+    bfNeighbors[5] = bfNb[CENTER - 1][CENTER    ][IBFY];
+    // clang-format on
 
     slope_unsplit_mhd_2d(bfNeighbors, dbf);
 
@@ -781,24 +931,28 @@ public:
     real_t dBLx = 0.5 * dbfX[IY];
 
     // change neighbors to i+1, j and recompute dbf
-    bfNeighbors[0] = bfNb[CENTER + 1][CENTER][IBFX];
+    // clang-format off
+    bfNeighbors[0] = bfNb[CENTER + 1][CENTER    ][IBFX];
     bfNeighbors[1] = bfNb[CENTER + 1][CENTER + 1][IBFX];
     bfNeighbors[2] = bfNb[CENTER + 1][CENTER - 1][IBFX];
-    bfNeighbors[3] = bfNb[CENTER + 1][CENTER][IBFY];
-    bfNeighbors[4] = bfNb[CENTER + 2][CENTER][IBFY];
-    bfNeighbors[5] = bfNb[CENTER][CENTER][IBFY];
+    bfNeighbors[3] = bfNb[CENTER + 1][CENTER    ][IBFY];
+    bfNeighbors[4] = bfNb[CENTER + 2][CENTER    ][IBFY];
+    bfNeighbors[5] = bfNb[CENTER    ][CENTER    ][IBFY];
+    // clang-format on
 
     slope_unsplit_mhd_2d(bfNeighbors, dbf);
 
     real_t dARy = 0.5 * dbfY[IX];
 
     // change neighbors to i, j+1 and recompute dbf
-    bfNeighbors[0] = bfNb[CENTER][CENTER + 1][IBFX];
-    bfNeighbors[1] = bfNb[CENTER][CENTER + 2][IBFX];
-    bfNeighbors[2] = bfNb[CENTER][CENTER][IBFX];
-    bfNeighbors[3] = bfNb[CENTER][CENTER + 1][IBFY];
+    // clang-format off
+    bfNeighbors[0] = bfNb[CENTER    ][CENTER + 1][IBFX];
+    bfNeighbors[1] = bfNb[CENTER    ][CENTER + 2][IBFX];
+    bfNeighbors[2] = bfNb[CENTER    ][CENTER    ][IBFX];
+    bfNeighbors[3] = bfNb[CENTER    ][CENTER + 1][IBFY];
     bfNeighbors[4] = bfNb[CENTER + 1][CENTER + 1][IBFY];
     bfNeighbors[5] = bfNb[CENTER - 1][CENTER + 1][IBFY];
+    // clang-format on
 
     slope_unsplit_mhd_2d(bfNeighbors, dbf);
 
@@ -861,9 +1015,9 @@ public:
     qp[0][IV] = v - dvx;
     qp[0][IW] = w - dwx;
     qp[0][IP] = p - dpx;
-    qp[0][IBX] = AL;
-    qp[0][IBY] = B - dBx;
-    qp[0][IBZ] = C - dCx;
+    qp[0][IA] = AL;
+    qp[0][IB] = B - dBx;
+    qp[0][IC] = C - dCx;
     qp[0][ID] = fmax(smallR, qp[0][ID]);
     qp[0][IP] = fmax(smallp * qp[0][ID], qp[0][IP]);
 
@@ -873,9 +1027,9 @@ public:
     qm[0][IV] = v + dvx;
     qm[0][IW] = w + dwx;
     qm[0][IP] = p + dpx;
-    qm[0][IBX] = AR;
-    qm[0][IBY] = B + dBx;
-    qm[0][IBZ] = C + dCx;
+    qm[0][IA] = AR;
+    qm[0][IB] = B + dBx;
+    qm[0][IC] = C + dCx;
     qm[0][ID] = fmax(smallR, qm[0][ID]);
     qm[0][IP] = fmax(smallp * qm[0][ID], qm[0][IP]);
 
@@ -885,9 +1039,9 @@ public:
     qp[1][IV] = v - dvy;
     qp[1][IW] = w - dwy;
     qp[1][IP] = p - dpy;
-    qp[1][IBX] = A - dAy;
-    qp[1][IBY] = BL;
-    qp[1][IBZ] = C - dCy;
+    qp[1][IA] = A - dAy;
+    qp[1][IB] = BL;
+    qp[1][IC] = C - dCy;
     qp[1][ID] = fmax(smallR, qp[1][ID]);
     qp[1][IP] = fmax(smallp * qp[1][ID], qp[1][IP]);
 
@@ -897,9 +1051,9 @@ public:
     qm[1][IV] = v + dvy;
     qm[1][IW] = w + dwy;
     qm[1][IP] = p + dpy;
-    qm[1][IBX] = A + dAy;
-    qm[1][IBY] = BR;
-    qm[1][IBZ] = C + dCy;
+    qm[1][IA] = A + dAy;
+    qm[1][IB] = BR;
+    qm[1][IC] = C + dCy;
     qm[1][ID] = fmax(smallR, qm[1][ID]);
     qm[1][IP] = fmax(smallp * qm[1][ID], qm[1][IP]);
 
@@ -910,9 +1064,9 @@ public:
     qRT[IV] = v + (+dvx + dvy);
     qRT[IW] = w + (+dwx + dwy);
     qRT[IP] = p + (+dpx + dpy);
-    qRT[IBX] = AR + (+dARy);
-    qRT[IBY] = BR + (+dBRx);
-    qRT[IBZ] = C + (+dCx + dCy);
+    qRT[IA] = AR + (+dARy);
+    qRT[IB] = BR + (+dBRx);
+    qRT[IC] = C + (+dCx + dCy);
     qRT[ID] = fmax(smallR, qRT[ID]);
     qRT[IP] = fmax(smallp * qRT[ID], qRT[IP]);
 
@@ -922,9 +1076,9 @@ public:
     qRB[IV] = v + (+dvx - dvy);
     qRB[IW] = w + (+dwx - dwy);
     qRB[IP] = p + (+dpx - dpy);
-    qRB[IBX] = AR + (-dARy);
-    qRB[IBY] = BL + (+dBLx);
-    qRB[IBZ] = C + (+dCx - dCy);
+    qRB[IA] = AR + (-dARy);
+    qRB[IB] = BL + (+dBLx);
+    qRB[IC] = C + (+dCx - dCy);
     qRB[ID] = fmax(smallR, qRB[ID]);
     qRB[IP] = fmax(smallp * qRB[ID], qRB[IP]);
 
@@ -934,9 +1088,9 @@ public:
     qLB[IV] = v + (-dvx - dvy);
     qLB[IW] = w + (-dwx - dwy);
     qLB[IP] = p + (-dpx - dpy);
-    qLB[IBX] = AL + (-dALy);
-    qLB[IBY] = BL + (-dBLx);
-    qLB[IBZ] = C + (-dCx - dCy);
+    qLB[IA] = AL + (-dALy);
+    qLB[IB] = BL + (-dBLx);
+    qLB[IC] = C + (-dCx - dCy);
     qLB[ID] = fmax(smallR, qLB[ID]);
     qLB[IP] = fmax(smallp * qLB[ID], qLB[IP]);
 
@@ -946,9 +1100,9 @@ public:
     qLT[IV] = v + (-dvx + dvy);
     qLT[IW] = w + (-dwx + dwy);
     qLT[IP] = p + (-dpx + dpy);
-    qLT[IBX] = AL + (+dALy);
-    qLT[IBY] = BR + (-dBRx);
-    qLT[IBZ] = C + (-dCx + dCy);
+    qLT[IA] = AL + (+dALy);
+    qLT[IB] = BR + (-dBRx);
+    qLT[IC] = C + (-dCx + dCy);
     qLT[ID] = fmax(smallR, qLT[ID]);
     qLT[IP] = fmax(smallp * qLT[ID], qLT[IP]);
 

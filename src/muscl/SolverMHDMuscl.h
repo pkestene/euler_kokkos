@@ -73,18 +73,26 @@ public:
     return solver;
   }
 
-  DataArray     U;     /*!< hydrodynamics conservative variables arrays */
-  DataArrayHost Uhost; /*!< U mirror on host memory space */
-  DataArray     U2;    /*!< hydrodynamics conservative variables arrays */
-  DataArray     Q;     /*!< hydrodynamics primitive    variables array  */
+  DataArray     U;     //!< hydrodynamics conservative variables array
+  DataArrayHost Uhost; //!< U mirror on host memory space
+  DataArray     U2;    //!< hydrodynamics conservative variables array
+  DataArray     Q;     //!< hydrodynamics primitive    variables array
+  DataArray Q2; //!< hydrodynamics primitive    variables array at t_{n+1/2} (half time step update)
 
-  DataArray Qm_x; /*!< hydrodynamics Riemann states array implementation 2 */
-  DataArray Qm_y; /*!< hydrodynamics Riemann states array */
-  DataArray Qm_z; /*!< hydrodynamics Riemann states array */
+  /// source term using to compute face centered magnetic field component at t_{n+1/2}
+  DataArray sFaceMag;
 
-  DataArray Qp_x; /*!< hydrodynamics Riemann states array */
-  DataArray Qp_y; /*!< hydrodynamics Riemann states array */
-  DataArray Qp_z; /*!< hydrodynamics Riemann states array */
+  DataArray Slopes_x; //!< implementation 2 only
+  DataArray Slopes_y; //!< implementation 2 only
+  DataArray Slopes_z; //!< implementation 2 only
+
+  DataArray Qm_x; //!< hydrodynamics Riemann states array implementation 2
+  DataArray Qm_y; //!< hydrodynamics Riemann states array
+  DataArray Qm_z; //!< hydrodynamics Riemann states array
+
+  DataArray Qp_x; //!< hydrodynamics Riemann states array
+  DataArray Qp_y; //!< hydrodynamics Riemann states array
+  DataArray Qp_z; //!< hydrodynamics Riemann states array
 
   DataArray QEdge_RT;
   DataArray QEdge_RB;
@@ -105,11 +113,11 @@ public:
   DataArray Fluxes_y;
   DataArray Fluxes_z;
 
-  /* electromotive forces */
+  // electromotive forces
   DataArrayScalar  Emf1; // 2d
   DataArrayVector3 Emf;  // 3d
 
-  DataArrayVector3 ElecField;
+  DataArray ElecField; // 2 or 3 components
 
   DataArrayVector3 DeltaA;
   DataArrayVector3 DeltaB;
@@ -165,6 +173,7 @@ public:
 
   void
   computeElectricField(DataArray Udata);
+
   void
   computeMagSlopes(DataArray Udata);
 
@@ -173,8 +182,15 @@ public:
 
   void
   computeFluxesAndStore(real_t dt);
+
+  void
+  computeFluxesAndUpdate(real_t dt, DataArray Udata);
+
   void
   computeEmfAndStore(real_t dt);
+
+  void
+  computeEmfAndUpdate(real_t dt, DataArray Udata);
 
   // output
   void
@@ -199,6 +215,11 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
   , U()
   , U2()
   , Q()
+  , Q2()
+  , sFaceMag()
+  , Slopes_x()
+  , Slopes_y()
+  , Slopes_z()
   , Qm_x()
   , Qm_y()
   , Qm_z()
@@ -257,7 +278,7 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
 
     total_mem_size += isize * jsize * nbvar * sizeof(real_t) * 3; // 1+1+1 for U+U2+Q
 
-    if (params.implementationVersion == 0)
+    if (params.implementationVersion == 0 or params.implementationVersion == 1)
     {
 
       Qm_x = DataArray("Qm_x", isize, jsize, nbvar);
@@ -270,13 +291,29 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
       QEdge_LT = DataArray("QEdge_LT", isize, jsize, nbvar);
       QEdge_LB = DataArray("QEdge_LB", isize, jsize, nbvar);
 
+      total_mem_size += isize * jsize * nbvar * sizeof(real_t) * 8;
+    }
+    else if (params.implementationVersion == 2)
+    {
+      Q2 = DataArray("Q2", isize, jsize, nbvar);
+      sFaceMag = DataArray("sFaceMag", isize, jsize, 2);
+      Slopes_x = DataArray("Slope_x", isize, jsize, nbvar);
+      Slopes_y = DataArray("Slope_y", isize, jsize, nbvar);
+      ElecField = DataArray("ElecField", isize, jsize, 1);
+
+      total_mem_size += isize * jsize * nbvar * sizeof(real_t) * (1 + 2);
+      total_mem_size += isize * jsize * 1 * sizeof(real_t) * 1;
+      total_mem_size += isize * jsize * 2 * sizeof(real_t) * 1;
+    }
+
+    if (params.implementationVersion == 0)
+    {
       Fluxes_x = DataArray("Fluxes_x", isize, jsize, nbvar);
       Fluxes_y = DataArray("Fluxes_y", isize, jsize, nbvar);
 
       Emf1 = DataArrayScalar("Emf", isize, jsize);
-
-      total_mem_size +=
-        isize * jsize * nbvar * sizeof(real_t) * 10 + isize * jsize * 1 * sizeof(real_t);
+      total_mem_size += isize * jsize * nbvar * sizeof(real_t) * 2;
+      total_mem_size += isize * jsize * 1 * sizeof(real_t);
     }
   }
   else
@@ -289,7 +326,7 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
 
     total_mem_size += isize * jsize * ksize * nbvar * sizeof(real_t) * 3; // 1+1+1=3 for U+U2+Q
 
-    if (params.implementationVersion == 0)
+    if (params.implementationVersion == 0 or params.implementationVersion == 1)
     {
 
       Qm_x = DataArray("Qm_x", isize, jsize, ksize, nbvar);
@@ -315,22 +352,39 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
       QEdge_LT3 = DataArray("QEdge_LT3", isize, jsize, ksize, nbvar);
       QEdge_LB3 = DataArray("QEdge_LB3", isize, jsize, ksize, nbvar);
 
+      ElecField = DataArray("ElecField", isize, jsize, ksize, 3);
+
+      DeltaA = DataArrayVector3("DeltaA", isize, jsize, ksize);
+      DeltaB = DataArrayVector3("DeltaB", isize, jsize, ksize);
+      DeltaC = DataArrayVector3("DeltaC", isize, jsize, ksize);
+
+      total_mem_size += isize * jsize * ksize * nbvar * sizeof(real_t) * 18 +
+                        isize * jsize * ksize * 3 * sizeof(real_t) * 4;
+    }
+    else if (params.implementationVersion == 2)
+    {
+      Q2 = DataArray("Q2", isize, jsize, ksize, nbvar);
+      sFaceMag = DataArray("sFaceMag", isize, jsize, ksize, 3);
+      Slopes_x = DataArray("Slope_x", isize, jsize, ksize, nbvar);
+      Slopes_y = DataArray("Slope_y", isize, jsize, ksize, nbvar);
+      Slopes_z = DataArray("Slope_z", isize, jsize, ksize, nbvar);
+      ElecField = DataArray("ElecField", isize, jsize, ksize, 3);
+
+      total_mem_size += isize * jsize * ksize * nbvar * sizeof(real_t) * (1 + 3) +
+                        isize * jsize * ksize * 3 * sizeof(real_t) * 2;
+    }
+
+    if (params.implementationVersion == 0)
+    {
       Fluxes_x = DataArray("Fluxes_x", isize, jsize, ksize, nbvar);
       Fluxes_y = DataArray("Fluxes_y", isize, jsize, ksize, nbvar);
       Fluxes_z = DataArray("Fluxes_z", isize, jsize, ksize, nbvar);
 
       Emf = DataArrayVector3("Emf", isize, jsize, ksize);
 
-      ElecField = DataArrayVector3("ElecField", isize, jsize, ksize);
-
-      DeltaA = DataArrayVector3("DeltaA", isize, jsize, ksize);
-      DeltaB = DataArrayVector3("DeltaB", isize, jsize, ksize);
-      DeltaC = DataArrayVector3("DeltaC", isize, jsize, ksize);
-
-      total_mem_size += isize * jsize * ksize * nbvar * sizeof(real_t) * 21 +
-                        isize * jsize * ksize * 3 * sizeof(real_t) * 5;
+      total_mem_size += isize * jsize * ksize * nbvar * sizeof(real_t) * 3 +
+                        isize * jsize * ksize * 3 * sizeof(real_t) * 1;
     }
-
   } // dim == 2 / 3
 
   // perform init condition
@@ -789,9 +843,14 @@ void
 SolverMHDMuscl<dim>::computeElectricField(DataArray Udata)
 {
 
-  // NA, 3D only
+  // 2d / 3d implementation are specialized
 
 } // SolverMHDMuscl<dim>::computeElectricField
+
+// 2d
+template <>
+void
+SolverMHDMuscl<2>::computeElectricField(DataArray Udata);
 
 // 3d
 template <>

@@ -16,18 +16,24 @@ enum DimensionType
 //! hydro field indexes
 enum VarIndex
 {
-  ID = 0,  /*!< ID Density field index */
-  IP = 1,  /*!< IP Pressure/Energy field index */
-  IE = 1,  /*!< IE Energy/Pressure field index */
-  IU = 2,  /*!< X velocity / momentum index */
-  IV = 3,  /*!< Y velocity / momentum index */
-  IW = 4,  /*!< Z velocity / momentum index */
-  IA = 5,  /*!< X magnetic field index */
-  IB = 6,  /*!< Y magnetic field index */
-  IC = 7,  /*!< Z magnetic field index */
-  IBX = 5, /*!< X magnetic field index */
-  IBY = 6, /*!< Y magnetic field index */
-  IBZ = 7, /*!< Z magnetic field index */
+  ID = 0,   /*!< ID Density field index */
+  IP = 1,   /*!< IP Pressure/Energy field index */
+  IE = 1,   /*!< IE Energy/Pressure field index */
+  IU = 2,   /*!< X velocity / momentum index */
+  IV = 3,   /*!< Y velocity / momentum index */
+  IW = 4,   /*!< Z velocity / momentum index */
+  IA = 5,   /*!< X magnetic field index */
+  IB = 6,   /*!< Y magnetic field index */
+  IC = 7,   /*!< Z magnetic field index */
+  IBX = 5,  /*!< X magnetic field index */
+  IBY = 6,  /*!< Y magnetic field index */
+  IBZ = 7,  /*!< Z magnetic field index */
+  IAL = 5,  /*!< X magnetic field index - left face */
+  IBL = 6,  /*!< Y magnetic field index - left face */
+  ICL = 7,  /*!< Z magnetic field index - left face */
+  IAR = 8,  /*!< X magnetic field index - right face */
+  IBR = 9,  /*!< Y magnetic field index - right face */
+  ICR = 10, /*!< Z magnetic field index - right face */
   IBFX = 0,
   IBFY = 1,
   IBFZ = 2
