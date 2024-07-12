@@ -79,6 +79,9 @@ public:
   DataArray     Q;     //!< hydrodynamics primitive    variables array
   DataArray Q2; //!< hydrodynamics primitive    variables array at t_{n+1/2} (half time step update)
 
+  /// source term using to compute face centered magnetic field component at t_{n+1/2}
+  DataArray sFaceMag;
+
   DataArray Slopes_x; //!< implementation 2 only
   DataArray Slopes_y; //!< implementation 2 only
   DataArray Slopes_z; //!< implementation 2 only
@@ -213,6 +216,7 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
   , U2()
   , Q()
   , Q2()
+  , sFaceMag()
   , Slopes_x()
   , Slopes_y()
   , Slopes_z()
@@ -292,12 +296,14 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
     else if (params.implementationVersion == 2)
     {
       Q2 = DataArray("Q2", isize, jsize, nbvar);
+      sFaceMag = DataArray("sFaceMag", isize, jsize, 2);
       Slopes_x = DataArray("Slope_x", isize, jsize, nbvar);
       Slopes_y = DataArray("Slope_y", isize, jsize, nbvar);
       ElecField = DataArray("ElecField", isize, jsize, 1);
 
       total_mem_size += isize * jsize * nbvar * sizeof(real_t) * (1 + 2);
       total_mem_size += isize * jsize * 1 * sizeof(real_t) * 1;
+      total_mem_size += isize * jsize * 2 * sizeof(real_t) * 1;
     }
 
     if (params.implementationVersion == 0)

@@ -316,6 +316,62 @@ public:
 /*************************************************/
 /*************************************************/
 /*************************************************/
+class ComputeSourceFaceMagFunctor2D : public MHDBaseFunctor2D
+{
+
+public:
+  ComputeSourceFaceMagFunctor2D(HydroParams params,
+                                DataArray2d ElecField,
+                                DataArray2d sFaceMag,
+                                real_t      dtdx,
+                                real_t      dtdy)
+    : MHDBaseFunctor2D(params)
+    , ElecField(ElecField)
+    , sFaceMag(sFaceMag)
+    , dtdx(dtdx)
+    , dtdy(dtdy){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params, DataArray2d ElecField, DataArray2d sFaceMag, real_t dtdx, real_t dtdy)
+  {
+    ComputeSourceFaceMagFunctor2D functor(params, ElecField, sFaceMag, dtdx, dtdy);
+    Kokkos::parallel_for(
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }), functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+
+    // clang-format off
+    if (j > 0 and j < jsize-1  and
+        i > 0 and i < isize-1)
+    {
+
+      // sAL0 = +(ELR - ELL) * 0.5 * dtdy
+      sFaceMag(i, j, IX) = (ElecField(i    , j + 1, 0) - ElecField(i, j, 0)) * 0.5 * dtdy;
+
+      // sBL0 = -(ERL - ELL) * 0.5 * dtdx;
+      sFaceMag(i, j, IY) = -(ElecField(i + 1, j    , 0) - ElecField(i, j, 0)) * 0.5 * dtdx;
+
+    }
+    // clang-format on
+
+  } // operator ()
+
+  DataArray2d ElecField;
+  DataArray2d sFaceMag;
+  real_t      dtdx, dtdy;
+
+}; // ComputeSourceFaceMagFunctor2D
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
 class ComputeFluxesAndStoreFunctor2D_MHD : public MHDBaseFunctor2D
 {
 
@@ -1015,7 +1071,7 @@ public:
                                             DataArray2d Qdata2,
                                             DataArray2d Slopes_x,
                                             DataArray2d Slopes_y,
-                                            DataArray2d ElecField,
+                                            DataArray2d sFaceMag,
                                             real_t      dtdx,
                                             real_t      dtdy)
     : MHDBaseFunctor2D(params)
@@ -1025,7 +1081,7 @@ public:
     , Qdata2(Qdata2)
     , Slopes_x(Slopes_x)
     , Slopes_y(Slopes_y)
-    , ElecField(ElecField)
+    , sFaceMag(sFaceMag)
     , dtdx(dtdx)
     , dtdy(dtdy){};
 
@@ -1038,12 +1094,12 @@ public:
         DataArray2d Qdata2,
         DataArray2d Slopes_x,
         DataArray2d Slopes_y,
-        DataArray2d ElecField,
+        DataArray2d sFaceMag,
         real_t      dtdx,
         real_t      dtdy)
   {
     ComputeFluxAndUpdateAlongDirFunctor2D_MHD<dir> functor(
-      params, Udata_in, Udata_out, Qdata, Qdata2, Slopes_x, Slopes_y, ElecField, dtdx, dtdy);
+      params, Udata_in, Udata_out, Qdata, Qdata2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
     Kokkos::parallel_for(
       "ComputeFluxAndUpdateAlongDirFunctor2D_MHD",
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
@@ -1110,18 +1166,14 @@ public:
       qR[IP] = fmax(smallp * qR[ID], qR[IP]);
       if constexpr (dir == DIR_X)
       {
-        const real_t ELR = ElecField(i, j + 1, 0);
-        const real_t ELL = ElecField(i, j, 0);
-        const real_t AL = Udata_in(i, j, IA) + (ELR - ELL) * 0.5 * dtdy;
+        const real_t AL = Udata_in(i, j, IA) + sFaceMag(i, j, IX);
         qR[IA] = AL;
         qR[IB] = q2[IB] - 0.5 * dq[IB];
         qR[IC] = q2[IC] - 0.5 * dq[IC];
       }
       else if constexpr (dir == DIR_Y)
       {
-        const real_t ERL = ElecField(i + 1, j, 0);
-        const real_t ELL = ElecField(i, j, 0);
-        const real_t BL = Udata_in(i, j, IB) - (ERL - ELL) * 0.5 * dtdx;
+        const real_t BL = Udata_in(i, j, IB) + sFaceMag(i, j, IY);
         qR[IA] = q2[IA] - 0.5 * dq[IA];
         qR[IB] = BL;
         qR[IC] = q2[IC] - 0.5 * dq[IC];
@@ -1231,7 +1283,7 @@ public:
   DataArray2d Udata_in, Udata_out;
   DataArray2d Qdata, Qdata2;
   DataArray2d Slopes_x, Slopes_y;
-  DataArray2d ElecField;
+  DataArray2d sFaceMag;
   real_t      dtdx, dtdy;
 
 }; // ComputeFluxAndUpdateAlongDirFunctor2D_MHD
@@ -1259,7 +1311,7 @@ public:
                                               DataArray2d Qdata2,
                                               DataArray2d Slopes_x,
                                               DataArray2d Slopes_y,
-                                              DataArray2d ElecField,
+                                              DataArray2d sFaceMag,
                                               real_t      dtdx,
                                               real_t      dtdy)
     : MHDBaseFunctor2D(params)
@@ -1269,7 +1321,7 @@ public:
     , Qdata2(Qdata2)
     , Slopes_x(Slopes_x)
     , Slopes_y(Slopes_y)
-    , ElecField(ElecField)
+    , sFaceMag(sFaceMag)
     , dtdx(dtdx)
     , dtdy(dtdy){};
 
@@ -1282,12 +1334,12 @@ public:
         DataArray2d Qdata2,
         DataArray2d Slopes_x,
         DataArray2d Slopes_y,
-        DataArray2d ElecField,
+        DataArray2d sFaceMag,
         real_t      dtdx,
         real_t      dtdy)
   {
     ReconstructEdgeComputeEmfAndUpdateFunctor2D functor(
-      params, Udata_in, Udata_out, Qdata, Qdata2, Slopes_x, Slopes_y, ElecField, dtdx, dtdy);
+      params, Udata_in, Udata_out, Qdata, Qdata2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
     Kokkos::parallel_for(
       "ReconstructEdgeComputeEmfAndUpdateFunctor2D",
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
@@ -1354,15 +1406,13 @@ public:
 
       // LB at (i,j)
       {
-        const auto   i0 = i;
-        const auto   j0 = j;
-        const real_t ELR = ElecField(i0 + 0, j0 + 1, 0);
-        const real_t ELL = ElecField(i0 + 0, j0 + 0, 0);
-        const real_t AL = Udata_in(i0 + 0, j0 + 0, IA) + (ELR - ELL) * 0.5 * dtdy;
+        const auto i0 = i;
+        const auto j0 = j;
+
+        const real_t AL = Udata_in(i0 + 0, j0 + 0, IA) + sFaceMag(i, j, IX);
         const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, IA);
 
-        const real_t ERL = ElecField(i0 + 1, j0 + 0, 0);
-        const real_t BL = Udata_in(i0 + 0, j0 + 0, IB) - (ERL - ELL) * 0.5 * dtdx;
+        const real_t BL = Udata_in(i0 + 0, j0 + 0, IB) + sFaceMag(i, j, IY);
         const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, IB);
 
         get_state(Slopes_x, i0, j0, dqX);
@@ -1381,15 +1431,13 @@ public:
 
       // RT (i-1, j-1)
       {
-        const auto   i0 = i - 1;
-        const auto   j0 = j - 1;
-        const real_t ERR = ElecField(i0 + 1, j0 + 1, 0);
-        const real_t ERL = ElecField(i0 + 1, j0 + 0, 0);
-        const real_t AR = Udata_in(i0 + 1, j0 + 0, IA) + (ERR - ERL) * 0.5 * dtdy;
+        const auto i0 = i - 1;
+        const auto j0 = j - 1;
+
+        const real_t AR = Udata_in(i0 + 1, j0 + 0, IA) + sFaceMag(i0 + 1, j0 + 0, IX);
         const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 1, j0 + 0, IA);
 
-        const real_t ELR = ElecField(i0 + 0, j0 + 1, 0);
-        const real_t BR = Udata_in(i0 + 0, j0 + 1, IB) - (ERR - ELR) * 0.5 * dtdx;
+        const real_t BR = Udata_in(i0 + 0, j0 + 1, IB) + sFaceMag(i0 + 0, j0 + 1, IX);
         const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 1, IB);
 
         get_state(Slopes_x, i0, j0, dqX);
@@ -1408,15 +1456,13 @@ public:
 
       // RB (i-1,j)
       {
-        const auto   i0 = i - 1;
-        const auto   j0 = j;
-        const real_t ERR = ElecField(i0 + 1, j0 + 1, 0);
-        const real_t ERL = ElecField(i0 + 1, j0 + 0, 0);
-        const real_t AR = Udata_in(i0 + 1, j0 + 0, IA) + (ERR - ERL) * 0.5 * dtdy;
+        const auto i0 = i - 1;
+        const auto j0 = j;
+
+        const real_t AR = Udata_in(i0 + 1, j0 + 0, IA) + sFaceMag(i0 + 1, j0 + 0, IX);
         const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 1, j0 + 0, IA);
 
-        const real_t ELL = ElecField(i0 + 0, j0 + 0, 0);
-        const real_t BL = Udata_in(i0 + 0, j0 + 0, IB) - (ERL - ELL) * 0.5 * dtdx;
+        const real_t BL = Udata_in(i0 + 0, j0 + 0, IB) + sFaceMag(i0 + 0, j0 + 0, IY);
         const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, IB);
 
         get_state(Slopes_x, i0, j0, dqX);
@@ -1435,15 +1481,13 @@ public:
 
       // LT (i,j-1)
       {
-        const auto   i0 = i;
-        const auto   j0 = j - 1;
-        const real_t ELR = ElecField(i0 + 0, j0 + 1, 0);
-        const real_t ELL = ElecField(i0 + 0, j0 + 0, 0);
-        const real_t AL = Udata_in(i0 + 0, j0 + 0, IA) + (ELR - ELL) * 0.5 * dtdy;
+        const auto i0 = i;
+        const auto j0 = j - 1;
+
+        const real_t AL = Udata_in(i0 + 0, j0 + 0, IA) + sFaceMag(i0 + 0, j0 + 0, IX);
         const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, IA);
 
-        const real_t ERR = ElecField(i0 + 1, j0 + 1, 0);
-        const real_t BR = Udata_in(i0 + 0, j0 + 1, IB) - (ERR - ELR) * 0.5 * dtdx;
+        const real_t BR = Udata_in(i0 + 0, j0 + 1, IB) + sFaceMag(i0 + 0, j0 + 1, IB);
         const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 1, IB);
 
         get_state(Slopes_x, i0, j0, dqX);
@@ -1475,7 +1519,7 @@ public:
   DataArray2d Udata_in, Udata_out;
   DataArray2d Qdata, Qdata2;
   DataArray2d Slopes_x, Slopes_y;
-  DataArray2d ElecField;
+  DataArray2d sFaceMag;
   real_t      dtdx, dtdy;
 
 }; // ComputeEmfAndUpdateFunctor2D_MHD
