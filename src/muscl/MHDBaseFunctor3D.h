@@ -121,6 +121,40 @@ public:
   } // compute_normal_mag_field_slopes
 
   /**
+   * Compute limited slope of face centered magnetic field component.
+   *
+   * \param[in] udata is a conservative variable array
+   */
+  template <Direction dir>
+  KOKKOS_INLINE_FUNCTION real_t
+  compute_limited_slope(DataArray udata, int i, int j, int k, int component) const
+  {
+    KOKKOS_ASSERT(((component == IA) or (component == IB) or (component == IC)) &&
+                  "Wrong component index for a magnetic field.");
+
+    constexpr auto delta_i = dir == DIR_X ? 1 : 0;
+    constexpr auto delta_j = dir == DIR_Y ? 1 : 0;
+    constexpr auto delta_k = dir == DIR_Z ? 1 : 0;
+
+    // clang-format off
+    const auto b       = udata(i          , j          , k          , component);
+    const auto b_plus  = udata(i + delta_i, j + delta_j, k + delta_k, component);
+    const auto b_minus = udata(i - delta_i, j - delta_j, k + delta_k, component);
+    // clang-format on
+
+    const real_t dlft = params.settings.slope_type * (b - b_minus);
+    const real_t drgt = params.settings.slope_type * (b_plus - b);
+    const real_t dcen = HALF_F * (b_plus - b_minus);
+    const real_t dsgn = (dcen >= ZERO_F) ? ONE_F : -ONE_F;
+    const real_t slop = fmin(fabs(dlft), fabs(drgt));
+    real_t       dlim = slop;
+    if ((dlft * drgt) <= ZERO_F)
+      dlim = ZERO_F;
+    return dsgn * fmin(dlim, fabs(dcen));
+
+  } // compute_limited_slope
+
+  /**
    * Equation of state:
    * compute pressure p and speed of sound c, from density rho and
    * internal energy eint using the "calorically perfect gas" equation

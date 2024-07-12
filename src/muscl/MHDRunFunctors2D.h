@@ -1522,7 +1522,7 @@ public:
   DataArray2d sFaceMag;
   real_t      dtdx, dtdy;
 
-}; // ComputeEmfAndUpdateFunctor2D_MHD
+}; // ReconstructEdgeComputeEmfAndUpdateFunctor2D
 
 /*************************************************/
 /*************************************************/

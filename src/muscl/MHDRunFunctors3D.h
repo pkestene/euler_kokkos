@@ -165,6 +165,116 @@ public:
 /*************************************************/
 /*************************************************/
 /*************************************************/
+class ComputeSlopesFunctor3D_MHD : public MHDBaseFunctor3D
+{
+
+public:
+  /**
+   * Compute limited slopes of primitives variables at cell center.
+   *
+   * Magnetic field slopes are computed for transverse component at cell center, and for normal
+   * component at cell faces.
+   *
+   * \note Normal magnetic field component slopes are not limited.
+   *
+   * \param[in] Udata conservative variables
+   * \param[in] Qdata primitive variables
+   * \param[out] Slopes_x limited slopes along direction X
+   * \param[out] Slopes_y limited slopes along direction Y
+   * \param[out] Slopes_z limited slopes along direction Z
+   */
+  ComputeSlopesFunctor3D_MHD(HydroParams params,
+                             DataArray3d Udata,
+                             DataArray3d Qdata,
+                             DataArray3d Slopes_x,
+                             DataArray3d Slopes_y,
+                             DataArray3d Slopes_z)
+    : MHDBaseFunctor3D(params)
+    , Udata(Udata)
+    , Qdata(Qdata)
+    , Slopes_x(Slopes_x)
+    , Slopes_y(Slopes_y)
+    , Slopes_z(Slopes_z){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params,
+        DataArray3d Udata,
+        DataArray3d Qdata,
+        DataArray3d Slopes_x,
+        DataArray3d Slopes_y,
+        DataArray3d Slopes_z)
+  {
+    ComputeSlopesFunctor3D_MHD functor(params, Udata, Qdata, Slopes_x, Slopes_y, Slopes_z);
+    Kokkos::parallel_for("ComputeSlopesFunctor3D_MHD",
+                         Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j, const int & k) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ksize = params.ksize;
+    // const int ghostWidth = params.ghostWidth;
+
+    // clang-format off
+    if (k >= 1 and k < ksize - 1 and
+        j >= 1 and j < jsize - 1 and
+        i >= 1 and i < isize - 1)
+    // clang-format on
+    {
+      MHDState qc, qm, qp;
+      get_state(Qdata, i, j, k, qc);
+
+      MHDState dq;
+
+      //
+      // slopes along X
+      //
+      get_state(Qdata, i - 1, j, k, qm);
+      get_state(Qdata, i + 1, j, k, qp);
+      slope_unsplit_hydro_3d(qc, qp, qm, dq);
+      set_state(Slopes_x, i, j, k, dq);
+
+      // modify slopes for normal magnetic field component using face centered value
+      Slopes_x(i, j, k, IA) = Udata(i + 1, j, k, IA) - Udata(i, j, k, IA);
+
+      //
+      // slopes along Y
+      //
+      get_state(Qdata, i, j - 1, k, qm);
+      get_state(Qdata, i, j + 1, k, qp);
+      slope_unsplit_hydro_3d(qc, qp, qm, dq);
+      set_state(Slopes_y, i, j, k, dq);
+
+      // modify slopes for normal magnetic field component using face centered value
+      Slopes_y(i, j, k, IB) = Udata(i, j + 1, k, IB) - Udata(i, j, k, IB);
+
+      //
+      // slopes along Z
+      //
+      get_state(Qdata, i, j, k - 1, qm);
+      get_state(Qdata, i, j, k + 1, qp);
+      slope_unsplit_hydro_3d(qc, qp, qm, dq);
+      set_state(Slopes_z, i, j, k, dq);
+
+      // modify slopes for normal magnetic field component using face centered value
+      Slopes_z(i, j, k, IC) = Udata(i, j, k + 1, IC) - Udata(i, j, k, IC);
+    }
+  } // end operator ()
+
+  DataArray3d Udata, Qdata;
+  DataArray3d Slopes_x, Slopes_y, Slopes_z;
+
+}; // ComputeSlopesFunctor3D_MHD
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
 class ComputeElecFieldFunctor3D : public MHDBaseFunctor3D
 {
 
@@ -254,6 +364,80 @@ public:
 /*************************************************/
 /*************************************************/
 /*************************************************/
+class ComputeSourceFaceMagFunctor3D : public MHDBaseFunctor3D
+{
+
+public:
+  ComputeSourceFaceMagFunctor3D(HydroParams params,
+                                DataArray3d ElecField,
+                                DataArray3d sFaceMag,
+                                real_t      dtdx,
+                                real_t      dtdy,
+                                real_t      dtdz)
+    : MHDBaseFunctor3D(params)
+    , ElecField(ElecField)
+    , sFaceMag(sFaceMag)
+    , dtdx(dtdx)
+    , dtdy(dtdy)
+    , dtdz(dtdz){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params,
+        DataArray3d ElecField,
+        DataArray3d sFaceMag,
+        real_t      dtdx,
+        real_t      dtdy,
+        real_t      dtdz)
+  {
+    ComputeSourceFaceMagFunctor3D functor(params, ElecField, sFaceMag, dtdx, dtdy, dtdz);
+    Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j, const int & k) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ksize = params.ksize;
+
+    // clang-format off
+    if (k > 0 and k < ksize-1  and
+        j > 0 and j < jsize-1  and
+        i > 0 and i < isize-1)
+    {
+
+      // sAL0 = +(GLR - GLL) * dtdy * HALF_F - (FLR - FLL) * dtdz * HALF_F
+      sFaceMag(i, j, k, IX) =
+        (ElecField(i, j + 1, k    , IZ) - ElecField(i, j, k, IZ)) * HALF_F * dtdy -
+        (ElecField(i, j    , k + 1, IY) - ElecField(i, j, k, IY)) * HALF_F * dtdz;
+
+      // sBL0 = -(GRL - GLL) * dtdx * HALF_F + (ELR - ELL) * dtdz * HALF_F
+      sFaceMag(i, j, k, IY) =
+        -(ElecField(i + 1, j, k    , IZ) - ElecField(i, j, k, IZ)) * HALF_F * dtdx +
+         (ElecField(i    , j, k + 1, IX) - ElecField(i, j, k, IX)) * HALF_F * dtdz;
+
+      // sCL0 = +(FRL - FLL) * dtdx * HALF_F - (ERL - ELL) * dtdy * HALF_F
+      sFaceMag(i, j, k, IZ) =
+        (ElecField(i + 1, j    , k, IY) - ElecField(i, j, k, IY)) * HALF_F * dtdx -
+        (ElecField(i    , j + 1, k, IX) - ElecField(i, j, k, IX)) * HALF_F * dtdy;
+    }
+    // clang-format on
+
+  } // operator ()
+
+  DataArray3d ElecField;
+  DataArray3d sFaceMag;
+  real_t      dtdx, dtdy, dtdz;
+
+}; // ComputeSourceFaceMagFunctor3D
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
 class ComputeMagSlopesFunctor3D : public MHDBaseFunctor3D
 {
 
@@ -308,23 +492,25 @@ public:
 
       // get magnetic slopes dbf
 
-      bfSlopes[0] = Udata(i, j, k, IA);
-      bfSlopes[1] = Udata(i, j + 1, k, IA);
-      bfSlopes[2] = Udata(i, j - 1, k, IA);
-      bfSlopes[3] = Udata(i, j, k + 1, IA);
-      bfSlopes[4] = Udata(i, j, k - 1, IA);
+      // clang-format off
+      bfSlopes[0] =  Udata(i    , j    , k    , IA);
+      bfSlopes[1] =  Udata(i    , j + 1, k    , IA);
+      bfSlopes[2] =  Udata(i    , j - 1, k    , IA);
+      bfSlopes[3] =  Udata(i    , j    , k + 1, IA);
+      bfSlopes[4] =  Udata(i    , j    , k - 1, IA);
 
-      bfSlopes[5] = Udata(i, j, k, IB);
-      bfSlopes[6] = Udata(i + 1, j, k, IB);
-      bfSlopes[7] = Udata(i - 1, j, k, IB);
-      bfSlopes[8] = Udata(i, j, k + 1, IB);
-      bfSlopes[9] = Udata(i, j, k - 1, IB);
+      bfSlopes[5] =  Udata(i    , j    , k    , IB);
+      bfSlopes[6] =  Udata(i + 1, j    , k    , IB);
+      bfSlopes[7] =  Udata(i - 1, j    , k    , IB);
+      bfSlopes[8] =  Udata(i    , j    , k + 1, IB);
+      bfSlopes[9] =  Udata(i    , j    , k - 1, IB);
 
-      bfSlopes[10] = Udata(i, j, k, IC);
-      bfSlopes[11] = Udata(i + 1, j, k, IC);
-      bfSlopes[12] = Udata(i - 1, j, k, IC);
-      bfSlopes[13] = Udata(i, j + 1, k, IC);
-      bfSlopes[14] = Udata(i, j - 1, k, IC);
+      bfSlopes[10] = Udata(i    , j    , k    , IC);
+      bfSlopes[11] = Udata(i + 1, j    , k    , IC);
+      bfSlopes[12] = Udata(i - 1, j    , k    , IC);
+      bfSlopes[13] = Udata(i    , j + 1, k    , IC);
+      bfSlopes[14] = Udata(i    , j - 1, k    , IC);
+      // clang-format on
 
       // compute magnetic slopes
       slope_unsplit_mhd_3d(bfSlopes, dbfSlopes);
@@ -552,20 +738,20 @@ public:
       dbf[11] = DeltaC(i    , j    , k + 1, IY);
 
       // get electric field components
-      Ex[0][0] = ElecField(i    , j    , k    , IX);
-      Ex[0][1] = ElecField(i    , j    , k + 1, IX);
-      Ex[1][0] = ElecField(i    , j + 1, k    , IX);
-      Ex[1][1] = ElecField(i    , j + 1, k + 1, IX);
+      Ex[0][0] = ElecField(i    , j    , k    , IX); // ELL
+      Ex[0][1] = ElecField(i    , j    , k + 1, IX); // ELR
+      Ex[1][0] = ElecField(i    , j + 1, k    , IX); // ERL
+      Ex[1][1] = ElecField(i    , j + 1, k + 1, IX); // ERR
 
-      Ey[0][0] = ElecField(i    , j    , k    , IY);
-      Ey[0][1] = ElecField(i    , j    , k + 1, IY);
-      Ey[1][0] = ElecField(i + 1, j    , k    , IY);
-      Ey[1][1] = ElecField(i + 1, j    , k + 1, IY);
+      Ey[0][0] = ElecField(i    , j    , k    , IY); // FLL
+      Ey[0][1] = ElecField(i    , j    , k + 1, IY); // FLR
+      Ey[1][0] = ElecField(i + 1, j    , k    , IY); // FRL
+      Ey[1][1] = ElecField(i + 1, j    , k + 1, IY); // FRR
 
-      Ez[0][0] = ElecField(i    , j    , k    , IZ);
-      Ez[0][1] = ElecField(i    , j + 1, k    , IZ);
-      Ez[1][0] = ElecField(i + 1, j    , k    , IZ);
-      Ez[1][1] = ElecField(i + 1, j + 1, k    , IZ);
+      Ez[0][0] = ElecField(i    , j    , k    , IZ); // GLL
+      Ez[0][1] = ElecField(i    , j + 1, k    , IZ); // GLR
+      Ez[1][0] = ElecField(i + 1, j    , k    , IZ); // GRL
+      Ez[1][1] = ElecField(i + 1, j + 1, k    , IZ); // GRR
 
       // clang-format on
 
@@ -830,6 +1016,889 @@ public:
   real_t      dtdx, dtdy, dtdz;
 
 }; // ComputeUpdatedPrimvarFunctor3D_MHD
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
+/**
+ * Reconstruct hydro state at cell face center, solve Riemann problems and update.
+ *
+ * This is done in a direction by direction manner.
+ */
+template <Direction dir>
+class ComputeFluxAndUpdateAlongDirFunctor3D_MHD : public MHDBaseFunctor3D
+{
+
+public:
+  //!
+  //! \param[in] Udata_in is conservative variables at t_n
+  //! \param[in] Udata_out is conservative variables at t_{n+1}
+  //! \param[in] Qdata is necessary to recompute limited slopes
+  //! \param[in] Qdata2 is primitive variables array at t_{n+1/2}
+  //!
+  ComputeFluxAndUpdateAlongDirFunctor3D_MHD(HydroParams params,
+                                            DataArray3d Udata_in,
+                                            DataArray3d Udata_out,
+                                            DataArray3d Qdata,
+                                            DataArray3d Qdata2,
+                                            DataArray3d Slopes_x,
+                                            DataArray3d Slopes_y,
+                                            DataArray3d Slopes_z,
+                                            DataArray3d sFaceMag,
+                                            real_t      dtdx,
+                                            real_t      dtdy,
+                                            real_t      dtdz)
+    : MHDBaseFunctor3D(params)
+    , Udata_in(Udata_in)
+    , Udata_out(Udata_out)
+    , Qdata(Qdata)
+    , Qdata2(Qdata2)
+    , Slopes_x(Slopes_x)
+    , Slopes_y(Slopes_y)
+    , Slopes_z(Slopes_z)
+    , sFaceMag(sFaceMag)
+    , dtdx(dtdx)
+    , dtdy(dtdy)
+    , dtdz(dtdz){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params,
+        DataArray3d Udata_in,
+        DataArray3d Udata_out,
+        DataArray3d Qdata,
+        DataArray3d Qdata2,
+        DataArray3d Slopes_x,
+        DataArray3d Slopes_y,
+        DataArray3d Slopes_z,
+        DataArray3d sFaceMag,
+        real_t      dtdx,
+        real_t      dtdy,
+        real_t      dtdz)
+  {
+    ComputeFluxAndUpdateAlongDirFunctor3D_MHD<dir> functor(params,
+                                                           Udata_in,
+                                                           Udata_out,
+                                                           Qdata,
+                                                           Qdata2,
+                                                           Slopes_x,
+                                                           Slopes_y,
+                                                           Slopes_z,
+                                                           sFaceMag,
+                                                           dtdx,
+                                                           dtdy,
+                                                           dtdz);
+    Kokkos::parallel_for("ComputeFluxAndUpdateAlongDirFunctor3D_MHD",
+                         Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j, const int & k) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ksize = params.ksize;
+    const int ghostWidth = params.ghostWidth;
+
+    // const real_t gamma = params.settings.gamma0;
+    const real_t smallR = params.settings.smallr;
+    const real_t smallp = params.settings.smallp;
+
+    constexpr auto delta_i = dir == DIR_X ? 1 : 0;
+    constexpr auto delta_j = dir == DIR_Y ? 1 : 0;
+    constexpr auto delta_k = dir == DIR_Z ? 1 : 0;
+
+    // clang-format off
+    if (k >= ghostWidth and k < ksize - ghostWidth + 1 and
+        j >= ghostWidth and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth and i < isize - ghostWidth + 1)
+    // clang-format on
+    {
+      MHDState dq, dqN;
+
+      // cell-centered primitive variables in current cell, and left and right neighbor along dir
+      MHDState q;
+      get_state(Qdata, i, j, k, q);
+
+      // cell-centered primitive variables in neighbor cell
+      MHDState qN;
+      get_state(Qdata, i - delta_i, j - delta_j, k - delta_k, qN);
+
+      // left and right reconstructed state (input for Riemann solver)
+      MHDState qR, qL;
+
+      //
+      // Right state at left interface (current cell)
+      //
+
+      // load hydro slopes along dir
+      if constexpr (dir == DIR_X)
+      {
+        get_state(Slopes_x, i, j, k, dq);
+      }
+      else if constexpr (dir == DIR_Y)
+      {
+        get_state(Slopes_y, i, j, k, dq);
+      }
+      else if constexpr (dir == DIR_Z)
+      {
+        get_state(Slopes_z, i, j, k, dq);
+      }
+
+      // get primitive variable in current cell at t_{n+1/2}
+      MHDState q2;
+      get_state(Qdata2, i, j, k, q2);
+
+      qR[ID] = q2[ID] - 0.5 * dq[ID];
+      qR[IU] = q2[IU] - 0.5 * dq[IU];
+      qR[IV] = q2[IV] - 0.5 * dq[IV];
+      qR[IW] = q2[IW] - 0.5 * dq[IW];
+      qR[IP] = q2[IP] - 0.5 * dq[IP];
+      qR[ID] = fmax(smallR, qR[ID]);
+      qR[IP] = fmax(smallp * qR[ID], qR[IP]);
+      // clang-format off
+      if constexpr (dir == DIR_X)
+      {
+        const real_t AL = Udata_in(i, j, k, IA) + sFaceMag(i, j, k, IX);
+        qR[IA] = AL;
+        qR[IB] = q2[IB] - 0.5 * dq[IB];
+        qR[IC] = q2[IC] - 0.5 * dq[IC];
+      }
+      else if constexpr (dir == DIR_Y)
+      {
+        const real_t BL = Udata_in(i, j, k, IB) + sFaceMag(i, j, k, IY);
+        qR[IA] = q2[IA] - 0.5 * dq[IA];
+        qR[IB] = BL;
+        qR[IC] = q2[IC] - 0.5 * dq[IC];
+      }
+      else if constexpr (dir == DIR_Z)
+      {
+        const real_t CL = Udata_in(i, j, k, IC) + sFaceMag(i, j, k, IZ);
+        qR[IA] = q2[IA] - 0.5 * dq[IA];
+        qR[IB] = q2[IB] - 0.5 * dq[IB];
+        qR[IC] = CL;
+      }
+      // clang-format on
+
+      //
+      // Left state at right interface (neighbor cell)
+      //
+
+      // load hydro slopes along dir
+      if constexpr (dir == DIR_X)
+      {
+        get_state(Slopes_x, i - delta_i, j - delta_j, k - delta_k, dqN);
+      }
+      else if constexpr (dir == DIR_Y)
+      {
+        get_state(Slopes_y, i - delta_i, j - delta_j, k - delta_k, dqN);
+      }
+      else if constexpr (dir == DIR_Z)
+      {
+        get_state(Slopes_z, i - delta_i, j - delta_j, k - delta_k, dqN);
+      }
+
+      // get primitive variable in neighbor cell at t_{n+1/2}
+      MHDState q2N;
+      get_state(Qdata2, i - delta_i, j - delta_j, k - delta_k, q2N);
+
+      qL[ID] = q2N[ID] + 0.5 * dqN[ID];
+      qL[IU] = q2N[IU] + 0.5 * dqN[IU];
+      qL[IV] = q2N[IV] + 0.5 * dqN[IV];
+      qL[IW] = q2N[IW] + 0.5 * dqN[IW];
+      qL[IP] = q2N[IP] + 0.5 * dqN[IP];
+      qL[ID] = fmax(smallR, qL[ID]);
+      qL[IP] = fmax(smallp * qL[ID], qL[IP]);
+      if constexpr (dir == DIR_X)
+      {
+        qL[IA] = qR[IA];
+        qL[IB] = q2N[IB] + 0.5 * dqN[IB];
+        qL[IC] = q2N[IC] + 0.5 * dqN[IC];
+      }
+      else if constexpr (dir == DIR_Y)
+      {
+        qL[IA] = q2N[IA] + 0.5 * dqN[IA];
+        qL[IB] = qR[IB];
+        qL[IC] = q2N[IC] + 0.5 * dqN[IC];
+      }
+      else if constexpr (dir == DIR_Z)
+      {
+        qL[IA] = q2N[IA] + 0.5 * dqN[IA];
+        qL[IB] = q2N[IB] + 0.5 * dqN[IB];
+        qL[IC] = qR[IC];
+      }
+
+      // now we are ready for computing hydro flux
+      MHDState flux;
+
+      if constexpr (dir == DIR_Y)
+      {
+        swapValues(&(qL[IU]), &(qL[IV]));
+        swapValues(&(qL[IA]), &(qL[IB]));
+        swapValues(&(qR[IU]), &(qR[IV]));
+        swapValues(&(qR[IA]), &(qR[IB]));
+      }
+      else if constexpr (dir == DIR_Z)
+      {
+        swapValues(&(qL[IU]), &(qL[IW]));
+        swapValues(&(qL[IA]), &(qL[IC]));
+        swapValues(&(qR[IU]), &(qR[IW]));
+        swapValues(&(qR[IA]), &(qR[IC]));
+      }
+      riemann_mhd(qL, qR, flux, params);
+      if constexpr (dir == DIR_Y)
+      {
+        swapValues(&(flux[IU]), &(flux[IV]));
+        swapValues(&(flux[IA]), &(flux[IB]));
+      }
+      else if constexpr (dir == DIR_Z)
+      {
+        swapValues(&(flux[IU]), &(flux[IW]));
+        swapValues(&(flux[IA]), &(flux[IC]));
+      }
+
+      if constexpr (dir == DIR_X)
+      {
+        if (k < ksize - ghostWidth and j < jsize - ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_add(&Udata_out(i, j, k, ID), flux[ID] * dtdx);
+          Kokkos::atomic_add(&Udata_out(i, j, k, IP), flux[IP] * dtdx);
+          Kokkos::atomic_add(&Udata_out(i, j, k, IU), flux[IU] * dtdx);
+          Kokkos::atomic_add(&Udata_out(i, j, k, IV), flux[IV] * dtdx);
+          Kokkos::atomic_add(&Udata_out(i, j, k, IW), flux[IW] * dtdx);
+        }
+
+        if (k < ksize - ghostWidth and j < jsize - ghostWidth and i > ghostWidth)
+        {
+          Kokkos::atomic_sub(&Udata_out(i - 1, j, k, ID), flux[ID] * dtdx);
+          Kokkos::atomic_sub(&Udata_out(i - 1, j, k, IP), flux[IP] * dtdx);
+          Kokkos::atomic_sub(&Udata_out(i - 1, j, k, IU), flux[IU] * dtdx);
+          Kokkos::atomic_sub(&Udata_out(i - 1, j, k, IV), flux[IV] * dtdx);
+          Kokkos::atomic_sub(&Udata_out(i - 1, j, k, IW), flux[IW] * dtdx);
+        }
+      }
+      else if constexpr (dir == DIR_Y)
+      {
+        if (k < ksize - ghostWidth and j < jsize - ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_add(&Udata_out(i, j, k, ID), flux[ID] * dtdy);
+          Kokkos::atomic_add(&Udata_out(i, j, k, IP), flux[IP] * dtdy);
+          Kokkos::atomic_add(&Udata_out(i, j, k, IU), flux[IU] * dtdy);
+          Kokkos::atomic_add(&Udata_out(i, j, k, IV), flux[IV] * dtdy);
+          Kokkos::atomic_add(&Udata_out(i, j, k, IW), flux[IW] * dtdy);
+        }
+        if (k < ksize - ghostWidth and j > ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_sub(&Udata_out(i, j - 1, k, ID), flux[ID] * dtdy);
+          Kokkos::atomic_sub(&Udata_out(i, j - 1, k, IP), flux[IP] * dtdy);
+          Kokkos::atomic_sub(&Udata_out(i, j - 1, k, IU), flux[IU] * dtdy);
+          Kokkos::atomic_sub(&Udata_out(i, j - 1, k, IV), flux[IV] * dtdy);
+          Kokkos::atomic_sub(&Udata_out(i, j - 1, k, IW), flux[IW] * dtdy);
+        }
+      }
+      else if constexpr (dir == DIR_Z)
+      {
+        if (k < ksize - ghostWidth and j < jsize - ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_add(&Udata_out(i, j, k, ID), flux[ID] * dtdz);
+          Kokkos::atomic_add(&Udata_out(i, j, k, IP), flux[IP] * dtdz);
+          Kokkos::atomic_add(&Udata_out(i, j, k, IU), flux[IU] * dtdz);
+          Kokkos::atomic_add(&Udata_out(i, j, k, IV), flux[IV] * dtdz);
+          Kokkos::atomic_add(&Udata_out(i, j, k, IW), flux[IW] * dtdz);
+        }
+        if (k > ghostWidth and j < jsize - ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_sub(&Udata_out(i, j, k - 1, ID), flux[ID] * dtdz);
+          Kokkos::atomic_sub(&Udata_out(i, j, k - 1, IP), flux[IP] * dtdz);
+          Kokkos::atomic_sub(&Udata_out(i, j, k - 1, IU), flux[IU] * dtdz);
+          Kokkos::atomic_sub(&Udata_out(i, j, k - 1, IV), flux[IV] * dtdz);
+          Kokkos::atomic_sub(&Udata_out(i, j, k - 1, IW), flux[IW] * dtdz);
+        }
+      }
+    }
+  } // operator ()
+
+  DataArray3d Udata_in, Udata_out;
+  DataArray3d Qdata, Qdata2;
+  DataArray3d Slopes_x, Slopes_y, Slopes_z;
+  DataArray3d sFaceMag;
+  real_t      dtdx, dtdy, dtdz;
+
+}; // ComputeFluxAndUpdateAlongDirFunctor3D_MHD
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
+/**
+ * Reconstruct hydrodynamics variables and magnetic field at edge center, compute Emf and update.
+ */
+template <Direction dir>
+class ReconstructEdgeComputeEmfAndUpdateFunctor3D : public MHDBaseFunctor3D
+{
+
+public:
+  //!
+  //! \param[in] Udata_in is conservative variables at t_n
+  //! \param[in] Udata_out is conservative variables at t_{n+1}
+  //! \param[in] Qdata is necessary to recompute limited slopes
+  //! \param[in] Qdata2 is primitive variables array at t_{n+1/2}
+  //!
+  ReconstructEdgeComputeEmfAndUpdateFunctor3D(HydroParams params,
+                                              DataArray3d Udata_in,
+                                              DataArray3d Udata_out,
+                                              DataArray3d Qdata,
+                                              DataArray3d Qdata2,
+                                              DataArray3d Slopes_x,
+                                              DataArray3d Slopes_y,
+                                              DataArray3d Slopes_z,
+                                              DataArray3d sFaceMag,
+                                              real_t      dtdx,
+                                              real_t      dtdy,
+                                              real_t      dtdz)
+    : MHDBaseFunctor3D(params)
+    , Udata_in(Udata_in)
+    , Udata_out(Udata_out)
+    , Qdata(Qdata)
+    , Qdata2(Qdata2)
+    , Slopes_x(Slopes_x)
+    , Slopes_y(Slopes_y)
+    , Slopes_z(Slopes_z)
+    , sFaceMag(sFaceMag)
+    , dtdx(dtdx)
+    , dtdy(dtdy)
+    , dtdz(dtdz){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params,
+        DataArray3d Udata_in,
+        DataArray3d Udata_out,
+        DataArray3d Qdata,
+        DataArray3d Qdata2,
+        DataArray3d Slopes_x,
+        DataArray3d Slopes_y,
+        DataArray3d Slopes_z,
+        DataArray3d sFaceMag,
+        real_t      dtdx,
+        real_t      dtdy,
+        real_t      dtdz)
+  {
+    ReconstructEdgeComputeEmfAndUpdateFunctor3D functor(params,
+                                                        Udata_in,
+                                                        Udata_out,
+                                                        Qdata,
+                                                        Qdata2,
+                                                        Slopes_x,
+                                                        Slopes_y,
+                                                        Slopes_z,
+                                                        sFaceMag,
+                                                        dtdx,
+                                                        dtdy,
+                                                        dtdz);
+    Kokkos::parallel_for("ReconstructEdgeComputeEmfAndUpdateFunctor3D",
+                         Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j, const int & k) const
+  {
+    const int isize = params.isize;
+    const int jsize = params.jsize;
+    const int ksize = params.ksize;
+    const int ghostWidth = params.ghostWidth;
+
+    // const real_t gamma = params.settings.gamma0;
+    const real_t smallR = params.settings.smallr;
+    const real_t smallp = params.settings.smallp;
+
+    // clang-format off
+    if (k >= ghostWidth and k < ksize - ghostWidth + 1 and
+        j >= ghostWidth and j < jsize - ghostWidth + 1 and
+        i >= ghostWidth and i < isize - ghostWidth + 1)
+    // clang-format on
+    {
+      // this drawing is a simple helper to reminder how reconstruction is done
+      //
+      // symbols LB, RB, LT, RT indicate location of reconstructed edge from the cell center.
+      //
+      //
+      //  X locates the edge where hydrodynamics values must be reconstructed
+      //    _________________________
+      //   |           |            |
+      //   |           |            |
+      //   |     RB    |     LB     |
+      //   |  (i-1,j)  |   (i,j)    |
+      //   |          \| /          |
+      //   |___________X____________|
+      //   |          /| \          |
+      //   |        /  |  \         |
+      //   |     RT    |     LT     |
+      //   | (i-1,j-1) |   (i,j-1)  |
+      //   |           |            |
+      //   |___________|____________|
+      //
+
+
+      // qLB is current cell, qLT, qRT and qRB are direct neighbors surrounding the lower left edge
+      // MHDState qLB, qLT, qRB, qRT;
+      MHDState   qEdge_emf[4];
+      MHDState & qRT = qEdge_emf[IRT];
+      MHDState & qLT = qEdge_emf[ILT];
+      MHDState & qRB = qEdge_emf[IRB];
+      MHDState & qLB = qEdge_emf[ILB];
+
+      // get primitive variable in current cell and neighbors at t_{n+1/2}
+      // clang-format off
+      if constexpr (dir == DIR_Z)
+      {
+        get_state(Qdata2, i    , j    , k    , qLB);
+        get_state(Qdata2, i    , j - 1, k    , qLT);
+        get_state(Qdata2, i - 1, j    , k    , qRB);
+        get_state(Qdata2, i - 1, j - 1, k    , qRT);
+      }
+      else if constexpr (dir == DIR_Y)
+      {
+        get_state(Qdata2, i    , j    , k    , qLB);
+        get_state(Qdata2, i    , j    , k - 1, qLT); // later LT and RB will swapped
+        get_state(Qdata2, i - 1, j    , k    , qRB); // later LT and RB will swapped
+        get_state(Qdata2, i - 1, j    , k - 1, qRT);
+      }
+      else if constexpr (dir == DIR_X)
+      {
+        get_state(Qdata2, i    , j    , k    , qLB);
+        get_state(Qdata2, i    , j    , k - 1, qLT);
+        get_state(Qdata2, i    , j - 1, k    , qRB);
+        get_state(Qdata2, i    , j - 1, k - 1, qRT);
+      }
+      // clang-format on
+
+      // reconstruct edge states using limited slopes
+      MHDState dqX, dqY, dqZ;
+
+      if constexpr (dir == DIR_Z)
+      {
+        // LB at (i,j,k)
+        {
+          const auto i0 = i;
+          const auto j0 = j;
+          const auto k0 = k;
+
+          const real_t AL =
+            Udata_in(i0 + 0, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IX);
+          const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IA);
+
+          const real_t BL =
+            Udata_in(i0 + 0, j0 + 0, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IY);
+          const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IB);
+
+          get_state(Slopes_x, i0, j0, k0, dqX);
+          get_state(Slopes_y, i0, j0, k0, dqY);
+          qLB[ID] += 0.5 * (-dqX[ID] - dqY[ID]);
+          qLB[IU] += 0.5 * (-dqX[IU] - dqY[IU]);
+          qLB[IV] += 0.5 * (-dqX[IV] - dqY[IV]);
+          qLB[IW] += 0.5 * (-dqX[IW] - dqY[IW]);
+          qLB[IP] += 0.5 * (-dqX[IP] - dqY[IP]);
+          qLB[IA] = AL + 0.5 * (-dALy);
+          qLB[IB] = BL + 0.5 * (-dBLx);
+          qLB[IC] += 0.5 * (-dqX[IC] - dqY[IC]);
+          qLB[ID] = fmax(smallR, qLB[ID]);
+          qLB[IP] = fmax(smallp * qLB[ID], qLB[IP]);
+        }
+
+        // RT (i-1, j-1, k)
+        {
+          const auto i0 = i - 1;
+          const auto j0 = j - 1;
+          const auto k0 = k;
+
+          const real_t AR =
+            Udata_in(i0 + 1, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 1, j0 + 0, k0 + 0, IX);
+          const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 1, j0 + 0, k0 + 0, IA);
+
+          const real_t BR =
+            Udata_in(i0 + 0, j0 + 1, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 1, k0 + 0, IY);
+          const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 1, k0 + 0, IB);
+
+          get_state(Slopes_x, i0, j0, k0, dqX);
+          get_state(Slopes_y, i0, j0, k0, dqY);
+          qRT[ID] += 0.5 * (+dqX[ID] + dqY[ID]);
+          qRT[IU] += 0.5 * (+dqX[IU] + dqY[IU]);
+          qRT[IV] += 0.5 * (+dqX[IV] + dqY[IV]);
+          qRT[IW] += 0.5 * (+dqX[IW] + dqY[IW]);
+          qRT[IP] += 0.5 * (+dqX[IP] + dqY[IP]);
+          qRT[IA] = AR + 0.5 * (+dARy);
+          qRT[IB] = BR + 0.5 * (+dBRx);
+          qRT[IC] += 0.5 * (+dqX[IC] + dqY[IC]);
+          qRT[ID] = fmax(smallR, qRT[ID]);
+          qRT[IP] = fmax(smallp * qRT[ID], qRT[IP]);
+        }
+
+        // RB (i-1, j, k)
+        {
+          const auto i0 = i - 1;
+          const auto j0 = j;
+          const auto k0 = k;
+
+          const real_t AR =
+            Udata_in(i0 + 1, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 1, j0 + 0, k0 + 0, IX);
+          const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 1, j0 + 0, k0 + 0, IA);
+
+          const real_t BL =
+            Udata_in(i0 + 0, j0 + 0, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IY);
+          const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IB);
+
+          get_state(Slopes_x, i0, j0, k0, dqX);
+          get_state(Slopes_y, i0, j0, k0, dqY);
+          qRB[ID] += 0.5 * (+dqX[ID] - dqY[ID]);
+          qRB[IU] += 0.5 * (+dqX[IU] - dqY[IU]);
+          qRB[IV] += 0.5 * (+dqX[IV] - dqY[IV]);
+          qRB[IW] += 0.5 * (+dqX[IW] - dqY[IW]);
+          qRB[IP] += 0.5 * (+dqX[IP] - dqY[IP]);
+          qRB[IA] = AR + 0.5 * (-dARy);
+          qRB[IB] = BL + 0.5 * (+dBLx);
+          qRB[IC] += 0.5 * (+dqX[IC] - dqY[IC]);
+          qRB[ID] = fmax(smallR, qRB[ID]);
+          qRB[IP] = fmax(smallp * qRB[ID], qRB[IP]);
+        }
+
+        // LT (i, j-1, k)
+        {
+          const auto i0 = i;
+          const auto j0 = j - 1;
+          const auto k0 = k;
+
+          const real_t AL =
+            Udata_in(i0 + 0, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IX);
+          const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IA);
+
+          const real_t BR =
+            Udata_in(i0 + 0, j0 + 1, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 1, k0 + 0, IY);
+          const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 1, k0 + 0, IB);
+
+          get_state(Slopes_x, i0, j0, k0, dqX);
+          get_state(Slopes_y, i0, j0, k0, dqY);
+          qLT[ID] += 0.5 * (-dqX[ID] + dqY[ID]);
+          qLT[IU] += 0.5 * (-dqX[IU] + dqY[IU]);
+          qLT[IV] += 0.5 * (-dqX[IV] + dqY[IV]);
+          qLT[IW] += 0.5 * (-dqX[IW] + dqY[IW]);
+          qLT[IP] += 0.5 * (-dqX[IP] + dqY[IP]);
+          qLT[IA] = AL + 0.5 * (+dALy);
+          qLT[IB] = BR + 0.5 * (-dBRx);
+          qLT[IC] += 0.5 * (-dqX[IC] + dqY[IC]);
+          qLT[ID] = fmax(smallR, qLT[ID]);
+          qLT[IP] = fmax(smallp * qLT[ID], qLT[IP]);
+        }
+
+        const real_t emfZ = compute_emf<EMFZ>(qEdge_emf, params);
+
+        // clang-format off
+        if (k < ksize - ghostWidth and j < jsize - ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_sub(&Udata_out(i    , j    , k     , IA), emfZ * dtdy);
+          Kokkos::atomic_add(&Udata_out(i    , j    , k     , IB), emfZ * dtdx);
+        }
+
+        if (k < ksize - ghostWidth and j > ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_add(&Udata_out(i    , j - 1, k     , IA), emfZ * dtdy);
+        }
+        if (k < ksize - ghostWidth and j < jsize - ghostWidth and i > ghostWidth)
+        {
+          Kokkos::atomic_sub(&Udata_out(i - 1, j    , k     , IB), emfZ * dtdx);
+        }
+        // clang-format on
+      }
+      else if constexpr (dir == DIR_Y)
+      {
+        // LB at (i,j,k)
+        {
+          const auto i0 = i;
+          const auto j0 = j;
+          const auto k0 = k;
+
+          const real_t AL =
+            Udata_in(i0 + 0, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IX);
+          const real_t dALz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IA);
+
+          const real_t CL =
+            Udata_in(i0 + 0, j0 + 0, k0 + 0, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IZ);
+          const real_t dCLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IC);
+
+          get_state(Slopes_x, i0, j0, k0, dqX);
+          get_state(Slopes_z, i0, j0, k0, dqZ);
+          qLB[ID] += 0.5 * (-dqX[ID] - dqZ[ID]);
+          qLB[IU] += 0.5 * (-dqX[IU] - dqZ[IU]);
+          qLB[IV] += 0.5 * (-dqX[IV] - dqZ[IV]);
+          qLB[IW] += 0.5 * (-dqX[IW] - dqZ[IW]);
+          qLB[IP] += 0.5 * (-dqX[IP] - dqZ[IP]);
+          qLB[IA] = AL + 0.5 * (-dALz);
+          qLB[IB] += 0.5 * (-dqX[IB] - dqZ[IB]);
+          qLB[IC] = CL + 0.5 * (-dCLx);
+          qLB[ID] = fmax(smallR, qLB[ID]);
+          qLB[IP] = fmax(smallp * qLB[ID], qLB[IP]);
+        }
+
+        // RT (i-1, j, k-1)
+        {
+          const auto i0 = i - 1;
+          const auto j0 = j;
+          const auto k0 = k - 1;
+
+          const real_t AR =
+            Udata_in(i0 + 1, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 1, j0 + 0, k0 + 0, IX);
+          const real_t dARz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 1, j0 + 0, k0 + 0, IA);
+
+          const real_t CR =
+            Udata_in(i0 + 0, j0 + 0, k0 + 1, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 1, IZ);
+          const real_t dCRx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, k0 + 1, IC);
+
+          get_state(Slopes_x, i0, j0, k0, dqX);
+          get_state(Slopes_z, i0, j0, k0, dqZ);
+          qRT[ID] += 0.5 * (+dqX[ID] + dqZ[ID]);
+          qRT[IU] += 0.5 * (+dqX[IU] + dqZ[IU]);
+          qRT[IV] += 0.5 * (+dqX[IV] + dqZ[IV]);
+          qRT[IW] += 0.5 * (+dqX[IW] + dqZ[IW]);
+          qRT[IP] += 0.5 * (+dqX[IP] + dqZ[IP]);
+          qRT[IA] = AR + 0.5 * (+dARz);
+          qRT[IB] += 0.5 * (+dqX[IB] + dqZ[IB]);
+          qRT[IC] = CR + 0.5 * (+dCRx);
+          qRT[ID] = fmax(smallR, qRT[ID]);
+          qRT[IP] = fmax(smallp * qRT[ID], qRT[IP]);
+        }
+
+        // RB (i-1, j, k)
+        {
+          const auto i0 = i - 1;
+          const auto j0 = j;
+          const auto k0 = k;
+
+          const real_t AR =
+            Udata_in(i0 + 1, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 1, j0 + 0, k0 + 0, IX);
+          const real_t dARz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 1, j0 + 0, k0 + 0, IA);
+
+          const real_t CL =
+            Udata_in(i0 + 0, j0 + 0, k0 + 0, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IZ);
+          const real_t dCLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IC);
+
+          get_state(Slopes_x, i0, j0, k0, dqX);
+          get_state(Slopes_z, i0, j0, k0, dqZ);
+          qRB[ID] += 0.5 * (+dqX[ID] - dqZ[ID]);
+          qRB[IU] += 0.5 * (+dqX[IU] - dqZ[IU]);
+          qRB[IV] += 0.5 * (+dqX[IV] - dqZ[IV]);
+          qRB[IW] += 0.5 * (+dqX[IW] - dqZ[IW]);
+          qRB[IP] += 0.5 * (+dqX[IP] - dqZ[IP]);
+          qRB[IA] = AR + 0.5 * (-dARz);
+          qRB[IB] += 0.5 * (+dqX[IB] - dqZ[IB]);
+          qRB[IC] = CL + 0.5 * (+dCLx);
+          qRB[ID] = fmax(smallR, qRB[ID]);
+          qRB[IP] = fmax(smallp * qRB[ID], qRB[IP]);
+        }
+
+        // LT (i, j, k-1)
+        {
+          const auto i0 = i;
+          const auto j0 = j;
+          const auto k0 = k - 1;
+
+          const real_t AL =
+            Udata_in(i0 + 0, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IX);
+          const real_t dALz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IA);
+
+          const real_t CR =
+            Udata_in(i0 + 0, j0 + 0, k0 + 1, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 1, IZ);
+          const real_t dCRx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, k0 + 1, IC);
+
+          get_state(Slopes_x, i0, j0, k0, dqX);
+          get_state(Slopes_z, i0, j0, k0, dqZ);
+          qLT[ID] += 0.5 * (-dqX[ID] + dqZ[ID]);
+          qLT[IU] += 0.5 * (-dqX[IU] + dqZ[IU]);
+          qLT[IV] += 0.5 * (-dqX[IV] + dqZ[IV]);
+          qLT[IW] += 0.5 * (-dqX[IW] + dqZ[IW]);
+          qLT[IP] += 0.5 * (-dqX[IP] + dqZ[IP]);
+          qLT[IA] = AL + 0.5 * (+dALz);
+          qLT[IB] += 0.5 * (-dqX[IB] + dqZ[IB]);
+          qLT[IC] = CR + 0.5 * (-dCRx);
+          qLT[ID] = fmax(smallR, qLT[ID]);
+          qLT[IP] = fmax(smallp * qLT[ID], qLT[IP]);
+        }
+
+        // exchange RB and LT
+        {
+          swapValues(&(qRB[ID]), &(qLT[ID]));
+          swapValues(&(qRB[IU]), &(qLT[IU]));
+          swapValues(&(qRB[IV]), &(qLT[IV]));
+          swapValues(&(qRB[IW]), &(qLT[IW]));
+          swapValues(&(qRB[IP]), &(qLT[IP]));
+          swapValues(&(qRB[IA]), &(qLT[IA]));
+          swapValues(&(qRB[IB]), &(qLT[IB]));
+          swapValues(&(qRB[IC]), &(qLT[IC]));
+        }
+        const real_t emfY = compute_emf<EMFY>(qEdge_emf, params);
+
+        // clang-format off
+        if (k < ksize - ghostWidth and j < jsize - ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_add(&Udata_out(i    , j    , k     , IA), emfY * dtdz);
+          Kokkos::atomic_sub(&Udata_out(i    , j    , k     , IC), emfY * dtdx);
+        }
+        if (k > ghostWidth and j < jsize - ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_sub(&Udata_out(i    , j    , k - 1 , IA), emfY * dtdz);
+        }
+        if (k < ksize - ghostWidth and j < jsize - ghostWidth and i > ghostWidth)
+        {
+          Kokkos::atomic_add(&Udata_out(i - 1, j    , k     , IC), emfY * dtdx);
+        }
+        // clang-format on
+      }
+      else if constexpr (dir == DIR_X)
+      {
+        // LB at (i,j,k)
+        {
+          const auto i0 = i;
+          const auto j0 = j;
+          const auto k0 = k;
+
+          const real_t BL =
+            Udata_in(i0 + 0, j0 + 0, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IY);
+          const real_t dBLz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IB);
+
+          const real_t CL =
+            Udata_in(i0 + 0, j0 + 0, k0 + 0, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IZ);
+          const real_t dCLy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IC);
+
+          get_state(Slopes_y, i0, j0, k0, dqY);
+          get_state(Slopes_z, i0, j0, k0, dqZ);
+          qLB[ID] += 0.5 * (-dqY[ID] - dqZ[ID]);
+          qLB[IU] += 0.5 * (-dqY[IU] - dqZ[IU]);
+          qLB[IV] += 0.5 * (-dqY[IV] - dqZ[IV]);
+          qLB[IW] += 0.5 * (-dqY[IW] - dqZ[IW]);
+          qLB[IP] += 0.5 * (-dqY[IP] - dqZ[IP]);
+          qLB[IA] += 0.5 * (-dqY[IA] - dqZ[IA]);
+          qLB[IB] = BL + 0.5 * (-dBLz);
+          qLB[IC] = CL + 0.5 * (-dCLy);
+          qLB[ID] = fmax(smallR, qLB[ID]);
+          qLB[IP] = fmax(smallp * qLB[ID], qLB[IP]);
+        }
+
+        // RT (i, j-1, k-1)
+        {
+          const auto i0 = i;
+          const auto j0 = j - 1;
+          const auto k0 = k - 1;
+
+          const real_t BR =
+            Udata_in(i0 + 0, j0 + 1, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 1, k0 + 0, IY);
+          const real_t dBRz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 0, j0 + 1, k0 + 0, IB);
+
+          const real_t CR =
+            Udata_in(i0 + 0, j0 + 0, k0 + 1, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 1, IZ);
+          const real_t dCRy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, k0 + 1, IC);
+
+          get_state(Slopes_y, i0, j0, k0, dqY);
+          get_state(Slopes_z, i0, j0, k0, dqZ);
+          qRT[ID] += 0.5 * (+dqY[ID] + dqZ[ID]);
+          qRT[IU] += 0.5 * (+dqY[IU] + dqZ[IU]);
+          qRT[IV] += 0.5 * (+dqY[IV] + dqZ[IV]);
+          qRT[IW] += 0.5 * (+dqY[IW] + dqZ[IW]);
+          qRT[IP] += 0.5 * (+dqY[IP] + dqZ[IP]);
+          qRT[IA] += 0.5 * (+dqY[IA] + dqZ[IA]);
+          qRT[IB] = BR + 0.5 * (+dBRz);
+          qRT[IC] = CR + 0.5 * (+dCRy);
+          qRT[ID] = fmax(smallR, qRT[ID]);
+          qRT[IP] = fmax(smallp * qRT[ID], qRT[IP]);
+        }
+
+        // RB (i, j-1, k)
+        {
+          const auto i0 = i;
+          const auto j0 = j - 1;
+          const auto k0 = k;
+
+          const real_t BR =
+            Udata_in(i0 + 0, j0 + 1, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 1, k0 + 0, IY);
+          const real_t dBRz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 0, j0 + 1, k0 + 0, IB);
+
+          const real_t CL =
+            Udata_in(i0 + 0, j0 + 0, k0 + 0, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IZ);
+          const real_t dCLy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IC);
+
+          get_state(Slopes_y, i0, j0, k0, dqY);
+          get_state(Slopes_z, i0, j0, k0, dqZ);
+          qRB[ID] += 0.5 * (+dqY[ID] - dqZ[ID]);
+          qRB[IU] += 0.5 * (+dqY[IU] - dqZ[IU]);
+          qRB[IV] += 0.5 * (+dqY[IV] - dqZ[IV]);
+          qRB[IW] += 0.5 * (+dqY[IW] - dqZ[IW]);
+          qRB[IP] += 0.5 * (+dqY[IP] - dqZ[IP]);
+          qRB[IA] += 0.5 * (+dqY[IA] - dqZ[IA]);
+          qRB[IB] = BR + 0.5 * (-dBRz);
+          qRB[IC] = CL + 0.5 * (+dCLy);
+          qRB[ID] = fmax(smallR, qRB[ID]);
+          qRB[IP] = fmax(smallp * qRB[ID], qRB[IP]);
+        }
+
+        // LT (i, j, k-1)
+        {
+          const auto i0 = i;
+          const auto j0 = j;
+          const auto k0 = k - 1;
+
+          const real_t BL =
+            Udata_in(i0 + 0, j0 + 0, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IY);
+          const real_t dBLz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IB);
+
+          const real_t CR =
+            Udata_in(i0 + 0, j0 + 0, k0 + 1, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 1, IZ);
+          const real_t dCRy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, k0 + 1, IC);
+
+          get_state(Slopes_y, i0, j0, k0, dqY);
+          get_state(Slopes_z, i0, j0, k0, dqZ);
+          qLT[ID] += 0.5 * (-dqY[ID] + dqZ[ID]);
+          qLT[IU] += 0.5 * (-dqY[IU] + dqZ[IU]);
+          qLT[IV] += 0.5 * (-dqY[IV] + dqZ[IV]);
+          qLT[IW] += 0.5 * (-dqY[IW] + dqZ[IW]);
+          qLT[IP] += 0.5 * (-dqY[IP] + dqZ[IP]);
+          qLT[IA] += 0.5 * (-dqY[IA] + dqZ[IA]);
+          qLT[IB] = BL + 0.5 * (+dBLz);
+          qLT[IC] = CR + 0.5 * (-dCRy);
+          qLT[ID] = fmax(smallR, qLT[ID]);
+          qLT[IP] = fmax(smallp * qLT[ID], qLT[IP]);
+        }
+
+        const real_t emfX = compute_emf<EMFX>(qEdge_emf, params);
+
+        // clang-format off
+        if (k < ksize - ghostWidth and j < jsize - ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_sub(&Udata_out(i    , j    , k     , IB), emfX * dtdz);
+          Kokkos::atomic_add(&Udata_out(i    , j    , k     , IC), emfX * dtdy);
+        }
+        if (k > ghostWidth and j < jsize - ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_add(&Udata_out(i    , j    , k - 1 , IB), emfX * dtdz);
+        }
+        if (k < ksize - ghostWidth and j > ghostWidth and i < isize - ghostWidth)
+        {
+          Kokkos::atomic_sub(&Udata_out(i    , j - 1, k     , IC), emfX * dtdy);
+        }
+        // clang-format on
+      }
+    }
+  } // operator ()
+
+  DataArray3d Udata_in, Udata_out;
+  DataArray3d Qdata, Qdata2;
+  DataArray3d Slopes_x, Slopes_y, Slopes_z;
+  DataArray3d sFaceMag;
+  real_t      dtdx, dtdy, dtdz;
+
+}; // ComputeEmfAndUpdateFunctor3D_MHD
 
 /*************************************************/
 /*************************************************/

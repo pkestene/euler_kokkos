@@ -361,6 +361,18 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
       total_mem_size += isize * jsize * ksize * nbvar * sizeof(real_t) * 18 +
                         isize * jsize * ksize * 3 * sizeof(real_t) * 4;
     }
+    else if (params.implementationVersion == 2)
+    {
+      Q2 = DataArray("Q2", isize, jsize, ksize, nbvar);
+      sFaceMag = DataArray("sFaceMag", isize, jsize, ksize, 3);
+      Slopes_x = DataArray("Slope_x", isize, jsize, ksize, nbvar);
+      Slopes_y = DataArray("Slope_y", isize, jsize, ksize, nbvar);
+      Slopes_z = DataArray("Slope_z", isize, jsize, ksize, nbvar);
+      ElecField = DataArray("ElecField", isize, jsize, ksize, 3);
+
+      total_mem_size += isize * jsize * ksize * nbvar * sizeof(real_t) * (1 + 3) +
+                        isize * jsize * ksize * 3 * sizeof(real_t) * 2;
+    }
 
     if (params.implementationVersion == 0)
     {
