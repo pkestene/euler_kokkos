@@ -137,6 +137,8 @@ public:
   void
   init_implode(DataArray Udata);
   void
+  init_brio_wu(DataArray Udata);
+  void
   init_orszag_tang(DataArray Udata);
   void
   init_kelvin_helmholtz(DataArray Udata); // 2d and 3d
@@ -548,6 +550,28 @@ SolverMHDMuscl<dim>::init_implode(DataArray Udata)
 // =======================================================
 // =======================================================
 /**
+ * Brio-We shock tube.
+ *
+ */
+template <int dim>
+void
+SolverMHDMuscl<dim>::init_brio_wu(DataArray Udata)
+{
+
+  BrioWuParams bwParams = BrioWuParams(configMap);
+
+  // alias to actual device functor
+  using InitBrioWuFunctor =
+    typename std::conditional<dim == 2, InitBrioWuFunctor2D_MHD, InitBrioWuFunctor3D_MHD>::type;
+
+  // perform init
+  InitBrioWuFunctor::apply(params, bwParams, Udata);
+
+} // SolverMHDMuscl::init_brio_wu
+
+// =======================================================
+// =======================================================
+/**
  * Rotor test.
  *
  */
@@ -653,6 +677,11 @@ SolverMHDMuscl<dim>::init(DataArray Udata)
     {
 
       init_implode(U);
+    }
+    else if (!m_problem_name.compare("brio-wu"))
+    {
+
+      init_brio_wu(U);
     }
     else if (!m_problem_name.compare("orszag_tang"))
     {

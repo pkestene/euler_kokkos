@@ -16,6 +16,7 @@
 #include "shared/problems/RotorParams.h"
 #include "shared/problems/FieldLoopParams.h"
 #include "shared/problems/OrszagTangParams.h"
+#include "shared/problems/BrioWuParams.h"
 
 // kokkos random numbers
 #include <Kokkos_Random.hpp>
@@ -136,6 +137,105 @@ public:
   DataArray2d   Udata;
 
 }; // InitImplodeFunctor2D_MHD
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
+class InitBrioWuFunctor2D_MHD : public MHDBaseFunctor2D
+{
+
+public:
+  InitBrioWuFunctor2D_MHD(HydroParams params, BrioWuParams bwparams, DataArray2d Udata)
+    : MHDBaseFunctor2D(params)
+    , bwparams(bwparams)
+    , Udata(Udata){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params, BrioWuParams bwparams, DataArray2d Udata)
+  {
+    InitBrioWuFunctor2D_MHD functor(params, bwparams, Udata);
+    Kokkos::parallel_for(
+      "InitBrioWuFunctor2D_MHD",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j) const
+  {
+
+    const int ghostWidth = params.ghostWidth;
+
+#ifdef USE_MPI
+    const int i_mpi = params.myMpiPos[IX];
+    // const int j_mpi = params.myMpiPos[IY];
+#else
+    const int i_mpi = 0;
+    // const int j_mpi = 0;
+#endif
+
+    const int nx = params.nx;
+    // const int ny = params.ny;
+
+    const real_t xmin = params.xmin;
+    // const real_t xmax = params.xmax;
+    //  const real_t ymin = params.ymin;
+    const real_t dx = params.dx;
+    // const real_t dy = params.dy;
+
+    const real_t gamma0 = params.settings.gamma0;
+
+    real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
+    // real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
+
+    // left state
+    const real_t rhoL = this->bwparams.rhoL;
+    const real_t pL = this->bwparams.pL;
+    const real_t uL = this->bwparams.uL;
+    const real_t ByL = this->bwparams.ByL;
+
+    // right state
+    const real_t rhoR = this->bwparams.rhoR;
+    const real_t pR = this->bwparams.pR;
+    const real_t uR = this->bwparams.uR;
+    const real_t ByR = this->bwparams.ByR;
+
+    const real_t Bx = this->bwparams.Bx;
+
+    const real_t xd = this->bwparams.xd;
+
+    // init cell centered values
+    if (x <= xd)
+    {
+      Udata(i, j, ID) = rhoL;
+      Udata(i, j, IP) = pL / (gamma0 - 1.0) + 0.5 * (Bx * Bx + ByL * ByL);
+      Udata(i, j, IU) = rhoL * uL;
+      Udata(i, j, IV) = 0.0;
+      Udata(i, j, IW) = 0.0;
+      Udata(i, j, IA) = Bx;
+      Udata(i, j, IB) = ByL;
+      Udata(i, j, IC) = 0.0;
+    }
+    else
+    {
+      Udata(i, j, ID) = rhoR;
+      Udata(i, j, IP) = pR / (gamma0 - 1.0) + 0.5 * (Bx * Bx + ByR * ByR);
+      Udata(i, j, IU) = rhoR * uR;
+      Udata(i, j, IV) = 0.0;
+      Udata(i, j, IW) = 0.0;
+      Udata(i, j, IA) = Bx;
+      Udata(i, j, IB) = ByR;
+      Udata(i, j, IC) = 0.0;
+    }
+
+  } // end operator ()
+
+  BrioWuParams bwparams;
+  DataArray2d  Udata;
+
+}; // InitBrioWuFunctor2D_MHD
 
 /*************************************************/
 /*************************************************/

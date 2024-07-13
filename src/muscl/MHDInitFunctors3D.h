@@ -151,6 +151,110 @@ public:
 /*************************************************/
 /*************************************************/
 /*************************************************/
+class InitBrioWuFunctor3D_MHD : public MHDBaseFunctor3D
+{
+
+public:
+  InitBrioWuFunctor3D_MHD(HydroParams params, BrioWuParams bwparams, DataArray3d Udata)
+    : MHDBaseFunctor3D(params)
+    , bwparams(bwparams)
+    , Udata(Udata){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(HydroParams params, BrioWuParams bwparams, DataArray3d Udata)
+  {
+    InitBrioWuFunctor3D_MHD functor(params, bwparams, Udata);
+    Kokkos::parallel_for("InitBrioWuFunctor3D_MHD",
+                         Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j, const int & k) const
+  {
+
+    const int ghostWidth = params.ghostWidth;
+
+#ifdef USE_MPI
+    const int i_mpi = params.myMpiPos[IX];
+    // const int j_mpi = params.myMpiPos[IY];
+    // const int k_mpi = params.myMpiPos[IZ];
+#else
+    const int                  i_mpi = 0;
+    // const int                  j_mpi = 0;
+    // const int                  k_mpi = 0;
+#endif
+
+    const int nx = params.nx;
+    // const int ny = params.ny;
+    // const int nz = params.ny;
+
+    const real_t xmin = params.xmin;
+    // const real_t xmax = params.xmax;
+    //  const real_t ymin = params.ymin;
+    //  const real_t zmin = params.zmin;
+    const real_t dx = params.dx;
+    // const real_t dy = params.dy;
+    // const real_t dz = params.dz;
+
+    const real_t gamma0 = params.settings.gamma0;
+
+    real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
+    // real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
+
+    // left state
+    const real_t rhoL = this->bwparams.rhoL;
+    const real_t pL = this->bwparams.pL;
+    const real_t uL = this->bwparams.uL;
+    const real_t ByL = this->bwparams.ByL;
+
+    // right state
+    const real_t rhoR = this->bwparams.rhoR;
+    const real_t pR = this->bwparams.pR;
+    const real_t uR = this->bwparams.uR;
+    const real_t ByR = this->bwparams.ByR;
+
+    const real_t Bx = this->bwparams.Bx;
+
+    const real_t xd = this->bwparams.xd;
+
+    // init cell centered values
+    if (x <= xd)
+    {
+      Udata(i, j, k, ID) = rhoL;
+      Udata(i, j, k, IP) = pL / (gamma0 - 1.0) + 0.5 * (Bx * Bx + ByL * ByL);
+      Udata(i, j, k, IU) = rhoL * uL;
+      Udata(i, j, k, IV) = 0.0;
+      Udata(i, j, k, IW) = 0.0;
+      Udata(i, j, k, IA) = Bx;
+      Udata(i, j, k, IB) = ByL;
+      Udata(i, j, k, IC) = 0.0;
+    }
+    else
+    {
+      Udata(i, j, k, ID) = rhoR;
+      Udata(i, j, k, IP) = pR / (gamma0 - 1.0) + 0.5 * (Bx * Bx + ByR * ByR);
+      Udata(i, j, k, IU) = rhoR * uR;
+      Udata(i, j, k, IV) = 0.0;
+      Udata(i, j, k, IW) = 0.0;
+      Udata(i, j, k, IA) = Bx;
+      Udata(i, j, k, IB) = ByR;
+      Udata(i, j, k, IC) = 0.0;
+    }
+
+  } // end operator ()
+
+  BrioWuParams bwparams;
+  DataArray3d  Udata;
+
+}; // InitBrioWuFunctor3D_MHD
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
 class InitBlastFunctor3D_MHD : public MHDBaseFunctor3D
 {
 
@@ -183,9 +287,9 @@ public:
     const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
-    const int i_mpi = 0;
-    const int j_mpi = 0;
-    const int k_mpi = 0;
+    const int                  i_mpi = 0;
+    const int                  j_mpi = 0;
+    const int                  k_mpi = 0;
 #endif
 
     const int nx = params.nx;
