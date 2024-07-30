@@ -340,15 +340,12 @@ public:
 class InitOrszagTangFunctor2D : public MHDBaseFunctor2D
 {
 
-private:
-  enum PhaseType
-  {
-    INIT_ALL_VAR_BUT_ENERGY = 0,
-    INIT_ENERGY = 1
-  };
-
-
 public:
+  struct TagInitTotalEnergy
+  {};
+  struct TagInitOtherVars
+  {};
+
   InitOrszagTangFunctor2D(HydroParams params, OrszagTangParams otParams, DataArray2d Udata)
     : MHDBaseFunctor2D(params)
     , otParams(otParams)
@@ -360,34 +357,20 @@ public:
   {
     InitOrszagTangFunctor2D functor(params, otParams, Udata);
 
-    functor.phase = INIT_ALL_VAR_BUT_ENERGY;
-    Kokkos::parallel_for(
-      "InitOrszagTangFunctor2D INIT_ALL_VAR_BUT_ENERGY",
-      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
-      functor);
+    Kokkos::parallel_for("InitOrszagTangFunctor2D",
+                         Kokkos::MDRangePolicy<Kokkos::Rank<2>, TagInitOtherVars>(
+                           { 0, 0 }, { params.isize, params.jsize }),
+                         functor);
 
-    functor.phase = INIT_ENERGY;
-    Kokkos::parallel_for(
-      "InitOrszagTangFunctor2D INIT_ENERGY",
-      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
-      functor);
+    Kokkos::parallel_for("InitOrszagTangFunctor2D - energy",
+                         Kokkos::MDRangePolicy<Kokkos::Rank<2>, TagInitTotalEnergy>(
+                           { 0, 0 }, { params.isize, params.jsize }),
+                         functor);
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  operator()(const int & i, const int & j) const
-  {
-
-    if (phase == INIT_ALL_VAR_BUT_ENERGY)
-      init_all_var_but_energy(i, j);
-    else if (phase == INIT_ENERGY)
-      init_energy(i, j);
-
-  } // end operator ()
-
-  KOKKOS_INLINE_FUNCTION
-  void
-  init_all_var_but_energy(const int & i, const int & j) const
+  operator()(TagInitOtherVars const &, const int & i, const int & j) const
   {
 
     const int isize = params.isize;
@@ -446,7 +429,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void
-  init_energy(const int & i, const int & j) const
+  operator()(TagInitTotalEnergy const &, const int & i, const int & j) const
   {
 
     const int isize = params.isize;
@@ -470,20 +453,23 @@ public:
     // double xPos = xmin + dx/2 + (i+nx*i_mpi-ghostWidth)*dx;
     // double yPos = ymin + dy/2 + (j+ny*j_mpi-ghostWidth)*dy;
 
+    // total energy is : thermal + kinetic + magnetic energy
     if (i < isize - 1 and j < jsize - 1)
     {
+      // clang-format off
       Udata(i, j, IP) =
         p0 / (gamma0 - 1.0) +
-        0.5 * (SQR(Udata(i, j, IU)) / Udata(i, j, ID) + SQR(Udata(i, j, IV)) / Udata(i, j, ID) +
-               0.25 * SQR(Udata(i, j, IA) + Udata(i + 1, j, IA)) +
-               0.25 * SQR(Udata(i, j, IB) + Udata(i, j + 1, IB)));
+        0.5 * (SQR(Udata(i, j, IU)) / Udata(i, j, ID) +
+               SQR(Udata(i, j, IV)) / Udata(i, j, ID)) +
+        0.5 * (SQR((Udata(i, j, IA) + Udata(i + 1, j    , IA)) / 2) +
+               SQR((Udata(i, j, IB) + Udata(i    , j + 1, IB)) / 2));
+      // clang-format on
     }
 
   } // init_energy
 
   OrszagTangParams otParams;
   DataArray2d      Udata;
-  PhaseType        phase;
 
 }; // InitOrszagTangFunctor2D
 
