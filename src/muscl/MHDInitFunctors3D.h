@@ -512,7 +512,7 @@ public:
 
     const int isize = params.isize;
     const int jsize = params.jsize;
-    // const int ksize = params.ksize;
+    const int ksize = params.ksize;
     //  const int ghostWidth = params.ghostWidth;
 
     const real_t gamma0 = params.settings.gamma0;
@@ -526,14 +526,16 @@ public:
     // double yPos = ymin + dy/2 + (j-ghostWidth)*dy;
     // double zPos = zmin + dz/2 + (k-ghostWidth)*dz;
 
-    if (i < isize - 1 and j < jsize - 1)
+    if (i < isize - 1 and j < jsize - 1 and k < ksize - 1)
     {
 
-      Udata(i, j, k, IP) =
-        p0 / (gamma0 - 1.0) + 0.5 * (SQR(Udata(i, j, k, IU)) / Udata(i, j, k, ID) +
-                                     SQR(Udata(i, j, k, IV)) / Udata(i, j, k, ID) +
-                                     0.25 * SQR(Udata(i, j, k, IA) + Udata(i + 1, j, k, IA)) +
-                                     0.25 * SQR(Udata(i, j, k, IB) + Udata(i, j + 1, k, IB)));
+      Udata(i, j, k, IP) = p0 / (gamma0 - 1.0) +
+                           0.5 * (SQR(Udata(i, j, k, IU)) / Udata(i, j, k, ID) +
+                                  SQR(Udata(i, j, k, IV)) / Udata(i, j, k, ID) +
+                                  SQR(Udata(i, j, k, IW)) / Udata(i, j, k, ID)) +
+                           0.5 * (SQR((Udata(i, j, k, IA) + Udata(i + 1, j, k, IA)) / 2) +
+                                  SQR((Udata(i, j, k, IB) + Udata(i, j + 1, k, IB)) / 2) +
+                                  SQR((Udata(i, j, k, IC) + Udata(i, j, k + 1, IC)) / 2));
     }
 
   } // init_energy
