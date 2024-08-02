@@ -1,14 +1,9 @@
 #include <string>
 #include <cstdio>
 #include <cstdbool>
-#include <sstream>
-#include <fstream>
-#include <algorithm>
 
 #include "muscl/SolverHydroMuscl.h"
 #include "shared/HydroParams.h"
-
-#include "shared/mpiBorderUtils.h"
 
 namespace euler_kokkos
 {

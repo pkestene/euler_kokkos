@@ -10,16 +10,11 @@
 #include <cstdio>
 #include <cstdbool>
 #include <iostream>
-#include <sstream>
-#include <fstream>
-#include <algorithm>
 
 // shared
 #include "shared/SolverBase.h"
 #include "shared/HydroParams.h"
 #include "shared/kokkos_shared.h"
-#include "shared/BoundariesFunctors.h"
-#include "shared/problems/initRiemannConfig2d.h"
 
 // the actual computational functors called in HydroRun
 #include "muscl/MHDRunFunctors2D.h"
@@ -28,9 +23,6 @@
 // Init conditions functors
 #include "muscl/MHDInitFunctors2D.h"
 #include "muscl/MHDInitFunctors3D.h"
-
-// border conditions functors
-#include "shared/BoundariesFunctors.h"
 
 // for IO
 #include <utils/io/IO_ReadWrite.h>
@@ -408,20 +400,16 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
 
   if (myRank == 0)
   {
-    std::cout << "##########################"
-              << "\n";
+    std::cout << "##########################" << "\n";
     std::cout << "Solver is " << m_solver_name << "\n";
     std::cout << "Problem (init condition) is " << m_problem_name << "\n";
-    std::cout << "##########################"
-              << "\n";
+    std::cout << "##########################" << "\n";
 
     // print parameters on screen
     params.print();
-    std::cout << "##########################"
-              << "\n";
+    std::cout << "##########################" << "\n";
     std::cout << "Memory requested : " << (total_mem_size / 1e6) << " MBytes\n";
-    std::cout << "##########################"
-              << "\n";
+    std::cout << "##########################" << "\n";
   }
 
 } // SolverMHDMuscl::SolverMHDMuscl
@@ -788,7 +776,7 @@ SolverMHDMuscl<dim>::next_iteration_impl()
       save_solution();
 
     } // end output
-  }   // end enable output
+  } // end enable output
 
   // compute new dt
   timers[TIMER_DT]->start();
