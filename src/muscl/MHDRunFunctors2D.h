@@ -997,7 +997,6 @@ public:
       real_t dux = dq[IX][IU];
       real_t dvx = dq[IX][IV];
       real_t dwx = dq[IX][IW];
-      real_t dAx = dq[IX][IA]; // face center slope !
       real_t dBx = dq[IX][IB];
       real_t dCx = dq[IX][IC];
 
@@ -1008,8 +1007,11 @@ public:
       real_t dvy = dq[IY][IV];
       real_t dwy = dq[IY][IW];
       real_t dAy = dq[IY][IA];
-      real_t dBy = dq[IY][IB]; // face center slope !
       real_t dCy = dq[IY][IC];
+
+      const auto   db = compute_normal_mag_field_slopes(Udata, i, j);
+      const auto & dAx = db[IX];
+      const auto & dBy = db[IY];
 
       real_t sr0, su0, sv0, sw0, sp0, sA0, sB0, sC0;
       {
