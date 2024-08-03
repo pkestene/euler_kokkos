@@ -924,12 +924,16 @@ public:
   ComputeUpdatedPrimVarFunctor2D_MHD(HydroParams params,
                                      DataArray2d Udata,
                                      DataArray2d Qdata,
+                                     DataArray2d Slopes_x,
+                                     DataArray2d Slopes_y,
                                      DataArray2d Qdata2,
                                      real_t      dtdx,
                                      real_t      dtdy)
     : MHDBaseFunctor2D(params)
     , Udata(Udata)
     , Qdata(Qdata)
+    , Slopes_x(Slopes_x)
+    , Slopes_y(Slopes_y)
     , Qdata2(Qdata2)
     , dtdx(dtdx)
     , dtdy(dtdy){};
@@ -939,11 +943,14 @@ public:
   apply(HydroParams params,
         DataArray2d Udata,
         DataArray2d Qdata,
+        DataArray2d Slopes_x,
+        DataArray2d Slopes_y,
         DataArray2d Qdata2,
         real_t      dtdx,
         real_t      dtdy)
   {
-    ComputeUpdatedPrimVarFunctor2D_MHD functor(params, Udata, Qdata, Qdata2, dtdx, dtdy);
+    ComputeUpdatedPrimVarFunctor2D_MHD functor(
+      params, Udata, Qdata, Slopes_x, Slopes_y, Qdata2, dtdx, dtdy);
     Kokkos::parallel_for(
       "ComputeUpdatedPrimVarFunctor2D_MHD",
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
@@ -969,17 +976,12 @@ public:
       get_state(Qdata, i, j, q);
 
       MHDState dq[2];
-      MHDState qm, qp;
 
-      // compute hydro slopes along X
-      get_state(Qdata, i + 1, j, qp);
-      get_state(Qdata, i - 1, j, qm);
-      slope_unsplit_hydro_2d(q, qp, qm, dq[IX]);
+      // retrieve hydro slopes along X
+      get_state(Slopes_x, i, j, dq[IX]);
 
-      // compute hydro slopes along Y
-      get_state(Qdata, i, j + 1, qp);
-      get_state(Qdata, i, j - 1, qm);
-      slope_unsplit_hydro_2d(q, qp, qm, dq[IY]);
+      // retrieve hydro slopes along Y
+      get_state(Slopes_y, i, j, dq[IY]);
 
       // Cell centered values
       real_t r = q[ID];
@@ -1042,6 +1044,7 @@ public:
   } // operator ()
 
   DataArray2d Udata, Qdata; // input
+  DataArray2d Slopes_x, Slopes_y; // input
   DataArray2d Qdata2;       // output
   real_t      dtdx, dtdy;
 

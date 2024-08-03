@@ -427,7 +427,8 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
     ComputeSlopesFunctor2D_MHD::apply(params, data_in, Q, Slopes_x, Slopes_y);
 
     // update (cell-centered) primitive variables, perform 1/2 time step
-    ComputeUpdatedPrimVarFunctor2D_MHD::apply(params, data_in, Q, Q2, dtdx, dtdy);
+    ComputeUpdatedPrimVarFunctor2D_MHD::apply(
+      params, data_in, Q, Slopes_x, Slopes_y, Q2, dtdx, dtdy);
 
     // compute electric field (v wedge B)
     ComputeElecFieldFunctor2D::apply(params, data_in, Q, ElecField);
@@ -526,7 +527,8 @@ SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
     ComputeSlopesFunctor3D_MHD::apply(params, data_in, Q, Slopes_x, Slopes_y, Slopes_z);
 
     // update (cell-centered) primitive variables, perform 1/2 time step
-    ComputeUpdatedPrimVarFunctor3D_MHD::apply(params, data_in, Q, Q2, dtdx, dtdy, dtdz);
+    ComputeUpdatedPrimVarFunctor3D_MHD::apply(
+      params, data_in, Q, Slopes_x, Slopes_y, Slopes_z, Q2, dtdx, dtdy, dtdz);
 
     // compute electric field (v wedge B)
     ComputeElecFieldFunctor3D::apply(params, data_in, Q, ElecField);

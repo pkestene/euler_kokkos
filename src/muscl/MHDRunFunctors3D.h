@@ -869,6 +869,9 @@ public:
   ComputeUpdatedPrimVarFunctor3D_MHD(HydroParams params,
                                      DataArray3d Udata,
                                      DataArray3d Qdata,
+                                     DataArray3d Slopes_x,
+                                     DataArray3d Slopes_y,
+                                     DataArray3d Slopes_z,
                                      DataArray3d Qdata2,
                                      real_t      dtdx,
                                      real_t      dtdy,
@@ -876,6 +879,9 @@ public:
     : MHDBaseFunctor3D(params)
     , Udata(Udata)
     , Qdata(Qdata)
+    , Slopes_x(Slopes_x)
+    , Slopes_y(Slopes_y)
+    , Slopes_z(Slopes_z)
     , Qdata2(Qdata2)
     , dtdx(dtdx)
     , dtdy(dtdy)
@@ -886,12 +892,16 @@ public:
   apply(HydroParams params,
         DataArray3d Udata,
         DataArray3d Qdata,
+        DataArray3d Slopes_x,
+        DataArray3d Slopes_y,
+        DataArray3d Slopes_z,
         DataArray3d Qdata2,
         real_t      dtdx,
         real_t      dtdy,
         real_t      dtdz)
   {
-    ComputeUpdatedPrimVarFunctor3D_MHD functor(params, Udata, Qdata, Qdata2, dtdx, dtdy, dtdz);
+    ComputeUpdatedPrimVarFunctor3D_MHD functor(
+      params, Udata, Qdata, Slopes_x, Slopes_y, Slopes_z, Qdata2, dtdx, dtdy, dtdz);
     Kokkos::parallel_for("ComputeUpdatedPrimVarFunctor3D_MHD",
                          Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
                            { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
@@ -919,22 +929,15 @@ public:
       get_state(Qdata, i, j, k, q);
 
       MHDState dq[3];
-      MHDState qm, qp;
 
-      // compute hydro slopes along X
-      get_state(Qdata, i + 1, j, k, qp);
-      get_state(Qdata, i - 1, j, k, qm);
-      slope_unsplit_hydro_3d(q, qp, qm, dq[IX]);
+      // retrieve hydro slopes along X
+      get_state(Slopes_x, i, j, k, dq[IX]);
 
-      // compute hydro slopes along Y
-      get_state(Qdata, i, j + 1, k, qp);
-      get_state(Qdata, i, j - 1, k, qm);
-      slope_unsplit_hydro_3d(q, qp, qm, dq[IY]);
+      // retrieve hydro slopes along Y
+      get_state(Slopes_y, i, j, k, dq[IY]);
 
-      // compute hydro slopes along Z
-      get_state(Qdata, i, j, k + 1, qp);
-      get_state(Qdata, i, j, k - 1, qm);
-      slope_unsplit_hydro_3d(q, qp, qm, dq[IZ]);
+      // retrieve hydro slopes along Z
+      get_state(Slopes_y, i, j, k, dq[IZ]);
 
       // Cell centered values
       real_t r = q[ID];
@@ -1012,6 +1015,7 @@ public:
   } // operator ()
 
   DataArray3d Udata, Qdata; // input
+  DataArray3d Slopes_x, Slopes_y, Slopes_z; // input
   DataArray3d Qdata2;       // output
   real_t      dtdx, dtdy, dtdz;
 
