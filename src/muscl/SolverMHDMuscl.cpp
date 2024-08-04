@@ -547,13 +547,13 @@ SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
       params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
 
     // update magnetic field at t_{n+1}
-    ReconstructEdgeComputeEmfAndUpdateFunctor3D<DIR_Z>::apply(
+    ReconstructEdgeComputeEmfAndUpdateFunctor3D<DIR_X>::apply(
       params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
 
     ReconstructEdgeComputeEmfAndUpdateFunctor3D<DIR_Y>::apply(
       params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
 
-    ReconstructEdgeComputeEmfAndUpdateFunctor3D<DIR_X>::apply(
+    ReconstructEdgeComputeEmfAndUpdateFunctor3D<DIR_Z>::apply(
       params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
   }
   timers[TIMER_NUM_SCHEME]->stop();

@@ -984,36 +984,36 @@ public:
       get_state(Slopes_y, i, j, dq[IY]);
 
       // Cell centered values
-      real_t r = q[ID];
-      real_t p = q[IP];
-      real_t u = q[IU];
-      real_t v = q[IV];
-      real_t w = q[IW];
-      real_t A = q[IA];
-      real_t B = q[IB];
-      real_t C = q[IC];
+      auto const & r = q[ID];
+      auto const & p = q[IP];
+      auto const & u = q[IU];
+      auto const & v = q[IV];
+      auto const & w = q[IW];
+      auto const & A = q[IA];
+      auto const & B = q[IB];
+      auto const & C = q[IC];
 
       // Cell centered TVD slopes in X direction
-      real_t drx = dq[IX][ID];
-      real_t dpx = dq[IX][IP];
-      real_t dux = dq[IX][IU];
-      real_t dvx = dq[IX][IV];
-      real_t dwx = dq[IX][IW];
-      real_t dBx = dq[IX][IB];
-      real_t dCx = dq[IX][IC];
+      auto const & drx = dq[IX][ID];
+      auto const & dpx = dq[IX][IP];
+      auto const & dux = dq[IX][IU];
+      auto const & dvx = dq[IX][IV];
+      auto const & dwx = dq[IX][IW];
+      auto const & dBx = dq[IX][IB];
+      auto const & dCx = dq[IX][IC];
 
       // Cell centered TVD slopes in Y direction
-      real_t dry = dq[IY][ID];
-      real_t dpy = dq[IY][IP];
-      real_t duy = dq[IY][IU];
-      real_t dvy = dq[IY][IV];
-      real_t dwy = dq[IY][IW];
-      real_t dAy = dq[IY][IA];
-      real_t dCy = dq[IY][IC];
+      auto const & dry = dq[IY][ID];
+      auto const & dpy = dq[IY][IP];
+      auto const & duy = dq[IY][IU];
+      auto const & dvy = dq[IY][IV];
+      auto const & dwy = dq[IY][IW];
+      auto const & dAy = dq[IY][IA];
+      auto const & dCy = dq[IY][IC];
 
-      const auto   db = compute_normal_mag_field_slopes(Udata, i, j);
-      const auto & dAx = db[IX];
-      const auto & dBy = db[IY];
+      auto const   db = compute_normal_mag_field_slopes(Udata, i, j);
+      auto const & dAx = db[IX];
+      auto const & dBy = db[IY];
 
       real_t sr0, su0, sv0, sw0, sp0, sA0, sB0, sC0;
       {
