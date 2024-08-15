@@ -5,15 +5,18 @@ add_library(shared "")
 target_sources (shared
   PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/BlastParams.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/problems/ImplodeParams.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/problems/KHParams.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/problems/WedgeParams.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/problems/JetParams.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/problems/IsentropicVortexParams.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/problems/RotorParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/problems/BrioWuParams.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/FieldLoopParams.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/problems/initRiemannConfig2d.h
   ${CMAKE_CURRENT_SOURCE_DIR}/problems/GreshoParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/problems/ImplodeParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/problems/IsentropicVortexParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/problems/JetParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/problems/KHParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/problems/OrszagTangParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/problems/RayleighTaylorInstabilityParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/problems/RotorParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/problems/WedgeParams.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/problems/initRiemannConfig2d.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BoundariesFunctors.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BoundariesFunctorsWedge.h
   ${CMAKE_CURRENT_SOURCE_DIR}/HydroParams.cpp
