@@ -183,7 +183,7 @@ public:
     // const int j_mpi = params.myMpiPos[IY];
     // const int k_mpi = params.myMpiPos[IZ];
 #else
-    const int                  i_mpi = 0;
+    const int i_mpi = 0;
     // const int                  j_mpi = 0;
     // const int                  k_mpi = 0;
 #endif
@@ -225,7 +225,7 @@ public:
     if (x <= xd)
     {
       Udata(i, j, k, ID) = rhoL;
-      Udata(i, j, k, IP) = pL / (gamma0 - 1.0) + 0.5 * (Bx * Bx + ByL * ByL);
+      Udata(i, j, k, IP) = pL / (gamma0 - 1.0) + 0.5 * rhoL * uL * uL + 0.5 * (Bx * Bx + ByL * ByL);
       Udata(i, j, k, IU) = rhoL * uL;
       Udata(i, j, k, IV) = 0.0;
       Udata(i, j, k, IW) = 0.0;
@@ -236,7 +236,7 @@ public:
     else
     {
       Udata(i, j, k, ID) = rhoR;
-      Udata(i, j, k, IP) = pR / (gamma0 - 1.0) + 0.5 * (Bx * Bx + ByR * ByR);
+      Udata(i, j, k, IP) = pR / (gamma0 - 1.0) + 0.5 * rhoR * uR * uR + 0.5 * (Bx * Bx + ByR * ByR);
       Udata(i, j, k, IU) = rhoR * uR;
       Udata(i, j, k, IV) = 0.0;
       Udata(i, j, k, IW) = 0.0;

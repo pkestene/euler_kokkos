@@ -210,7 +210,7 @@ public:
     if (x <= xd)
     {
       Udata(i, j, ID) = rhoL;
-      Udata(i, j, IP) = pL / (gamma0 - 1.0) + 0.5 * (Bx * Bx + ByL * ByL);
+      Udata(i, j, IP) = pL / (gamma0 - 1.0) + 0.5 * rhoL * uL * uL + 0.5 * (Bx * Bx + ByL * ByL);
       Udata(i, j, IU) = rhoL * uL;
       Udata(i, j, IV) = 0.0;
       Udata(i, j, IW) = 0.0;
@@ -221,7 +221,7 @@ public:
     else
     {
       Udata(i, j, ID) = rhoR;
-      Udata(i, j, IP) = pR / (gamma0 - 1.0) + 0.5 * (Bx * Bx + ByR * ByR);
+      Udata(i, j, IP) = pR / (gamma0 - 1.0) + 0.5 * rhoR * uR * uR + 0.5 * (Bx * Bx + ByR * ByR);
       Udata(i, j, IU) = rhoR * uR;
       Udata(i, j, IV) = 0.0;
       Udata(i, j, IW) = 0.0;
