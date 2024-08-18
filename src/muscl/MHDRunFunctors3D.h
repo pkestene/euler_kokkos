@@ -937,7 +937,7 @@ public:
       get_state(Slopes_y, i, j, k, dq[IY]);
 
       // retrieve hydro slopes along Z
-      get_state(Slopes_y, i, j, k, dq[IZ]);
+      get_state(Slopes_z, i, j, k, dq[IZ]);
 
       // Cell centered values
       auto const & r = q[ID];
