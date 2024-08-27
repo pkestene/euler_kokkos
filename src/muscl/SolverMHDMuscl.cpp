@@ -438,13 +438,13 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
 
     // update at t_{n+1} with hydro flux (across all faces)
     ComputeFluxAndUpdateAlongDirFunctor2D_MHD<DIR_X>::apply(
-      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
+      params, data_in, data_out, Q2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
 
     ComputeFluxAndUpdateAlongDirFunctor2D_MHD<DIR_Y>::apply(
-      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
+      params, data_in, data_out, Q2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
 
     ReconstructEdgeComputeEmfAndUpdateFunctor2D::apply(
-      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
+      params, data_in, data_out, Q2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
   }
 
   timers[TIMER_NUM_SCHEME]->stop();
@@ -538,23 +538,23 @@ SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
 
     // update hydro variables at t_{n+1}
     ComputeFluxAndUpdateAlongDirFunctor3D_MHD<DIR_X>::apply(
-      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
+      params, data_in, data_out, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
 
     ComputeFluxAndUpdateAlongDirFunctor3D_MHD<DIR_Y>::apply(
-      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
+      params, data_in, data_out, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
 
     ComputeFluxAndUpdateAlongDirFunctor3D_MHD<DIR_Z>::apply(
-      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
+      params, data_in, data_out, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
 
     // update magnetic field at t_{n+1}
     ReconstructEdgeComputeEmfAndUpdateFunctor3D<DIR_X>::apply(
-      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
+      params, data_in, data_out, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
 
     ReconstructEdgeComputeEmfAndUpdateFunctor3D<DIR_Y>::apply(
-      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
+      params, data_in, data_out, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
 
     ReconstructEdgeComputeEmfAndUpdateFunctor3D<DIR_Z>::apply(
-      params, data_in, data_out, Q, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
+      params, data_in, data_out, Q2, Slopes_x, Slopes_y, Slopes_z, sFaceMag, dtdx, dtdy, dtdz);
   }
   timers[TIMER_NUM_SCHEME]->stop();
 

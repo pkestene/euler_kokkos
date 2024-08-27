@@ -1066,13 +1066,11 @@ public:
   //!
   //! \param[in] Udata_in is conservative variables at t_n
   //! \param[in] Udata_out is conservative variables at t_{n+1}
-  //! \param[in] Qdata is necessary to recompute limited slopes
   //! \param[in] Qdata2 is primitive variables array at t_{n+1/2}
   //!
   ComputeFluxAndUpdateAlongDirFunctor2D_MHD(HydroParams params,
                                             DataArray2d Udata_in,
                                             DataArray2d Udata_out,
-                                            DataArray2d Qdata,
                                             DataArray2d Qdata2,
                                             DataArray2d Slopes_x,
                                             DataArray2d Slopes_y,
@@ -1082,7 +1080,6 @@ public:
     : MHDBaseFunctor2D(params)
     , Udata_in(Udata_in)
     , Udata_out(Udata_out)
-    , Qdata(Qdata)
     , Qdata2(Qdata2)
     , Slopes_x(Slopes_x)
     , Slopes_y(Slopes_y)
@@ -1095,7 +1092,6 @@ public:
   apply(HydroParams params,
         DataArray2d Udata_in,
         DataArray2d Udata_out,
-        DataArray2d Qdata,
         DataArray2d Qdata2,
         DataArray2d Slopes_x,
         DataArray2d Slopes_y,
@@ -1104,7 +1100,7 @@ public:
         real_t      dtdy)
   {
     ComputeFluxAndUpdateAlongDirFunctor2D_MHD<dir> functor(
-      params, Udata_in, Udata_out, Qdata, Qdata2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
+      params, Udata_in, Udata_out, Qdata2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
     Kokkos::parallel_for(
       "ComputeFluxAndUpdateAlongDirFunctor2D_MHD",
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
@@ -1131,18 +1127,11 @@ public:
         i >= ghostWidth and i < isize - ghostWidth + 1)
     // clang-format on
     {
-      MHDState dq, dqN;
-
-      // cell-centered primitive variables in current cell, and left and right neighbor along dir
-      MHDState q;
-      get_state(Qdata, i, j, q);
-
-      // cell-centered primitive variables in neighbor cell
-      MHDState qN;
-      get_state(Qdata, i - delta_i, j - delta_j, qN);
-
       // left and right reconstructed state (input for Riemann solver)
       MHDState qR, qL;
+
+      // slopes in left and right cells
+      MHDState dq, dqN;
 
       //
       // Right state at left interface (current cell)
@@ -1286,7 +1275,7 @@ public:
   } // operator ()
 
   DataArray2d Udata_in, Udata_out;
-  DataArray2d Qdata, Qdata2;
+  DataArray2d Qdata2;
   DataArray2d Slopes_x, Slopes_y;
   DataArray2d sFaceMag;
   real_t      dtdx, dtdy;
@@ -1306,13 +1295,11 @@ public:
   //!
   //! \param[in] Udata_in is conservative variables at t_n
   //! \param[in] Udata_out is conservative variables at t_{n+1}
-  //! \param[in] Qdata is necessary to recompute limited slopes
   //! \param[in] Qdata2 is primitive variables array at t_{n+1/2}
   //!
   ReconstructEdgeComputeEmfAndUpdateFunctor2D(HydroParams params,
                                               DataArray2d Udata_in,
                                               DataArray2d Udata_out,
-                                              DataArray2d Qdata,
                                               DataArray2d Qdata2,
                                               DataArray2d Slopes_x,
                                               DataArray2d Slopes_y,
@@ -1322,7 +1309,6 @@ public:
     : MHDBaseFunctor2D(params)
     , Udata_in(Udata_in)
     , Udata_out(Udata_out)
-    , Qdata(Qdata)
     , Qdata2(Qdata2)
     , Slopes_x(Slopes_x)
     , Slopes_y(Slopes_y)
@@ -1335,7 +1321,6 @@ public:
   apply(HydroParams params,
         DataArray2d Udata_in,
         DataArray2d Udata_out,
-        DataArray2d Qdata,
         DataArray2d Qdata2,
         DataArray2d Slopes_x,
         DataArray2d Slopes_y,
@@ -1344,7 +1329,7 @@ public:
         real_t      dtdy)
   {
     ReconstructEdgeComputeEmfAndUpdateFunctor2D functor(
-      params, Udata_in, Udata_out, Qdata, Qdata2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
+      params, Udata_in, Udata_out, Qdata2, Slopes_x, Slopes_y, sFaceMag, dtdx, dtdy);
     Kokkos::parallel_for(
       "ReconstructEdgeComputeEmfAndUpdateFunctor2D",
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
@@ -1522,7 +1507,7 @@ public:
   } // operator ()
 
   DataArray2d Udata_in, Udata_out;
-  DataArray2d Qdata, Qdata2;
+  DataArray2d Qdata2;
   DataArray2d Slopes_x, Slopes_y;
   DataArray2d sFaceMag;
   real_t      dtdx, dtdy;

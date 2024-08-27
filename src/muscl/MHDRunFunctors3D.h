@@ -1037,13 +1037,11 @@ public:
   //!
   //! \param[in] Udata_in is conservative variables at t_n
   //! \param[in] Udata_out is conservative variables at t_{n+1}
-  //! \param[in] Qdata is necessary to recompute limited slopes
   //! \param[in] Qdata2 is primitive variables array at t_{n+1/2}
   //!
   ComputeFluxAndUpdateAlongDirFunctor3D_MHD(HydroParams params,
                                             DataArray3d Udata_in,
                                             DataArray3d Udata_out,
-                                            DataArray3d Qdata,
                                             DataArray3d Qdata2,
                                             DataArray3d Slopes_x,
                                             DataArray3d Slopes_y,
@@ -1055,7 +1053,6 @@ public:
     : MHDBaseFunctor3D(params)
     , Udata_in(Udata_in)
     , Udata_out(Udata_out)
-    , Qdata(Qdata)
     , Qdata2(Qdata2)
     , Slopes_x(Slopes_x)
     , Slopes_y(Slopes_y)
@@ -1070,7 +1067,6 @@ public:
   apply(HydroParams params,
         DataArray3d Udata_in,
         DataArray3d Udata_out,
-        DataArray3d Qdata,
         DataArray3d Qdata2,
         DataArray3d Slopes_x,
         DataArray3d Slopes_y,
@@ -1083,7 +1079,6 @@ public:
     ComputeFluxAndUpdateAlongDirFunctor3D_MHD<dir> functor(params,
                                                            Udata_in,
                                                            Udata_out,
-                                                           Qdata,
                                                            Qdata2,
                                                            Slopes_x,
                                                            Slopes_y,
@@ -1121,18 +1116,12 @@ public:
         i >= ghostWidth and i < isize - ghostWidth + 1)
     // clang-format on
     {
-      MHDState dq, dqN;
-
-      // cell-centered primitive variables in current cell, and left and right neighbor along dir
-      MHDState q;
-      get_state(Qdata, i, j, k, q);
-
-      // cell-centered primitive variables in neighbor cell
-      MHDState qN;
-      get_state(Qdata, i - delta_i, j - delta_j, k - delta_k, qN);
 
       // left and right reconstructed state (input for Riemann solver)
       MHDState qR, qL;
+
+      // slopes in left and right cells
+      MHDState dq, dqN;
 
       //
       // Right state at left interface (current cell)
@@ -1326,7 +1315,7 @@ public:
   } // operator ()
 
   DataArray3d Udata_in, Udata_out;
-  DataArray3d Qdata, Qdata2;
+  DataArray3d Qdata2;
   DataArray3d Slopes_x, Slopes_y, Slopes_z;
   DataArray3d sFaceMag;
   real_t      dtdx, dtdy, dtdz;
@@ -1347,13 +1336,11 @@ public:
   //!
   //! \param[in] Udata_in is conservative variables at t_n
   //! \param[in] Udata_out is conservative variables at t_{n+1}
-  //! \param[in] Qdata is necessary to recompute limited slopes
   //! \param[in] Qdata2 is primitive variables array at t_{n+1/2}
   //!
   ReconstructEdgeComputeEmfAndUpdateFunctor3D(HydroParams params,
                                               DataArray3d Udata_in,
                                               DataArray3d Udata_out,
-                                              DataArray3d Qdata,
                                               DataArray3d Qdata2,
                                               DataArray3d Slopes_x,
                                               DataArray3d Slopes_y,
@@ -1365,7 +1352,6 @@ public:
     : MHDBaseFunctor3D(params)
     , Udata_in(Udata_in)
     , Udata_out(Udata_out)
-    , Qdata(Qdata)
     , Qdata2(Qdata2)
     , Slopes_x(Slopes_x)
     , Slopes_y(Slopes_y)
@@ -1380,7 +1366,6 @@ public:
   apply(HydroParams params,
         DataArray3d Udata_in,
         DataArray3d Udata_out,
-        DataArray3d Qdata,
         DataArray3d Qdata2,
         DataArray3d Slopes_x,
         DataArray3d Slopes_y,
@@ -1393,7 +1378,6 @@ public:
     ReconstructEdgeComputeEmfAndUpdateFunctor3D functor(params,
                                                         Udata_in,
                                                         Udata_out,
-                                                        Qdata,
                                                         Qdata2,
                                                         Slopes_x,
                                                         Slopes_y,
@@ -1897,7 +1881,7 @@ public:
   } // operator ()
 
   DataArray3d Udata_in, Udata_out;
-  DataArray3d Qdata, Qdata2;
+  DataArray3d Qdata2;
   DataArray3d Slopes_x, Slopes_y, Slopes_z;
   DataArray3d sFaceMag;
   real_t      dtdx, dtdy, dtdz;
