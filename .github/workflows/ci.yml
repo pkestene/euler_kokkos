@@ -14,8 +14,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
-            cuda: "12.0.0"
+          - os: ubuntu-24.04
+            cuda: "12.5.0"
 
     env:
       config: "Release"
@@ -25,13 +25,14 @@ jobs:
         run: sudo apt-get install -y libhwloc-dev
 
       - name: Install CUDA
-        uses: Jimver/cuda-toolkit@v0.2.9
+        uses: pkestene/cuda-toolkit@fix/cuda-keyring-version
+        id: cuda-toolkit
         if: runner.os == 'Linux'
         with:
           sub-packages: '["nvcc", "nvrtc", "cudart"]'
           cuda: ${{ matrix.cuda }}
           method: network
-          use-github-cache: false
+          use-github-cache: true
 
       - name: nvcc check
         shell: bash
