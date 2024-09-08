@@ -1392,6 +1392,142 @@ public:
                          functor);
   }
 
+  /**
+   * Given a cell-center MHD state and limited slopes, reconstruct a MHD state at edge.
+   *
+   * \param[out] qEdge is the reconstructed MHD state at edge
+   * \param[in] i0 x-coordinate (cell center) of the cell where the reconstruction takes place
+   * \param[in] j0 y-coordinate (cell center) of the cell where the reconstruction takes place
+   * \param[in] k0 z-coordinate (cell center) of the cell where the reconstruction takes place
+   * \param[in] edge_loc is the type of edge reconstruction (from cell center)
+   * \param[in] dir0 one of the edge transverse direction
+   * \param[in] dir1 the other edge transverse direction
+   */
+  template <int dir0, int dir1>
+  KOKKOS_INLINE_FUNCTION auto
+  reconstruct_state_at_edge(MHDState & qEdge, int ic, int jc, int kc, MHDEdgeLocation edge_loc)
+    const
+  {
+
+    // const real_t gamma = params.settings.gamma0;
+    const real_t smallR = params.settings.smallr;
+    const real_t smallp = params.settings.smallp;
+
+    int                   sign_dq0 = 1;
+    int                   sign_dq1 = 1;
+    Kokkos::Array<int, 3> ijk0{ 0, 0, 0 };
+    Kokkos::Array<int, 3> ijk1{ 0, 0, 0 };
+    int                   sign_b0 = 1;
+    int                   sign_b1 = 1;
+
+    if (edge_loc == MHDEdgeLocation::LB)
+    {
+      sign_dq0 = -1;
+      sign_dq1 = -1;
+      sign_b0 = -1;
+      sign_b1 = -1;
+    }
+    else if (edge_loc == MHDEdgeLocation::RT)
+    {
+      ijk0[dir0] = 1;
+      ijk1[dir1] = 1;
+      sign_dq0 = 1;
+      sign_dq1 = 1;
+      sign_b0 = 1;
+      sign_b1 = 1;
+    }
+    else if (edge_loc == MHDEdgeLocation::RB)
+    {
+      ijk0[dir0] = 1;
+      sign_dq0 = 1;
+      sign_dq1 = -1;
+      sign_b0 = -1;
+      sign_b1 = 1;
+    }
+    else if (edge_loc == MHDEdgeLocation::LT)
+    {
+      ijk1[dir1] = 1;
+      sign_dq0 = -1;
+      sign_dq1 = 1;
+      sign_b0 = 1;
+      sign_b1 = -1;
+    }
+
+    const real_t B0 =
+      Udata_in(ic + ijk0[IX], jc + ijk0[IY], kc + ijk0[IZ], IA + dir0) + sFaceMag(ic, jc, kc, dir0);
+    const real_t dB0d1 = compute_limited_slope<static_cast<Direction>(dir1)>(
+      Udata_in, ic + ijk0[IX], jc + ijk0[IY], kc + ijk0[IZ], IA + dir0);
+
+    const real_t B1 =
+      Udata_in(ic + ijk1[IX], jc + ijk1[IY], kc + ijk1[IZ], IA + dir1) + sFaceMag(ic, jc, kc, dir1);
+    const real_t dB1d0 = compute_limited_slope<static_cast<Direction>(dir0)>(
+      Udata_in, ic + ijk1[IX], jc + ijk1[IY], kc + ijk1[IZ], IA + dir1);
+
+    // get limited slopes
+    MHDState dq0, dq1;
+    if constexpr (dir0 == IX and dir1 == IY)
+    {
+      get_state(Slopes_x, ic, jc, kc, dq0);
+      get_state(Slopes_y, ic, jc, kc, dq1);
+    }
+    else if constexpr (dir0 == IX and dir1 == IZ)
+    {
+      get_state(Slopes_x, ic, jc, kc, dq0);
+      get_state(Slopes_z, ic, jc, kc, dq1);
+    }
+    else if constexpr (dir0 == IY and dir1 == IZ)
+    {
+      get_state(Slopes_y, ic, jc, kc, dq0);
+      get_state(Slopes_z, ic, jc, kc, dq1);
+    }
+
+    // reconstructed state
+    qEdge[ID] += 0.5 * (sign_dq0 * dq0[ID] + sign_dq1 * dq1[ID]);
+    qEdge[IU] += 0.5 * (sign_dq0 * dq0[IU] + sign_dq1 * dq1[IU]);
+    qEdge[IV] += 0.5 * (sign_dq0 * dq0[IV] + sign_dq1 * dq1[IV]);
+    qEdge[IW] += 0.5 * (sign_dq0 * dq0[IW] + sign_dq1 * dq1[IW]);
+    qEdge[IP] += 0.5 * (sign_dq0 * dq0[IP] + sign_dq1 * dq1[IP]);
+    if (dir0 == IX)
+    {
+      qEdge[IA] = B0 + 0.5 * (sign_b0 * dB0d1);
+    }
+    else
+    {
+      qEdge[IA] += 0.5 * (sign_dq0 * dq0[IA] + sign_dq1 * dq1[IA]);
+    }
+
+    if (dir0 == IY)
+    {
+      qEdge[IB] = B0 + 0.5 * (sign_b0 * dB0d1);
+    }
+    else
+    {
+      qEdge[IB] += 0.5 * (sign_dq0 * dq0[IB] + sign_dq1 * dq1[IB]);
+    }
+
+    if (dir1 == IY)
+    {
+      qEdge[IB] = B1 + 0.5 * (sign_b1 * dB1d0);
+    }
+    else
+    {
+      qEdge[IB] += 0.5 * (sign_dq0 * dq0[IB] + sign_dq1 * dq1[IB]);
+    }
+
+    if (dir1 == IZ)
+    {
+      qEdge[IC] = B1 + 0.5 * (sign_b1 * dB1d0);
+    }
+    else
+    {
+      qEdge[IC] += 0.5 * (sign_dq0 * dq0[IC] + sign_dq1 * dq1[IC]);
+    }
+
+    qEdge[ID] = fmax(smallR, qEdge[ID]);
+    qEdge[IP] = fmax(smallp * qEdge[ID], qEdge[IP]);
+
+  } // reconstruct_state_at_edge
+
   KOKKOS_INLINE_FUNCTION
   void
   operator()(const int & i, const int & j, const int & k) const
@@ -1400,10 +1536,6 @@ public:
     const int jsize = params.jsize;
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
-
-    // const real_t gamma = params.settings.gamma0;
-    const real_t smallR = params.settings.smallr;
-    const real_t smallp = params.settings.smallp;
 
     // clang-format off
     if (k >= ghostWidth and k < ksize - ghostWidth + 1 and
@@ -1466,9 +1598,6 @@ public:
       }
       // clang-format on
 
-      // reconstruct edge states using limited slopes
-      MHDState dqX, dqY, dqZ;
-
       if constexpr (dir == DIR_Z)
       {
         // LB at (i,j,k)
@@ -1476,27 +1605,7 @@ public:
           const auto i0 = i;
           const auto j0 = j;
           const auto k0 = k;
-
-          const real_t AL =
-            Udata_in(i0 + 0, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IX);
-          const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IA);
-
-          const real_t BL =
-            Udata_in(i0 + 0, j0 + 0, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IY);
-          const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IB);
-
-          get_state(Slopes_x, i0, j0, k0, dqX);
-          get_state(Slopes_y, i0, j0, k0, dqY);
-          qLB[ID] += 0.5 * (-dqX[ID] - dqY[ID]);
-          qLB[IU] += 0.5 * (-dqX[IU] - dqY[IU]);
-          qLB[IV] += 0.5 * (-dqX[IV] - dqY[IV]);
-          qLB[IW] += 0.5 * (-dqX[IW] - dqY[IW]);
-          qLB[IP] += 0.5 * (-dqX[IP] - dqY[IP]);
-          qLB[IA] = AL + 0.5 * (-dALy);
-          qLB[IB] = BL + 0.5 * (-dBLx);
-          qLB[IC] += 0.5 * (-dqX[IC] - dqY[IC]);
-          qLB[ID] = fmax(smallR, qLB[ID]);
-          qLB[IP] = fmax(smallp * qLB[ID], qLB[IP]);
+          reconstruct_state_at_edge<IX, IY>(qLB, i0, j0, k0, MHDEdgeLocation::LB);
         }
 
         // RT (i-1, j-1, k)
@@ -1504,27 +1613,7 @@ public:
           const auto i0 = i - 1;
           const auto j0 = j - 1;
           const auto k0 = k;
-
-          const real_t AR =
-            Udata_in(i0 + 1, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 1, j0 + 0, k0 + 0, IX);
-          const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 1, j0 + 0, k0 + 0, IA);
-
-          const real_t BR =
-            Udata_in(i0 + 0, j0 + 1, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 1, k0 + 0, IY);
-          const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 1, k0 + 0, IB);
-
-          get_state(Slopes_x, i0, j0, k0, dqX);
-          get_state(Slopes_y, i0, j0, k0, dqY);
-          qRT[ID] += 0.5 * (+dqX[ID] + dqY[ID]);
-          qRT[IU] += 0.5 * (+dqX[IU] + dqY[IU]);
-          qRT[IV] += 0.5 * (+dqX[IV] + dqY[IV]);
-          qRT[IW] += 0.5 * (+dqX[IW] + dqY[IW]);
-          qRT[IP] += 0.5 * (+dqX[IP] + dqY[IP]);
-          qRT[IA] = AR + 0.5 * (+dARy);
-          qRT[IB] = BR + 0.5 * (+dBRx);
-          qRT[IC] += 0.5 * (+dqX[IC] + dqY[IC]);
-          qRT[ID] = fmax(smallR, qRT[ID]);
-          qRT[IP] = fmax(smallp * qRT[ID], qRT[IP]);
+          reconstruct_state_at_edge<IX, IY>(qRT, i0, j0, k0, MHDEdgeLocation::RT);
         }
 
         // RB (i-1, j, k)
@@ -1532,27 +1621,7 @@ public:
           const auto i0 = i - 1;
           const auto j0 = j;
           const auto k0 = k;
-
-          const real_t AR =
-            Udata_in(i0 + 1, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 1, j0 + 0, k0 + 0, IX);
-          const real_t dARy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 1, j0 + 0, k0 + 0, IA);
-
-          const real_t BL =
-            Udata_in(i0 + 0, j0 + 0, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IY);
-          const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IB);
-
-          get_state(Slopes_x, i0, j0, k0, dqX);
-          get_state(Slopes_y, i0, j0, k0, dqY);
-          qRB[ID] += 0.5 * (+dqX[ID] - dqY[ID]);
-          qRB[IU] += 0.5 * (+dqX[IU] - dqY[IU]);
-          qRB[IV] += 0.5 * (+dqX[IV] - dqY[IV]);
-          qRB[IW] += 0.5 * (+dqX[IW] - dqY[IW]);
-          qRB[IP] += 0.5 * (+dqX[IP] - dqY[IP]);
-          qRB[IA] = AR + 0.5 * (-dARy);
-          qRB[IB] = BL + 0.5 * (+dBLx);
-          qRB[IC] += 0.5 * (+dqX[IC] - dqY[IC]);
-          qRB[ID] = fmax(smallR, qRB[ID]);
-          qRB[IP] = fmax(smallp * qRB[ID], qRB[IP]);
+          reconstruct_state_at_edge<IX, IY>(qRB, i0, j0, k0, MHDEdgeLocation::RB);
         }
 
         // LT (i, j-1, k)
@@ -1560,27 +1629,7 @@ public:
           const auto i0 = i;
           const auto j0 = j - 1;
           const auto k0 = k;
-
-          const real_t AL =
-            Udata_in(i0 + 0, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IX);
-          const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IA);
-
-          const real_t BR =
-            Udata_in(i0 + 0, j0 + 1, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 1, k0 + 0, IY);
-          const real_t dBRx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 1, k0 + 0, IB);
-
-          get_state(Slopes_x, i0, j0, k0, dqX);
-          get_state(Slopes_y, i0, j0, k0, dqY);
-          qLT[ID] += 0.5 * (-dqX[ID] + dqY[ID]);
-          qLT[IU] += 0.5 * (-dqX[IU] + dqY[IU]);
-          qLT[IV] += 0.5 * (-dqX[IV] + dqY[IV]);
-          qLT[IW] += 0.5 * (-dqX[IW] + dqY[IW]);
-          qLT[IP] += 0.5 * (-dqX[IP] + dqY[IP]);
-          qLT[IA] = AL + 0.5 * (+dALy);
-          qLT[IB] = BR + 0.5 * (-dBRx);
-          qLT[IC] += 0.5 * (-dqX[IC] + dqY[IC]);
-          qLT[ID] = fmax(smallR, qLT[ID]);
-          qLT[IP] = fmax(smallp * qLT[ID], qLT[IP]);
+          reconstruct_state_at_edge<IX, IY>(qLT, i0, j0, k0, MHDEdgeLocation::LT);
         }
 
         const real_t emfZ = compute_emf<EMFZ>(qEdge_emf, params);
@@ -1609,27 +1658,7 @@ public:
           const auto i0 = i;
           const auto j0 = j;
           const auto k0 = k;
-
-          const real_t AL =
-            Udata_in(i0 + 0, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IX);
-          const real_t dALz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IA);
-
-          const real_t CL =
-            Udata_in(i0 + 0, j0 + 0, k0 + 0, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IZ);
-          const real_t dCLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IC);
-
-          get_state(Slopes_x, i0, j0, k0, dqX);
-          get_state(Slopes_z, i0, j0, k0, dqZ);
-          qLB[ID] += 0.5 * (-dqX[ID] - dqZ[ID]);
-          qLB[IU] += 0.5 * (-dqX[IU] - dqZ[IU]);
-          qLB[IV] += 0.5 * (-dqX[IV] - dqZ[IV]);
-          qLB[IW] += 0.5 * (-dqX[IW] - dqZ[IW]);
-          qLB[IP] += 0.5 * (-dqX[IP] - dqZ[IP]);
-          qLB[IA] = AL + 0.5 * (-dALz);
-          qLB[IB] += 0.5 * (-dqX[IB] - dqZ[IB]);
-          qLB[IC] = CL + 0.5 * (-dCLx);
-          qLB[ID] = fmax(smallR, qLB[ID]);
-          qLB[IP] = fmax(smallp * qLB[ID], qLB[IP]);
+          reconstruct_state_at_edge<IX, IZ>(qLB, i0, j0, k0, MHDEdgeLocation::LB);
         }
 
         // RT (i-1, j, k-1)
@@ -1637,27 +1666,7 @@ public:
           const auto i0 = i - 1;
           const auto j0 = j;
           const auto k0 = k - 1;
-
-          const real_t AR =
-            Udata_in(i0 + 1, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 1, j0 + 0, k0 + 0, IX);
-          const real_t dARz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 1, j0 + 0, k0 + 0, IA);
-
-          const real_t CR =
-            Udata_in(i0 + 0, j0 + 0, k0 + 1, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 1, IZ);
-          const real_t dCRx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, k0 + 1, IC);
-
-          get_state(Slopes_x, i0, j0, k0, dqX);
-          get_state(Slopes_z, i0, j0, k0, dqZ);
-          qRT[ID] += 0.5 * (+dqX[ID] + dqZ[ID]);
-          qRT[IU] += 0.5 * (+dqX[IU] + dqZ[IU]);
-          qRT[IV] += 0.5 * (+dqX[IV] + dqZ[IV]);
-          qRT[IW] += 0.5 * (+dqX[IW] + dqZ[IW]);
-          qRT[IP] += 0.5 * (+dqX[IP] + dqZ[IP]);
-          qRT[IA] = AR + 0.5 * (+dARz);
-          qRT[IB] += 0.5 * (+dqX[IB] + dqZ[IB]);
-          qRT[IC] = CR + 0.5 * (+dCRx);
-          qRT[ID] = fmax(smallR, qRT[ID]);
-          qRT[IP] = fmax(smallp * qRT[ID], qRT[IP]);
+          reconstruct_state_at_edge<IX, IZ>(qRT, i0, j0, k0, MHDEdgeLocation::RT);
         }
 
         // RB (i-1, j, k)
@@ -1665,27 +1674,7 @@ public:
           const auto i0 = i - 1;
           const auto j0 = j;
           const auto k0 = k;
-
-          const real_t AR =
-            Udata_in(i0 + 1, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 1, j0 + 0, k0 + 0, IX);
-          const real_t dARz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 1, j0 + 0, k0 + 0, IA);
-
-          const real_t CL =
-            Udata_in(i0 + 0, j0 + 0, k0 + 0, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IZ);
-          const real_t dCLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IC);
-
-          get_state(Slopes_x, i0, j0, k0, dqX);
-          get_state(Slopes_z, i0, j0, k0, dqZ);
-          qRB[ID] += 0.5 * (+dqX[ID] - dqZ[ID]);
-          qRB[IU] += 0.5 * (+dqX[IU] - dqZ[IU]);
-          qRB[IV] += 0.5 * (+dqX[IV] - dqZ[IV]);
-          qRB[IW] += 0.5 * (+dqX[IW] - dqZ[IW]);
-          qRB[IP] += 0.5 * (+dqX[IP] - dqZ[IP]);
-          qRB[IA] = AR + 0.5 * (-dARz);
-          qRB[IB] += 0.5 * (+dqX[IB] - dqZ[IB]);
-          qRB[IC] = CL + 0.5 * (+dCLx);
-          qRB[ID] = fmax(smallR, qRB[ID]);
-          qRB[IP] = fmax(smallp * qRB[ID], qRB[IP]);
+          reconstruct_state_at_edge<IX, IZ>(qRB, i0, j0, k0, MHDEdgeLocation::RB);
         }
 
         // LT (i, j, k-1)
@@ -1693,27 +1682,7 @@ public:
           const auto i0 = i;
           const auto j0 = j;
           const auto k0 = k - 1;
-
-          const real_t AL =
-            Udata_in(i0 + 0, j0 + 0, k0 + 0, IA) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IX);
-          const real_t dALz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IA);
-
-          const real_t CR =
-            Udata_in(i0 + 0, j0 + 0, k0 + 1, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 1, IZ);
-          const real_t dCRx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, k0 + 1, IC);
-
-          get_state(Slopes_x, i0, j0, k0, dqX);
-          get_state(Slopes_z, i0, j0, k0, dqZ);
-          qLT[ID] += 0.5 * (-dqX[ID] + dqZ[ID]);
-          qLT[IU] += 0.5 * (-dqX[IU] + dqZ[IU]);
-          qLT[IV] += 0.5 * (-dqX[IV] + dqZ[IV]);
-          qLT[IW] += 0.5 * (-dqX[IW] + dqZ[IW]);
-          qLT[IP] += 0.5 * (-dqX[IP] + dqZ[IP]);
-          qLT[IA] = AL + 0.5 * (+dALz);
-          qLT[IB] += 0.5 * (-dqX[IB] + dqZ[IB]);
-          qLT[IC] = CR + 0.5 * (-dCRx);
-          qLT[ID] = fmax(smallR, qLT[ID]);
-          qLT[IP] = fmax(smallp * qLT[ID], qLT[IP]);
+          reconstruct_state_at_edge<IX, IZ>(qLT, i0, j0, k0, MHDEdgeLocation::LT);
         }
 
         // exchange RB and LT
@@ -1752,27 +1721,7 @@ public:
           const auto i0 = i;
           const auto j0 = j;
           const auto k0 = k;
-
-          const real_t BL =
-            Udata_in(i0 + 0, j0 + 0, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IY);
-          const real_t dBLz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IB);
-
-          const real_t CL =
-            Udata_in(i0 + 0, j0 + 0, k0 + 0, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IZ);
-          const real_t dCLy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IC);
-
-          get_state(Slopes_y, i0, j0, k0, dqY);
-          get_state(Slopes_z, i0, j0, k0, dqZ);
-          qLB[ID] += 0.5 * (-dqY[ID] - dqZ[ID]);
-          qLB[IU] += 0.5 * (-dqY[IU] - dqZ[IU]);
-          qLB[IV] += 0.5 * (-dqY[IV] - dqZ[IV]);
-          qLB[IW] += 0.5 * (-dqY[IW] - dqZ[IW]);
-          qLB[IP] += 0.5 * (-dqY[IP] - dqZ[IP]);
-          qLB[IA] += 0.5 * (-dqY[IA] - dqZ[IA]);
-          qLB[IB] = BL + 0.5 * (-dBLz);
-          qLB[IC] = CL + 0.5 * (-dCLy);
-          qLB[ID] = fmax(smallR, qLB[ID]);
-          qLB[IP] = fmax(smallp * qLB[ID], qLB[IP]);
+          reconstruct_state_at_edge<IY, IZ>(qLB, i0, j0, k0, MHDEdgeLocation::LB);
         }
 
         // RT (i, j-1, k-1)
@@ -1780,27 +1729,7 @@ public:
           const auto i0 = i;
           const auto j0 = j - 1;
           const auto k0 = k - 1;
-
-          const real_t BR =
-            Udata_in(i0 + 0, j0 + 1, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 1, k0 + 0, IY);
-          const real_t dBRz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 0, j0 + 1, k0 + 0, IB);
-
-          const real_t CR =
-            Udata_in(i0 + 0, j0 + 0, k0 + 1, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 1, IZ);
-          const real_t dCRy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, k0 + 1, IC);
-
-          get_state(Slopes_y, i0, j0, k0, dqY);
-          get_state(Slopes_z, i0, j0, k0, dqZ);
-          qRT[ID] += 0.5 * (+dqY[ID] + dqZ[ID]);
-          qRT[IU] += 0.5 * (+dqY[IU] + dqZ[IU]);
-          qRT[IV] += 0.5 * (+dqY[IV] + dqZ[IV]);
-          qRT[IW] += 0.5 * (+dqY[IW] + dqZ[IW]);
-          qRT[IP] += 0.5 * (+dqY[IP] + dqZ[IP]);
-          qRT[IA] += 0.5 * (+dqY[IA] + dqZ[IA]);
-          qRT[IB] = BR + 0.5 * (+dBRz);
-          qRT[IC] = CR + 0.5 * (+dCRy);
-          qRT[ID] = fmax(smallR, qRT[ID]);
-          qRT[IP] = fmax(smallp * qRT[ID], qRT[IP]);
+          reconstruct_state_at_edge<IY, IZ>(qRT, i0, j0, k0, MHDEdgeLocation::RT);
         }
 
         // RB (i, j-1, k)
@@ -1808,27 +1737,7 @@ public:
           const auto i0 = i;
           const auto j0 = j - 1;
           const auto k0 = k;
-
-          const real_t BR =
-            Udata_in(i0 + 0, j0 + 1, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 1, k0 + 0, IY);
-          const real_t dBRz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 0, j0 + 1, k0 + 0, IB);
-
-          const real_t CL =
-            Udata_in(i0 + 0, j0 + 0, k0 + 0, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IZ);
-          const real_t dCLy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IC);
-
-          get_state(Slopes_y, i0, j0, k0, dqY);
-          get_state(Slopes_z, i0, j0, k0, dqZ);
-          qRB[ID] += 0.5 * (+dqY[ID] - dqZ[ID]);
-          qRB[IU] += 0.5 * (+dqY[IU] - dqZ[IU]);
-          qRB[IV] += 0.5 * (+dqY[IV] - dqZ[IV]);
-          qRB[IW] += 0.5 * (+dqY[IW] - dqZ[IW]);
-          qRB[IP] += 0.5 * (+dqY[IP] - dqZ[IP]);
-          qRB[IA] += 0.5 * (+dqY[IA] - dqZ[IA]);
-          qRB[IB] = BR + 0.5 * (-dBRz);
-          qRB[IC] = CL + 0.5 * (+dCLy);
-          qRB[ID] = fmax(smallR, qRB[ID]);
-          qRB[IP] = fmax(smallp * qRB[ID], qRB[IP]);
+          reconstruct_state_at_edge<IY, IZ>(qRB, i0, j0, k0, MHDEdgeLocation::RB);
         }
 
         // LT (i, j, k-1)
@@ -1836,27 +1745,7 @@ public:
           const auto i0 = i;
           const auto j0 = j;
           const auto k0 = k - 1;
-
-          const real_t BL =
-            Udata_in(i0 + 0, j0 + 0, k0 + 0, IB) + sFaceMag(i0 + 0, j0 + 0, k0 + 0, IY);
-          const real_t dBLz = compute_limited_slope<DIR_Z>(Udata_in, i0 + 0, j0 + 0, k0 + 0, IB);
-
-          const real_t CR =
-            Udata_in(i0 + 0, j0 + 0, k0 + 1, IC) + sFaceMag(i0 + 0, j0 + 0, k0 + 1, IZ);
-          const real_t dCRy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, k0 + 1, IC);
-
-          get_state(Slopes_y, i0, j0, k0, dqY);
-          get_state(Slopes_z, i0, j0, k0, dqZ);
-          qLT[ID] += 0.5 * (-dqY[ID] + dqZ[ID]);
-          qLT[IU] += 0.5 * (-dqY[IU] + dqZ[IU]);
-          qLT[IV] += 0.5 * (-dqY[IV] + dqZ[IV]);
-          qLT[IW] += 0.5 * (-dqY[IW] + dqZ[IW]);
-          qLT[IP] += 0.5 * (-dqY[IP] + dqZ[IP]);
-          qLT[IA] += 0.5 * (-dqY[IA] + dqZ[IA]);
-          qLT[IB] = BL + 0.5 * (+dBLz);
-          qLT[IC] = CR + 0.5 * (-dCRy);
-          qLT[ID] = fmax(smallR, qLT[ID]);
-          qLT[IP] = fmax(smallp * qLT[ID], qLT[IP]);
+          reconstruct_state_at_edge<IY, IZ>(qLT, i0, j0, k0, MHDEdgeLocation::LT);
         }
 
         const real_t emfX = compute_emf<EMFX>(qEdge_emf, params);
