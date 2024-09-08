@@ -1347,8 +1347,6 @@ public:
     const real_t smallR = params.settings.smallr;
     const real_t smallp = params.settings.smallp;
 
-    // auto i0 = i;
-    // auto j0 = j;
     int sign_x = 1;
     int sign_y = 1;
     int ia = 0;
@@ -1360,8 +1358,6 @@ public:
 
     if (edge_loc == MHDEdgeLocation::LB)
     {
-      // i0 = i;
-      // j0 = j;
       ia = 0;
       ja = 0;
       ib = 0;
@@ -1373,8 +1369,6 @@ public:
     }
     else if (edge_loc == MHDEdgeLocation::RT)
     {
-      // i0 = i - 1;
-      // j0 = j - 1;
       ia = 1;
       ja = 0;
       ib = 0;
@@ -1386,8 +1380,6 @@ public:
     }
     else if (edge_loc == MHDEdgeLocation::RB)
     {
-      // i0 = i - 1;
-      // j0 = j;
       ia = 1;
       ja = 0;
       ib = 0;
@@ -1399,8 +1391,6 @@ public:
     }
     else if (edge_loc == MHDEdgeLocation::LT)
     {
-      // i0 = i;
-      // j0 = j - 1;
       ia = 0;
       ja = 0;
       ib = 0;
