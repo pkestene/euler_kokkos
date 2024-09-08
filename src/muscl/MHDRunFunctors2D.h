@@ -1399,10 +1399,10 @@ public:
         const auto i0 = i;
         const auto j0 = j;
 
-        const real_t AL = Udata_in(i0 + 0, j0 + 0, IA) + sFaceMag(i, j, IX);
+        const real_t AL = Udata_in(i0 + 0, j0 + 0, IA) + sFaceMag(i0 + 0, j0 + 0, IX);
         const real_t dALy = compute_limited_slope<DIR_Y>(Udata_in, i0 + 0, j0 + 0, IA);
 
-        const real_t BL = Udata_in(i0 + 0, j0 + 0, IB) + sFaceMag(i, j, IY);
+        const real_t BL = Udata_in(i0 + 0, j0 + 0, IB) + sFaceMag(i0 + 0, j0 + 0, IY);
         const real_t dBLx = compute_limited_slope<DIR_X>(Udata_in, i0 + 0, j0 + 0, IB);
 
         get_state(Slopes_x, i0, j0, dqX);
