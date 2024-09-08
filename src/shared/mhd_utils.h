@@ -18,6 +18,19 @@ namespace euler_kokkos
 {
 
 /**
+ * enum used ti identified one the four state arround a cell edge.
+ *
+ * This is useful when computing emf (electromotive forces)
+ */
+enum class MHDEdgeLocation : uint8_t
+{
+  LB,
+  RB,
+  LT,
+  RT
+};
+
+/**
  * max value out of 4
  */
 KOKKOS_INLINE_FUNCTION
