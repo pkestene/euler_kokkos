@@ -1366,10 +1366,10 @@ public:
 
     if (edge_loc == MHDEdgeLocation::LB)
     {
-      ia = 0;
-      ja = 0;
-      ib = 0;
-      jb = 0;
+      ia = i0;
+      ja = j0;
+      ib = i0;
+      jb = j0;
       sign_x = -1;
       sign_y = -1;
       sign_a = -1;
@@ -1377,10 +1377,10 @@ public:
     }
     else if (edge_loc == MHDEdgeLocation::RT)
     {
-      ia = 1;
-      ja = 0;
-      ib = 0;
-      jb = 1;
+      ia = i0 + 1;
+      ja = j0;
+      ib = i0;
+      jb = j0 + 1;
       sign_x = 1;
       sign_y = 1;
       sign_a = 1;
@@ -1388,10 +1388,10 @@ public:
     }
     else if (edge_loc == MHDEdgeLocation::RB)
     {
-      ia = 1;
-      ja = 0;
-      ib = 0;
-      jb = 0;
+      ia = i0 + 1;
+      ja = j0;
+      ib = i0;
+      jb = j0;
       sign_x = 1;
       sign_y = -1;
       sign_a = -1;
@@ -1399,21 +1399,21 @@ public:
     }
     else if (edge_loc == MHDEdgeLocation::LT)
     {
-      ia = 0;
-      ja = 0;
-      ib = 0;
-      jb = 1;
+      ia = i0;
+      ja = j0;
+      ib = i0;
+      jb = j0 + 1;
       sign_x = -1;
       sign_y = 1;
       sign_a = 1;
       sign_b = -1;
     }
 
-    const real_t A = Udata_in(i0 + ia, j0 + ja, IA) + sFaceMag(i0 + ia, j0 + ja, IX);
-    const real_t dAy = compute_limited_slope<DIR_Y>(Udata_in, i0 + ia, j0 + ja, IA);
+    const real_t A = Udata_in(ia, ja, IA) + sFaceMag(ia, ja, IX);
+    const real_t dAy = compute_limited_slope<DIR_Y>(Udata_in, ia, ja, IA);
 
-    const real_t B = Udata_in(i0 + ib, j0 + jb, IB) + sFaceMag(i0 + ib, j0 + jb, IY);
-    const real_t dBx = compute_limited_slope<DIR_X>(Udata_in, i0 + ib, j0 + jb, IB);
+    const real_t B = Udata_in(ib, jb, IB) + sFaceMag(ib, jb, IY);
+    const real_t dBx = compute_limited_slope<DIR_X>(Udata_in, ib, jb, IB);
 
     // get limited slopes
     MHDState dqX, dqY;

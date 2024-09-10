@@ -1415,8 +1415,8 @@ public:
 
     int                   sign_dq0 = 1;
     int                   sign_dq1 = 1;
-    Kokkos::Array<int, 3> ijk0{ 0, 0, 0 };
-    Kokkos::Array<int, 3> ijk1{ 0, 0, 0 };
+    Kokkos::Array<int, 3> ijk0{ ic, jc, kc };
+    Kokkos::Array<int, 3> ijk1{ ic, jc, kc };
     int                   sign_b0 = 1;
     int                   sign_b1 = 1;
 
@@ -1429,8 +1429,8 @@ public:
     }
     else if (edge_loc == MHDEdgeLocation::RT)
     {
-      ijk0[dir0] = 1;
-      ijk1[dir1] = 1;
+      ijk0[dir0] += 1;
+      ijk1[dir1] += 1;
       sign_dq0 = 1;
       sign_dq1 = 1;
       sign_b0 = 1;
@@ -1438,7 +1438,7 @@ public:
     }
     else if (edge_loc == MHDEdgeLocation::RB)
     {
-      ijk0[dir0] = 1;
+      ijk0[dir0] += 1;
       sign_dq0 = 1;
       sign_dq1 = -1;
       sign_b0 = -1;
@@ -1446,22 +1446,22 @@ public:
     }
     else if (edge_loc == MHDEdgeLocation::LT)
     {
-      ijk1[dir1] = 1;
+      ijk1[dir1] += 1;
       sign_dq0 = -1;
       sign_dq1 = 1;
       sign_b0 = 1;
       sign_b1 = -1;
     }
 
-    const real_t B0 = Udata_in(ic + ijk0[IX], jc + ijk0[IY], kc + ijk0[IZ], IA + dir0) +
-                      sFaceMag(ic + ijk0[IX], jc + ijk0[IY], kc + ijk0[IZ], dir0);
+    const real_t B0 = Udata_in(ijk0[IX], ijk0[IY], ijk0[IZ], IA + dir0) +
+                      sFaceMag(ijk0[IX], ijk0[IY], ijk0[IZ], dir0);
     const real_t dB0d1 = compute_limited_slope<static_cast<Direction>(dir1)>(
-      Udata_in, ic + ijk0[IX], jc + ijk0[IY], kc + ijk0[IZ], IA + dir0);
+      Udata_in, ijk0[IX], ijk0[IY], ijk0[IZ], IA + dir0);
 
-    const real_t B1 = Udata_in(ic + ijk1[IX], jc + ijk1[IY], kc + ijk1[IZ], IA + dir1) +
-                      sFaceMag(ic + ijk1[IX], jc + ijk1[IY], kc + ijk1[IZ], dir1);
+    const real_t B1 = Udata_in(ijk1[IX], ijk1[IY], ijk1[IZ], IA + dir1) +
+                      sFaceMag(ijk1[IX], ijk1[IY], ijk1[IZ], dir1);
     const real_t dB1d0 = compute_limited_slope<static_cast<Direction>(dir0)>(
-      Udata_in, ic + ijk1[IX], jc + ijk1[IY], kc + ijk1[IZ], IA + dir1);
+      Udata_in, ijk1[IX], ijk1[IY], ijk1[IZ], IA + dir1);
 
     // get limited slopes
     MHDState dq0, dq1;
