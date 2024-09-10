@@ -1409,10 +1409,10 @@ public:
       sign_b = -1;
     }
 
-    const real_t A = Udata_in(i0 + ia, j0 + ja, IA) + sFaceMag(i0, j0, IX);
+    const real_t A = Udata_in(i0 + ia, j0 + ja, IA) + sFaceMag(i0 + ia, j0 + ja, IX);
     const real_t dAy = compute_limited_slope<DIR_Y>(Udata_in, i0 + ia, j0 + ja, IA);
 
-    const real_t B = Udata_in(i0 + ib, j0 + jb, IB) + sFaceMag(i0, j0, IY);
+    const real_t B = Udata_in(i0 + ib, j0 + jb, IB) + sFaceMag(i0 + ib, j0 + jb, IY);
     const real_t dBx = compute_limited_slope<DIR_X>(Udata_in, i0 + ib, j0 + jb, IB);
 
     // get limited slopes

@@ -1453,13 +1453,13 @@ public:
       sign_b1 = -1;
     }
 
-    const real_t B0 =
-      Udata_in(ic + ijk0[IX], jc + ijk0[IY], kc + ijk0[IZ], IA + dir0) + sFaceMag(ic, jc, kc, dir0);
+    const real_t B0 = Udata_in(ic + ijk0[IX], jc + ijk0[IY], kc + ijk0[IZ], IA + dir0) +
+                      sFaceMag(ic + ijk0[IX], jc + ijk0[IY], kc + ijk0[IZ], dir0);
     const real_t dB0d1 = compute_limited_slope<static_cast<Direction>(dir1)>(
       Udata_in, ic + ijk0[IX], jc + ijk0[IY], kc + ijk0[IZ], IA + dir0);
 
-    const real_t B1 =
-      Udata_in(ic + ijk1[IX], jc + ijk1[IY], kc + ijk1[IZ], IA + dir1) + sFaceMag(ic, jc, kc, dir1);
+    const real_t B1 = Udata_in(ic + ijk1[IX], jc + ijk1[IY], kc + ijk1[IZ], IA + dir1) +
+                      sFaceMag(ic + ijk1[IX], jc + ijk1[IY], kc + ijk1[IZ], dir1);
     const real_t dB1d0 = compute_limited_slope<static_cast<Direction>(dir0)>(
       Udata_in, ic + ijk1[IX], jc + ijk1[IY], kc + ijk1[IZ], IA + dir1);
 
