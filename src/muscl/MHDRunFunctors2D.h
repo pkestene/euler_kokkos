@@ -1336,6 +1336,14 @@ public:
       functor);
   }
 
+  /**
+   * Given a cell-center MHD state and limited slopes, reconstruct a MHD state at edge.
+   *
+   * \param[out] qEdge is the reconstructed MHD state at edge
+   * \param[in] i0 x-coordinate (cell center) of the cell where the reconstruction takes place
+   * \param[in] j0 y-coordinate (cell center) of the cell where the reconstruction takes place
+   * \param[in] edge_loc is the type of edge reconstruction (from cell center)
+   */
   KOKKOS_INLINE_FUNCTION auto
   reconstruct_state_at_edge(MHDState &      qEdge,
                             uint32_t        i0,
