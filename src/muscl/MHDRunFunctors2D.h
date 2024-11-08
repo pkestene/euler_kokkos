@@ -23,9 +23,9 @@ public:
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams params, DataArray2d Udata, real_t & invDt)
+  apply(HydroParams params, DataArray2d Qdata, real_t & invDt)
   {
-    ComputeDtFunctor2D_MHD functor(params, Udata);
+    ComputeDtFunctor2D_MHD functor(params, Qdata);
     Kokkos::Max<real_t>    reducer(invDt);
     Kokkos::parallel_reduce(
       "ComputeDtFunctor2D_MHD",

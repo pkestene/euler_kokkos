@@ -157,10 +157,10 @@ public:
 
   //! numerical scheme
   void
-  godunov_unsplit(real_t dt);
+  godunov_unsplit();
 
   void
-  godunov_unsplit_impl(DataArray data_in, DataArray data_out, real_t dt);
+  godunov_unsplit_impl(DataArray data_in, DataArray data_out);
 
   void
   convertToPrimitives(DataArray Udata);
@@ -389,6 +389,9 @@ SolverMHDMuscl<dim>::SolverMHDMuscl(HydroParams & params, ConfigMap & configMap)
 
   // copy U into U2
   Kokkos::deep_copy(U2, U);
+
+  // primitive variables are necessary for computing time step
+  convertToPrimitives(U);
 
   // compute initialize time step
   compute_dt();
@@ -717,22 +720,15 @@ double
 SolverMHDMuscl<dim>::compute_dt_local()
 {
 
-  real_t    dt;
-  real_t    invDt = ZERO_F;
-  DataArray Udata;
-
-  // which array is the current one ?
-  if (m_iteration % 2 == 0)
-    Udata = U;
-  else
-    Udata = U2;
+  real_t dt;
+  real_t invDt = ZERO_F;
 
   // alias to actual device functor
   using ComputeDtFunctor =
     typename std::conditional<dim == 2, ComputeDtFunctor2D_MHD, ComputeDtFunctor3D_MHD>::type;
 
   // call device functor
-  ComputeDtFunctor::apply(params, Udata, invDt);
+  ComputeDtFunctor::apply(params, Q, invDt);
 
   dt = params.settings.cfl / invDt;
 
@@ -778,13 +774,8 @@ SolverMHDMuscl<dim>::next_iteration_impl()
     } // end output
   } // end enable output
 
-  // compute new dt
-  timers[TIMER_DT]->start();
-  compute_dt();
-  timers[TIMER_DT]->stop();
-
   // perform one step integration
-  godunov_unsplit(m_dt);
+  godunov_unsplit();
 
 } // SolverMHDMuscl::next_iteration_impl
 
@@ -795,16 +786,16 @@ SolverMHDMuscl<dim>::next_iteration_impl()
 // ///////////////////////////////////////////
 template <int dim>
 void
-SolverMHDMuscl<dim>::godunov_unsplit(real_t dt)
+SolverMHDMuscl<dim>::godunov_unsplit()
 {
 
   if (m_iteration % 2 == 0)
   {
-    godunov_unsplit_impl(U, U2, dt);
+    godunov_unsplit_impl(U, U2);
   }
   else
   {
-    godunov_unsplit_impl(U2, U, dt);
+    godunov_unsplit_impl(U2, U);
   }
 
 } // SolverMHDMuscl::godunov_unsplit
@@ -816,7 +807,7 @@ SolverMHDMuscl<dim>::godunov_unsplit(real_t dt)
 // ///////////////////////////////////////////
 template <int dim>
 void
-SolverMHDMuscl<dim>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, real_t dt)
+SolverMHDMuscl<dim>::godunov_unsplit_impl(DataArray data_in, DataArray data_out)
 {
 
   // 2d / 3d implementation are specialized
@@ -826,12 +817,12 @@ SolverMHDMuscl<dim>::godunov_unsplit_impl(DataArray data_in, DataArray data_out,
 // 2d
 template <>
 void
-SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, real_t dt);
+SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out);
 
 // 3d
 template <>
 void
-SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, real_t dt);
+SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out);
 
 
 // =======================================================

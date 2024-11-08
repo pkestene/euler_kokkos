@@ -368,14 +368,8 @@ SolverMHDMuscl<3>::computeEmfAndUpdate(real_t dt, DataArray Udata)
 // ///////////////////////////////////////////
 template <>
 void
-SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, real_t dt)
+SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out)
 {
-
-  real_t dtdx;
-  real_t dtdy;
-
-  dtdx = dt / params.dx;
-  dtdy = dt / params.dy;
 
   // fill ghost cell in data_in
   timers[TIMER_BOUNDARIES]->start();
@@ -392,17 +386,25 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
   // convert conservative variable into primitives ones for the entire domain
   convertToPrimitives(data_in);
 
+  // compute new dt
+  timers[TIMER_DT]->start();
+  compute_dt();
+  timers[TIMER_DT]->stop();
+
+  const auto dtdx = m_dt / params.dx;
+  const auto dtdy = m_dt / params.dy;
+
   if (params.implementationVersion == 0)
   {
 
     // trace computation: fill arrays qm_x, qm_y, qp_x, qp_y
-    computeTrace(data_in, dt);
+    computeTrace(data_in, m_dt);
 
     // Compute flux via Riemann solver and update (time integration)
-    computeFluxesAndStore(dt);
+    computeFluxesAndStore(m_dt);
 
     // Compute Emf
-    computeEmfAndStore(dt);
+    computeEmfAndStore(m_dt);
 
     // actual update with fluxes
     UpdateFunctor2D_MHD::apply(params, data_out, Fluxes_x, Fluxes_y, dtdx, dtdy);
@@ -413,13 +415,13 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
   else if (params.implementationVersion == 1)
   {
     // trace computation: fill arrays qm_x, qm_y, qp_x, qp_y
-    computeTrace(data_in, dt);
+    computeTrace(data_in, m_dt);
 
     // Compute flux via Riemann solver and update (time integration)
-    computeFluxesAndUpdate(dt, data_out);
+    computeFluxesAndUpdate(m_dt, data_out);
 
     // Compute Emf and update magnetic field
-    computeEmfAndUpdate(dt, data_out);
+    computeEmfAndUpdate(m_dt, data_out);
   }
   else if (params.implementationVersion == 2)
   {
@@ -458,12 +460,8 @@ SolverMHDMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
 // ///////////////////////////////////////////
 template <>
 void
-SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, real_t dt)
+SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out)
 {
-
-  const real_t dtdx = dt / params.dx;
-  const real_t dtdy = dt / params.dy;
-  const real_t dtdz = dt / params.dz;
 
   // fill ghost cell in data_in
   timers[TIMER_BOUNDARIES]->start();
@@ -480,6 +478,15 @@ SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
   // convert conservative variable into primitives ones for the entire domain
   convertToPrimitives(data_in);
 
+  // compute new dt
+  timers[TIMER_DT]->start();
+  compute_dt();
+  timers[TIMER_DT]->stop();
+
+  const auto dtdx = m_dt / params.dx;
+  const auto dtdy = m_dt / params.dy;
+  const auto dtdz = m_dt / params.dz;
+
   if (params.implementationVersion == 0)
   {
 
@@ -490,13 +497,13 @@ SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
     computeMagSlopes(data_in);
 
     // trace computation: fill arrays qm_x, qm_y, qm_z, qp_x, qp_y, qp_z
-    computeTrace(data_in, dt);
+    computeTrace(data_in, m_dt);
 
     // Compute flux via Riemann solver and update (time integration)
-    computeFluxesAndStore(dt);
+    computeFluxesAndStore(m_dt);
 
     // Compute Emf
-    computeEmfAndStore(dt);
+    computeEmfAndStore(m_dt);
 
     // actual update with fluxes
     UpdateFunctor3D_MHD::apply(params, data_out, Fluxes_x, Fluxes_y, Fluxes_z, dtdx, dtdy, dtdz);
@@ -513,13 +520,13 @@ SolverMHDMuscl<3>::godunov_unsplit_impl(DataArray data_in, DataArray data_out, r
     computeMagSlopes(data_in);
 
     // trace computation: fill arrays qm_x, qm_y, qm_z, qp_x, qp_y, qp_z
-    computeTrace(data_in, dt);
+    computeTrace(data_in, m_dt);
 
     // Compute flux via Riemann solver and update (time integration)
-    computeFluxesAndUpdate(dt, data_out);
+    computeFluxesAndUpdate(m_dt, data_out);
 
     // Compute Emf and update magnetic field
-    computeEmfAndUpdate(dt, data_out);
+    computeEmfAndUpdate(m_dt, data_out);
   }
   else if (params.implementationVersion == 2)
   {
