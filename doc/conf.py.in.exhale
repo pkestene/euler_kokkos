@@ -517,4 +517,3 @@ def setup(app):
         the_req.write(".. code-block:: nginx\n\n")
         the_req.write(prefix("   ", "".join(l for l in requirements)))
         the_req.write("\n")
-

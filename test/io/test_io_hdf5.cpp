@@ -55,7 +55,7 @@ public:
 
 #ifdef USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IY];
+    const int j_mpi = params.myMpiPos[IT];
 #else
     const int            i_mpi = 0;
     const int            j_mpi = 0;
@@ -94,7 +94,7 @@ public:
 
 #ifdef USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IY];
+    const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
 #else
     const int            i_mpi = 0;

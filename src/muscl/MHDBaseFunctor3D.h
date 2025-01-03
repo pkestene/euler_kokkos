@@ -113,7 +113,7 @@ public:
 
     // clang-format off
     db[IX] = data(i + 1, j    , k    , IA) - data(i, j, k, IA);
-    db[IY] = data(i    , j + 1, k    , IB) - data(i, j, k, IB);
+    db[IT] = data(i    , j + 1, k    , IB) - data(i, j, k, IB);
     db[IZ] = data(i    , j    , k + 1, IC) - data(i, j, k, IC);
     // clang-format on
 
@@ -373,7 +373,7 @@ public:
     real_t slope_type = params.settings.slope_type;
 
     MHDState & dqX = dq[IX];
-    MHDState & dqY = dq[IY];
+    MHDState & dqY = dq[IT];
     MHDState & dqZ = dq[IZ];
 
     if (slope_type == 1 or slope_type == 2)
@@ -583,7 +583,7 @@ public:
 
 
     real_t(&dbfX)[3] = dbf[IX];
-    real_t(&dbfY)[3] = dbf[IY];
+    real_t(&dbfY)[3] = dbf[IT];
     real_t(&dbfZ)[3] = dbf[IZ];
 
     // default values for magnetic field slopes
@@ -631,7 +631,7 @@ public:
       dlim = slop;
       if ((dlft * drgt) <= ZERO_F)
         dlim = ZERO_F;
-      dbfX[IY] = dsgn * fmin(dlim, fabs(dcen));
+      dbfX[IT] = dsgn * fmin(dlim, fabs(dcen));
       // By along direction Z
       dlft = xslope_type * (bfy - bfy_zminus);
       drgt = xslope_type * (bfy_zplus - bfy);
@@ -641,7 +641,7 @@ public:
       dlim = slop;
       if ((dlft * drgt) <= ZERO_F)
         dlim = ZERO_F;
-      dbfZ[IY] = dsgn * fmin(dlim, fabs(dcen));
+      dbfZ[IT] = dsgn * fmin(dlim, fabs(dcen));
 
       // Bz along direction X
       dlft = xslope_type * (bfz - bfz_xminus);
@@ -673,7 +673,7 @@ public:
    * trace_unsplit_mhd_3d.
    *
    * By simpler, we mean to design a device function that could lead to better
-   * ressource utilization and thus better performances (hopefully).
+   * resource utilization and thus better performances (hopefully).
    *
    * To achieve this goal, several modifications are brought (compared to
    * trace_unsplit_mhd_3d) :
@@ -704,7 +704,7 @@ public:
     // inputs
     // alias to electric field components
     const real_t(&Ex)[2][2] = elecFields[IX];
-    const real_t(&Ey)[2][2] = elecFields[IY];
+    const real_t(&Ey)[2][2] = elecFields[IT];
     const real_t(&Ez)[2][2] = elecFields[IZ];
 
     // outputs
@@ -781,19 +781,19 @@ public:
     dBx *= HALF_F;
 
     // Cell centered TVD slopes in Y direction
-    real_t & dry = dq[IY][ID];
+    real_t & dry = dq[IT][ID];
     dry *= HALF_F;
-    real_t & dpy = dq[IY][IP];
+    real_t & dpy = dq[IT][IP];
     dpy *= HALF_F;
-    real_t & duy = dq[IY][IU];
+    real_t & duy = dq[IT][IU];
     duy *= HALF_F;
-    real_t & dvy = dq[IY][IV];
+    real_t & dvy = dq[IT][IV];
     dvy *= HALF_F;
-    real_t & dwy = dq[IY][IW];
+    real_t & dwy = dq[IT][IW];
     dwy *= HALF_F;
-    real_t & dCy = dq[IY][IC];
+    real_t & dCy = dq[IT][IC];
     dCy *= HALF_F;
-    real_t & dAy = dq[IY][IA];
+    real_t & dAy = dq[IT][IA];
     dAy *= HALF_F;
 
     // Cell centered TVD slopes in Z direction

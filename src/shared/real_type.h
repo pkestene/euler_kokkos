@@ -83,7 +83,7 @@ constexpr auto TWOPI_F = 2 * PI_v<real_t>;
 #  define COPYSIGN(x, y) copysignf(x, y)
 #endif // USE_DOUBLE
 
-// other usefull macros
+// other useful macros
 #define SQR(x) ((x) * (x))
 
 } // namespace euler_kokkos

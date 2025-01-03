@@ -12,7 +12,7 @@ namespace euler_kokkos
  * A small structure to hold parameters passed to a Kokkos functor,
  * for initializing the Kelvin-Helmholtz instability init condition.
  *
- * p_sine, p_sine_robertson and p_rand specifiy which type of perturbation is
+ * p_sine, p_sine_robertson and p_rand specify which type of perturbation is
  * used to seed the instability.
  */
 struct KHParams

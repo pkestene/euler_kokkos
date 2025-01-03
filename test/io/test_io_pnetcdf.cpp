@@ -52,7 +52,7 @@ public:
     const int ny = params.ny;
 
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IY];
+    const int j_mpi = params.myMpiPos[IT];
 
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
@@ -86,7 +86,7 @@ public:
     const int nz = params.nz;
 
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IY];
+    const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
 
     const real_t xmin = params.xmin;

@@ -182,7 +182,7 @@ save_VTK_2D(DataArray2d                        Udata,
 
     outFile << "  <AppendedData encoding=\"raw\">" << std::endl;
 
-    // write the leading undescore
+    // write the leading underscore
     outFile << "_";
     // then write heavy data (column major format)
     {
@@ -384,7 +384,7 @@ save_VTK_3D(DataArray3d                        Udata,
 
     outFile << "  <AppendedData encoding=\"raw\">" << std::endl;
 
-    // write the leading undescore
+    // write the leading underscore
     outFile << "_";
 
     // then write heavy data (column major format)
@@ -601,7 +601,7 @@ save_VTK_2D_mpi(DataArray2d                        Udata,
 
     outFile << "  <AppendedData encoding=\"raw\">" << std::endl;
 
-    // write the leading undescore
+    // write the leading underscore
     outFile << "_";
     // then write heavy data (column major format)
     {
@@ -828,7 +828,7 @@ save_VTK_3D_mpi(DataArray3d                        Udata,
 
     outFile << "  <AppendedData encoding=\"raw\">" << std::endl;
 
-    // write the leading undescore
+    // write the leading underscore
     outFile << "_";
     // then write heavy data (column major format)
     {

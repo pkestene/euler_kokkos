@@ -102,7 +102,7 @@ main(int argc, char ** argv)
     // add option "--ndevices=X" where X is the number of GPUs
     // you want to use per node.
 
-    // on a large cluster, the scheduler should assign ressources
+    // on a large cluster, the scheduler should assign resources
     // in a way that each MPI task is mapped to a different GPU
     // let's cross-checked that:
 

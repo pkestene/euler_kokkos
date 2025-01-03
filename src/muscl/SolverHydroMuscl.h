@@ -574,7 +574,7 @@ SolverHydroMuscl<dim>::init_restart(DataArray Udata)
     std::cout << "### This is a restarted run ! Current time is " << m_t << " ###\n";
   }
 
-  // some extra stuff that need to be done here (usefull when MRI is activated)
+  // some extra stuff that need to be done here (useful when MRI is activated)
   // restart_run_extra_work();
 
 

@@ -3,7 +3,7 @@ if (NOT GIT_FOUND)
   set(GIT_BUILD_STRING "N/A")
 else()
   # check if we are building source from a git clone or a release tarball
-  
+
   # try to run quietly a git command
   execute_process(COMMAND git log --pretty=format:'%h' -n 1
     OUTPUT_VARIABLE GIT_REV

@@ -50,4 +50,3 @@ endif ()
 mark_as_advanced(
   LAPACKE_INCLUDE_DIR
   LAPACKE_LIBRARY)
-

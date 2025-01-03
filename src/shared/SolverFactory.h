@@ -93,14 +93,14 @@ public:
       // create solver
       SolverBase * solver = it->second(params, configMap);
 
-      // additionnal initialization (each solver might override this method)
+      // additional initialization (each solver might override this method)
       solver->init_io();
 
       return solver;
     }
 
     // if not found, return null pointer
-    // it is the responsability of the client code to deal with
+    // it is the responsibility of the client code to deal with
     // the possibility to have a nullptr callback (does nothing).
     printf("############ WARNING: ############\n");
     printf("%s: is not recognized as a valid application name key.\n", solver_name.c_str());

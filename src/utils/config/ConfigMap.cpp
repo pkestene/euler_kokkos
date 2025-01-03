@@ -128,7 +128,7 @@ broadcast_parameters(std::string filename)
     filein.read(buffer, buffer_size);
   }
 
-  // broacast buffer size (collective)
+  // broadcast buffer size (collective)
   MPI_Bcast(&buffer_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   // all other MPI task need to allocate buffer

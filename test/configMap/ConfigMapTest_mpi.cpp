@@ -49,7 +49,7 @@ test1(std::string filename)
       std::cout << buffer << '\n';
   }
 
-  // broacast buffer size (collective)
+  // broadcast buffer size (collective)
   MPI_Bcast(&buffer_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   if (myRank > 0)
