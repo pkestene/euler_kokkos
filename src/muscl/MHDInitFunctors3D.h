@@ -62,9 +62,9 @@ public:
     const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
 #else
-    const int                  i_mpi = 0;
-    const int                  j_mpi = 0;
-    const int                  k_mpi = 0;
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+    const int k_mpi = 0;
 #endif
 
     const int nx = params.nx;
@@ -287,9 +287,9 @@ public:
     const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
 #else
-    const int                  i_mpi = 0;
-    const int                  j_mpi = 0;
-    const int                  k_mpi = 0;
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+    const int k_mpi = 0;
 #endif
 
     const int nx = params.nx;
@@ -541,7 +541,7 @@ public:
   } // init_energy
 
   const OrszagTangParams otParams;
-  DataArray3d      Udata;
+  DataArray3d            Udata;
 
 }; // InitOrszagTangFunctor3D
 
@@ -581,9 +581,9 @@ public:
     const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
 #else
-    const int                  i_mpi = 0;
-    const int                  j_mpi = 0;
-    const int                  k_mpi = 0;
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+    const int k_mpi = 0;
 #endif
 
     const int nx = params.nx;

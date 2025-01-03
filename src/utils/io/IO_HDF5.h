@@ -1651,7 +1651,7 @@ public:
           }
 
         } // end for i
-      }   // end for j
+      } // end for j
     }
     else
     {
@@ -1766,8 +1766,8 @@ public:
             }
 
           } // end for i
-        }   // end for j
-      }     // end for k
+        } // end for j
+      } // end for k
     }
     else
     {

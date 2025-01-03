@@ -1043,9 +1043,9 @@ public:
     }
   } // operator ()
 
-  DataArray2d Udata, Qdata; // input
+  DataArray2d Udata, Qdata;       // input
   DataArray2d Slopes_x, Slopes_y; // input
-  DataArray2d Qdata2;       // output
+  DataArray2d Qdata2;             // output
   real_t      dtdx, dtdy;
 
 }; // ComputeUpdatedPrimvarFunctor2D_MHD
@@ -1663,8 +1663,10 @@ public:
   apply(HydroParams params, DataArray2d Udata, DataArrayScalar Emf, real_t dtdx, real_t dtdy)
   {
     UpdateEmfFunctor2D functor(params, Udata, Emf, dtdx, dtdy);
-    Kokkos::parallel_for("UpdateEmfFunctor2D",
-      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }), functor);
+    Kokkos::parallel_for(
+      "UpdateEmfFunctor2D",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
+      functor);
   }
 
   KOKKOS_INLINE_FUNCTION

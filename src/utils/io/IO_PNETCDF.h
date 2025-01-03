@@ -417,9 +417,8 @@ public:
     // for information MPI config used
     {
       std::ostringstream mpiConf;
-      mpiConf << "MPI configuration used to write file: "
-              << "mx,my,mz=" << mx << "," << my << "," << mz << " "
-              << "nx,ny,nz=" << nx << "," << ny << "," << nz;
+      mpiConf << "MPI configuration used to write file: " << "mx,my,mz=" << mx << "," << my << ","
+              << mz << " " << "nx,ny,nz=" << nx << "," << ny << "," << nz;
 
       err = ncmpi_put_att_text(
         ncFileId, NC_GLOBAL, "MPI conf", mpiConf.str().size(), mpiConf.str().c_str());

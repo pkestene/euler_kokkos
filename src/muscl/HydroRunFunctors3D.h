@@ -31,7 +31,7 @@ public:
   static void
   apply(HydroParams params, DataArray3d Udata, real_t & invDt)
   {
-    ComputeDtFunctor3D functor(params, Udata);
+    ComputeDtFunctor3D  functor(params, Udata);
     Kokkos::Max<real_t> reducer(invDt);
     Kokkos::parallel_reduce("ComputeDtFunctor3D",
                             Kokkos::MDRangePolicy<Kokkos::Rank<3>>(

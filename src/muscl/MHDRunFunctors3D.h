@@ -1014,9 +1014,9 @@ public:
     }
   } // operator ()
 
-  DataArray3d Udata, Qdata; // input
+  DataArray3d Udata, Qdata;                 // input
   DataArray3d Slopes_x, Slopes_y, Slopes_z; // input
-  DataArray3d Qdata2;       // output
+  DataArray3d Qdata2;                       // output
   real_t      dtdx, dtdy, dtdz;
 
 }; // ComputeUpdatedPrimvarFunctor3D_MHD

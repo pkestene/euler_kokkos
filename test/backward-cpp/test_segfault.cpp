@@ -19,7 +19,8 @@ badass_function()
   *ptr = 42;
 }
 
-int main(int argc, char* argv[])
+int
+main(int argc, char * argv[])
 {
 
   std::cout << "Create a segfault on purpose...\n";

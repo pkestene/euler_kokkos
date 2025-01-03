@@ -22,11 +22,16 @@ enum solver_type_t
   SOLVER_MUSCL_HANCOCK = 1
 };
 
-namespace euler_kokkos { namespace io {
+namespace euler_kokkos
+{
+namespace io
+{
 class IO_ReadWriteBase;
-} }
+}
+} // namespace euler_kokkos
 
-enum TimerIds {
+enum TimerIds
+{
   TIMER_TOTAL = 0,
   TIMER_IO = 1,
   TIMER_DT = 2,
@@ -34,7 +39,8 @@ enum TimerIds {
   TIMER_NUM_SCHEME = 4
 }; // enum TimerIds
 
-namespace euler_kokkos {
+namespace euler_kokkos
+{
 
 /**
  * Abstract base class for all our actual solvers.

@@ -3,7 +3,7 @@
 
 #include "utils/config/ConfigMap.h"
 
-//#include <cstdlib> // for srand
+// #include <cstdlib> // for srand
 
 namespace euler_kokkos
 {

@@ -96,7 +96,7 @@ index2coord(int64_t index, int & i, int & j, int & k, int Nx, int Ny, int Nz)
   j = (index - k * NxNy) / Nx;
   i = index - j * Nx - k * NxNy;
 #else
-  int     NyNz = Ny * Nz;
+  int NyNz = Ny * Nz;
   i = index / NyNz;
   j = (index - i * NyNz) / Nz;
   k = index - j * Nz - i * NyNz;

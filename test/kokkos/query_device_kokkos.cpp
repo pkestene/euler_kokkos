@@ -108,8 +108,8 @@ main(int argc, char ** argv)
 
     int cudaDeviceId;
     cudaGetDevice(&cudaDeviceId);
-    std::cout << "I'm MPI task #" << mpi_rank << " (out of " << nRanks << ")"
-              << " pinned to GPU #" << cudaDeviceId << "\n";
+    std::cout << "I'm MPI task #" << mpi_rank << " (out of " << nRanks << ")" << " pinned to GPU #"
+              << cudaDeviceId << "\n";
   }
 #endif // KOKKOS_ENABLE_CUDA
 

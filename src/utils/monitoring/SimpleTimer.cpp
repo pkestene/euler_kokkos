@@ -38,20 +38,19 @@ SimpleTimer::SimpleTimer(double t)
 
 } // SimpleTimer::SimpleTimer
 
-  // =======================================================
-  // =======================================================
-SimpleTimer::SimpleTimer(SimpleTimer const& aTimer) : start_time(aTimer.start_time), total_time(aTimer.total_time)
-{
-} // SimpleTimer::SimpleTimer
+// =======================================================
+// =======================================================
+SimpleTimer::SimpleTimer(SimpleTimer const & aTimer)
+  : start_time(aTimer.start_time)
+  , total_time(aTimer.total_time)
+{} // SimpleTimer::SimpleTimer
 
-  // =======================================================
-  // =======================================================
-SimpleTimer::~SimpleTimer()
-{
-} // SimpleTimer::~SimpleTimer
+// =======================================================
+// =======================================================
+SimpleTimer::~SimpleTimer() {} // SimpleTimer::~SimpleTimer
 
-  // =======================================================
-  // =======================================================
+// =======================================================
+// =======================================================
 void
 SimpleTimer::start()
 {
@@ -80,9 +79,10 @@ SimpleTimer::stop()
 
 } // SimpleTimer::stop
 
-  // =======================================================
-  // =======================================================
-double SimpleTimer::elapsed() const
+// =======================================================
+// =======================================================
+double
+SimpleTimer::elapsed() const
 {
 
   return total_time;

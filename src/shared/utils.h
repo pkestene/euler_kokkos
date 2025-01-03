@@ -23,7 +23,7 @@
 #define FUZZYCOMPARE(a, b)               \
   ((ISFUZZYNULL(a) && ISFUZZYNULL(b)) || \
    (Kokkos::abs((a) - (b)) * 1000000000000. <= Kokkos::fmin(Kokkos::abs(a), Kokkos::abs(b))))
-#define FUZZYLIMITS(x, a, b) (((x) > ((a)-THRESHOLD)) && ((x) < ((b) + THRESHOLD)))
+#define FUZZYLIMITS(x, a, b) (((x) > ((a) - THRESHOLD)) && ((x) < ((b) + THRESHOLD)))
 
 namespace euler_kokkos
 {
