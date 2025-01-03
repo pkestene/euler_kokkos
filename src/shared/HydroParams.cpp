@@ -300,8 +300,8 @@ HydroParams::setup_mpi(ConfigMap & configMap)
    * Let's assume hwloc is doing its job !
    *
    * Old comments from RamsesGPU:
-   * When running on a Linux machine with mutiple GPU per node, it might be
-   * very helpfull if admin has set the CUDA device compute mode to exclusive
+   * When running on a Linux machine with multiple GPU per node, it might be
+   * very helpful if admin has set the CUDA device compute mode to exclusive
    * so that a device is only attached to 1 host thread (i.e. 2 different host
    * thread can not communicate with the same GPU).
    *
@@ -329,8 +329,8 @@ HydroParams::setup_mpi(ConfigMap & configMap)
   // cutilSafeCall( cudaGetDevice( &myDevId ) );
   // cutilSafeCall( cudaGetDeviceProperties( &deviceProp, myDevId ) );
   // // faire un cudaSetDevice et cudaGetDeviceProp et aficher le nom
-  // // ajouter un booleen dans le constructeur pour savoir si on veut faire ca
-  // // sachant que sur Titane, probablement que le mode exclusif est active
+  // // ajouter un boolean dans le constructeur pour savoir si on veut faire ca
+  // // sachant que sure Titane, probablement que le mode exclusif est active
   // // a verifier demain
 
   // std::cout << "MPI process " << myRank << " is using GPU device num " << myDevId << std::endl;

@@ -48,15 +48,13 @@ using Kokkos::Experimental::fmod;
 #endif
 
 #if defined(KOKKOS_ENABLE_CXX17)
-#define KOKKOS_IMPL_MATH_CONSTANT(TRAIT, VALUE) \
-  template <class T>                            \
-  inline constexpr auto TRAIT##_v =             \
-      std::enable_if_t<std::is_floating_point_v<T>, T>(VALUE)
+#  define KOKKOS_IMPL_MATH_CONSTANT(TRAIT, VALUE) \
+    template <class T>                            \
+    inline constexpr auto TRAIT##_v = std::enable_if_t<std::is_floating_point_v<T>, T>(VALUE)
 #else
-#define KOKKOS_IMPL_MATH_CONSTANT(TRAIT, VALUE) \
-  template <class T>                            \
-  constexpr auto TRAIT##_v =                    \
-      std::enable_if_t<std::is_floating_point<T>::value, T>(VALUE)
+#  define KOKKOS_IMPL_MATH_CONSTANT(TRAIT, VALUE) \
+    template <class T>                            \
+    constexpr auto TRAIT##_v = std::enable_if_t<std::is_floating_point<T>::value, T>(VALUE)
 #endif
 
 KOKKOS_IMPL_MATH_CONSTANT(ZERO, 0.000000000000000000000000000000000000L);
@@ -70,9 +68,9 @@ KOKKOS_IMPL_MATH_CONSTANT(PI, 3.141592653589793238462643383279502884L);
 
 constexpr auto ZERO_F = ZERO_v<real_t>;
 constexpr auto HALF_F = HALF_v<real_t>;
-constexpr auto ONE_F  = ONE_v<real_t>;
-constexpr auto TWO_F  = TWO_v<real_t>;
-constexpr auto ONE_FOURTH_F  = ONE_FOURTH_v<real_t>;
+constexpr auto ONE_F = ONE_v<real_t>;
+constexpr auto TWO_F = TWO_v<real_t>;
+constexpr auto ONE_FOURTH_F = ONE_FOURTH_v<real_t>;
 constexpr auto PI_F = PI_v<real_t>;
 constexpr auto TWOPI_F = 2 * PI_v<real_t>;
 
@@ -83,7 +81,7 @@ constexpr auto TWOPI_F = 2 * PI_v<real_t>;
 #  define COPYSIGN(x, y) copysignf(x, y)
 #endif // USE_DOUBLE
 
-// other usefull macros
+// other useful macros
 #define SQR(x) ((x) * (x))
 
 } // namespace euler_kokkos

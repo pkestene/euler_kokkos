@@ -18,7 +18,7 @@ namespace euler_kokkos
 {
 
 /**
- * enum used to identify one the four states arround a cell edge.
+ * enum used to identify one the four states around a cell edge.
  *
  * This is useful when computing emf (electromotive forces)
  */
@@ -106,7 +106,7 @@ find_speed_fast(const MHDState & qvar, const HydroParams & params)
   if (dir == IX)
     cf = sqrt(d2 + sqrt(d2 * d2 - c2 * a * a / d));
 
-  if (dir == IY)
+  if (dir == IT)
     cf = sqrt(d2 + sqrt(d2 * d2 - c2 * b * b / d));
 
   if (dir == IZ)
@@ -256,20 +256,20 @@ fast_mhd_speed(const MHDState & qState, real_t (&fastMagSpeed)[3], const HydroPa
   const real_t & by = qState[IB];
   const real_t & bz = qState[IC];
 
-  real_t mag_perp, alfv, vit_son, som_vit, som_vit2, delta, fast_speed;
+  real_t mag_perp, alfv, vit_son, some_vit, some_vit2, delta, fast_speed;
 
   // compute fast magnetosonic speed along X
   mag_perp = (by * by + bz * bz) / rho; // bt ^2 / rho
   alfv = bx * bx / rho;                 // bx / sqrt(4pi*rho)
   vit_son = gamma0 * p / rho;           // sonic contribution :  gamma*P / rho
 
-  som_vit = mag_perp + alfv + vit_son; // whatever direction,
+  some_vit = mag_perp + alfv + vit_son; // whatever direction,
   // always the same
-  som_vit2 = som_vit * som_vit;
+  some_vit2 = some_vit * some_vit;
 
-  delta = fmax(ZERO_F, som_vit2 - 4 * vit_son * alfv);
+  delta = fmax(ZERO_F, some_vit2 - 4 * vit_son * alfv);
 
-  fast_speed = 0.5 * (som_vit + sqrt(delta));
+  fast_speed = 0.5 * (some_vit + sqrt(delta));
   fast_speed = sqrt(fast_speed);
 
   fastMagSpeed[IX] = fast_speed;
@@ -278,12 +278,12 @@ fast_mhd_speed(const MHDState & qState, real_t (&fastMagSpeed)[3], const HydroPa
   mag_perp = (bx * bx + bz * bz) / rho;
   alfv = by * by / rho;
 
-  delta = fmax(ZERO_F, som_vit2 - 4 * vit_son * alfv);
+  delta = fmax(ZERO_F, some_vit2 - 4 * vit_son * alfv);
 
-  fast_speed = 0.5 * (som_vit + sqrt(delta));
+  fast_speed = 0.5 * (some_vit + sqrt(delta));
   fast_speed = sqrt(fast_speed);
 
-  fastMagSpeed[IY] = fast_speed;
+  fastMagSpeed[IT] = fast_speed;
 
   // compute fast magnetosonic speed along Z
   if (NDIM == THREE_D)
@@ -291,9 +291,9 @@ fast_mhd_speed(const MHDState & qState, real_t (&fastMagSpeed)[3], const HydroPa
     mag_perp = (bx * bx + by * by) / rho;
     alfv = bz * bz / rho;
 
-    delta = fmax(ZERO_F, som_vit2 - 4 * vit_son * alfv);
+    delta = fmax(ZERO_F, some_vit2 - 4 * vit_son * alfv);
 
-    fast_speed = 0.5 * (som_vit + sqrt(delta));
+    fast_speed = 0.5 * (some_vit + sqrt(delta));
     fast_speed = sqrt(fast_speed);
 
     fastMagSpeed[IZ] = fast_speed;
@@ -308,8 +308,8 @@ fast_mhd_speed(const MHDState & qState, real_t (&fastMagSpeed)[3], const HydroPa
  * \param[out] fastInfoSpeed array containing fastest information speed along
  * x, y, and z direction.
  *
- * Directionnal information speed being defined as :
- * directionnal fast magneto speed + fabs(velocity component)
+ * Directional information speed being defined as :
+ * directional fast magneto speed + fabs(velocity component)
  *
  * \warning This routine uses gamma ! You need to set gamma to something very near to 1
  *
@@ -352,7 +352,7 @@ find_speed_info(const MHDState qState, real_t (&fastInfoSpeed)[3], const HydroPa
   // compute fastest info speed along Y
   cf = sqrt(d2 + sqrt(d2 * d2 - c2 * b * b / d));
 
-  fastInfoSpeed[IY] = cf + fabs(v);
+  fastInfoSpeed[IT] = cf + fabs(v);
 
 
   // compute fastest info speed along Z

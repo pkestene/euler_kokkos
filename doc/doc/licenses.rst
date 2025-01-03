@@ -7,7 +7,7 @@ euler_kokkos License
 
 .. include:: ../../../LICENSE
 
-	     
+
 Third Party Builtin Libraries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -208,7 +208,7 @@ struct EulerEquations<2>
     flux[ID] = 0.0;
     flux[IU] = tau_xx;
     flux[IV] = tau_xy;
-    flux[IE] = v[IX] * tau_xx + v[IY] * tau_xy + f[IX];
+    flux[IE] = v[IX] * tau_xx + v[IT] * tau_xy + f[IX];
   };
 
   /**
@@ -236,14 +236,14 @@ struct EulerEquations<2>
     flux[ID] = 0.0;
     flux[IU] = tau_xy;
     flux[IV] = tau_yy;
-    flux[IE] = v[IX] * tau_xy + v[IY] * tau_yy + f[IY];
+    flux[IE] = v[IX] * tau_xy + v[IT] * tau_yy + f[IT];
   };
 
   /**
    * Compute characteristic variables by multiply input vector
    * by L (left eigenvalue matrix of Euler Jacobian). Computation is done in place
    *
-   * The formulas defining eigen matrix are detailled in doc/euler/euler_equations.tex
+   * The formulas defining eigen matrix are detailed in doc/euler/euler_equations.tex
    * and also copied here using python syntax
    *
    * # left eigenvectors (R^-1)
@@ -305,7 +305,7 @@ struct EulerEquations<2>
       tmp[IE] = data[ID] * beta * (phi2 - u * c) + data[IU] * (-beta * (g1 * u - c)) +
                 data[IV] * (-beta * g1 * v) + data[IE] * beta * g1;
     }
-    else if (dir == IY)
+    else if (dir == IT)
     {
 
       // compute matrix vector multiply: tmp = Ly . data
@@ -329,7 +329,7 @@ struct EulerEquations<2>
    * Transform from characteristic variables to conservative by multiply input vector
    * by R (right eigenvalue matrix of Euler Jacobian). Computation is done in place
    *
-   * The formulas defining eigen matrix are detailled in doc/euler/euler_equations.tex
+   * The formulas defining eigen matrix are detailed in doc/euler/euler_equations.tex
    * and also copied here using python syntax
    *
    * # right eigenvectors
@@ -390,7 +390,7 @@ struct EulerEquations<2>
       tmp[IV] = data[ID] * v + data[IU] * v + data[IV] + data[IE] * v;
       tmp[IE] = data[ID] * (H - u * c) + data[IU] * V2 / 2 + data[IV] * v + data[IE] * (H + u * c);
     }
-    else if (dir == IY)
+    else if (dir == IT)
     {
 
       // compute matrix vector multiply: tmp = Ry . data
@@ -633,7 +633,7 @@ struct EulerEquations<3>
     flux[IU] = tau_xx;
     flux[IV] = tau_yx;
     flux[IW] = tau_zx;
-    flux[IE] = v[IX] * tau_xx + v[IY] * tau_yx + v[IZ] * tau_zx + f[IX];
+    flux[IE] = v[IX] * tau_xx + v[IT] * tau_yx + v[IZ] * tau_zx + f[IX];
   };
 
   /**
@@ -663,7 +663,7 @@ struct EulerEquations<3>
     flux[IU] = tau_xy;
     flux[IV] = tau_yy;
     flux[IW] = tau_zy;
-    flux[IE] = v[IX] * tau_xy + v[IY] * tau_yy + v[IZ] * tau_zy + f[IY];
+    flux[IE] = v[IX] * tau_xy + v[IT] * tau_yy + v[IZ] * tau_zy + f[IT];
   };
 
   /**
@@ -693,14 +693,14 @@ struct EulerEquations<3>
     flux[IU] = tau_xz;
     flux[IV] = tau_yz;
     flux[IW] = tau_zz;
-    flux[IE] = v[IX] * tau_xz + v[IY] * tau_yz + v[IZ] * tau_zz + f[IZ];
+    flux[IE] = v[IX] * tau_xz + v[IT] * tau_yz + v[IZ] * tau_zz + f[IZ];
   };
 
   /**
    * Compute characteristic variables by multiply input vector
    * by L (left eigenvalue matrix of Euler Jacobian). Computation is done in place.
    *
-   * The formulas defining eigen matrix are detailled in doc/euler/euler_equations.tex
+   * The formulas defining eigen matrix are detailed in doc/euler/euler_equations.tex
    * and also copied here using python syntax
    *
    * # left eigenvectors (R^-1)
@@ -771,7 +771,7 @@ struct EulerEquations<3>
       tmp[IE] = data[ID] * beta * (phi2 - u * c) + data[IU] * (-beta * (g1 * u - c)) +
                 data[IV] * (-beta * g1 * v) + data[IW] * (-beta * g1 * w) + data[IE] * beta * g1;
     }
-    else if (dir == IY)
+    else if (dir == IT)
     {
 
       // compute matrix vector multiply: tmp = Ly . data
@@ -814,7 +814,7 @@ struct EulerEquations<3>
    * Transform from characteristic variables to conservative by multiply input vector
    * by R (right eigenvalue matrix of Euler Jacobian). Computation done in place.
    *
-   * The formulas defining eigen matrix are detailled in doc/euler/euler_equations.tex
+   * The formulas defining eigen matrix are detailed in doc/euler/euler_equations.tex
    * and also copied here using python syntax
    *
    * # right eigenvectors
@@ -884,7 +884,7 @@ struct EulerEquations<3>
       tmp[IE] = data[ID] * (H - u * c) + data[IU] * V2 / 2 + data[IV] * v + data[IW] * w +
                 data[IE] * (H + u * c);
     }
-    else if (dir == IY)
+    else if (dir == IT)
     {
 
       // compute matrix vector multiply: tmp = Ry . data

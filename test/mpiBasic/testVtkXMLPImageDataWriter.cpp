@@ -53,28 +53,27 @@ struct args_tmp
 /**
  * entry point of the code run by each MPI process.
  */
-void process(vtkMultiProcessController* controller, void* arg)
+void
+process(vtkMultiProcessController * controller, void * arg)
 {
   int myId = controller->GetLocalProcessId();
   int numProcs = controller->GetNumberOfProcesses();
 
-  args_tmp * args_ptr
-    = reinterpret_cast< args_tmp * >(arg);
+  args_tmp * args_ptr = reinterpret_cast<args_tmp *>(arg);
 
-  char* out_file_name = args_ptr->argv[1];
-  int pieces = atoi( args_ptr->argv[2] );
+  char * out_file_name = args_ptr->argv[1];
+  int    pieces = atoi(args_ptr->argv[2]);
 
   // Create ImageData object and fill with dummy data
-  vtkSmartPointer<vtkImageData> imageData =
-    vtkSmartPointer<vtkImageData>::New();
+  vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
 #if HAVE_VTK6
-  imageData->SetExtent(0,NX-1,0,NY-1,0,NZ-1);
+  imageData->SetExtent(0, NX - 1, 0, NY - 1, 0, NZ - 1);
 #else
   imageData->SetDimensions(NX, NY, NZ);
 #endif
 
   imageData->SetOrigin(0.0, 0.0, 0.0);
-  imageData->SetSpacing(1.0,1.0,1.0);
+  imageData->SetSpacing(1.0, 1.0, 1.0);
 
 #if HAVE_VTK6
   imageData->AllocateScalars(VTK_FLOAT, 3);
@@ -83,10 +82,11 @@ void process(vtkMultiProcessController* controller, void* arg)
   imageData->SetScalarTypeToFloat();
   imageData->AllocateScalars();
 #endif
-  for(int j= 0; j < NY; j++)
-    for(int i = 0; i < NX; i++) {
-      float* tmp = static_cast<float*>( imageData->GetScalarPointer(i,j,0) );
-      tmp[0] = i+j;
+  for (int j = 0; j < NY; j++)
+    for (int i = 0; i < NX; i++)
+    {
+      float * tmp = static_cast<float *>(imageData->GetScalarPointer(i, j, 0));
+      tmp[0] = i + j;
     }
 
   // compute number of pieces per MPI process
@@ -96,16 +96,16 @@ void process(vtkMultiProcessController* controller, void* arg)
   int end_piece;
   start_piece = myId * pieces_per_node;
   end_piece = (myId + 1) * pieces_per_node - 1;
-  if ( myId < rem_pieces )
-    {
-      start_piece += myId;
-      end_piece += myId;
-    }
+  if (myId < rem_pieces)
+  {
+    start_piece += myId;
+    end_piece += myId;
+  }
   else
-    {
-      start_piece += rem_pieces;
-      end_piece += rem_pieces;
-    }
+  {
+    start_piece += rem_pieces;
+    end_piece += rem_pieces;
+  }
   std::cout << "Process ";
   std::cout << myId;
   std::cout << " will write pieces ";
@@ -113,37 +113,40 @@ void process(vtkMultiProcessController* controller, void* arg)
   std::cout << end_piece << std::endl;
 
   // create the parallel writer
-  vtkSmartPointer<vtkXMLPImageDataWriter> image_writer
-    = vtkSmartPointer<vtkXMLPImageDataWriter>::New();
+  vtkSmartPointer<vtkXMLPImageDataWriter> image_writer =
+    vtkSmartPointer<vtkXMLPImageDataWriter>::New();
 
-  image_writer->SetFileName(out_file_name );
-  image_writer->SetNumberOfPieces( pieces );
+  image_writer->SetFileName(out_file_name);
+  image_writer->SetNumberOfPieces(pieces);
 #if HAVE_VTK6
-  image_writer->SetInputData( imageData );
+  image_writer->SetInputData(imageData);
 #else
-  image_writer->SetInput( imageData );
+  image_writer->SetInput(imageData);
 #endif
   image_writer->SetByteOrderToLittleEndian();
-  image_writer->SetStartPiece( start_piece );
-  image_writer->SetEndPiece( end_piece );
+  image_writer->SetStartPiece(start_piece);
+  image_writer->SetEndPiece(end_piece);
   image_writer->SetGhostLevel(0);
   image_writer->SetDataModeToAscii();
   /* SetCompressorTypeToNone  is only available in vtk > 5.2 */
-  //image_writer->SetCompressorTypeToNone();
+  // image_writer->SetCompressorTypeToNone();
   image_writer->SetCompressor(NULL);
   image_writer->Write();
 }
 
 /*********************************
  *********************************/
-int main( int argc, char* argv[] )
+int
+main(int argc, char * argv[])
 {
 
-  vtkMPIController* controller = vtkMPIController::New();
+  vtkMPIController * controller = vtkMPIController::New();
   controller->Initialize(&argc, &argv);
 
-  if (argc<3) {
-    if (controller->GetLocalProcessId() == 0) {
+  if (argc < 3)
+  {
+    if (controller->GetLocalProcessId() == 0)
+    {
       std::cerr << "Usage:\n";
       std::cerr << "  mpirun -n nMpiProcs ./testVtkXMLPImageDataWriter filename.pvti nbOfPieces\n";
     }

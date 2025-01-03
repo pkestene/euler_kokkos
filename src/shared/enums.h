@@ -163,7 +163,7 @@ enum BoundaryConditionType
 enum ComponentIndex3D
 {
   IX = 0,
-  IY = 1,
+  IT = 1,
   IZ = 2
 };
 

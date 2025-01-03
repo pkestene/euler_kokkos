@@ -549,7 +549,7 @@ SolverBase::make_boundaries_mpi(DataArray2d Udata, bool mhd_enabled)
   // XDIR
   // ======
   copy_boundaries(Udata, XDIR);
-  transfert_boundaries_2d(XDIR);
+  transfer_boundaries_2d(XDIR);
 
   if (params.neighborsBC[X_MIN] == BC_COPY || params.neighborsBC[X_MIN] == BC_PERIODIC)
   {
@@ -575,7 +575,7 @@ SolverBase::make_boundaries_mpi(DataArray2d Udata, bool mhd_enabled)
   // YDIR
   // ======
   copy_boundaries(Udata, YDIR);
-  transfert_boundaries_2d(YDIR);
+  transfer_boundaries_2d(YDIR);
 
   if (params.neighborsBC[Y_MIN] == BC_COPY || params.neighborsBC[Y_MIN] == BC_PERIODIC)
   {
@@ -611,7 +611,7 @@ SolverBase::make_boundaries_mpi(DataArray3d Udata, bool mhd_enabled)
   // XDIR
   // ======
   copy_boundaries(Udata, XDIR);
-  transfert_boundaries_3d(XDIR);
+  transfer_boundaries_3d(XDIR);
 
   if (params.neighborsBC[X_MIN] == BC_COPY || params.neighborsBC[X_MIN] == BC_PERIODIC)
   {
@@ -637,7 +637,7 @@ SolverBase::make_boundaries_mpi(DataArray3d Udata, bool mhd_enabled)
   // YDIR
   // ======
   copy_boundaries(Udata, YDIR);
-  transfert_boundaries_3d(YDIR);
+  transfer_boundaries_3d(YDIR);
 
   if (params.neighborsBC[Y_MIN] == BC_COPY || params.neighborsBC[Y_MIN] == BC_PERIODIC)
   {
@@ -663,7 +663,7 @@ SolverBase::make_boundaries_mpi(DataArray3d Udata, bool mhd_enabled)
   // ZDIR
   // ======
   copy_boundaries(Udata, ZDIR);
-  transfert_boundaries_3d(ZDIR);
+  transfer_boundaries_3d(ZDIR);
 
   if (params.neighborsBC[Z_MIN] == BC_COPY || params.neighborsBC[Z_MIN] == BC_PERIODIC)
   {
@@ -765,7 +765,7 @@ SolverBase::copy_boundaries(DataArray3d Udata, Direction dir)
 // =======================================================
 // =======================================================
 void
-SolverBase::transfert_boundaries_2d(Direction dir)
+SolverBase::transfer_boundaries_2d(Direction dir)
 {
 
   const int data_type = params.data_type;
@@ -829,12 +829,12 @@ SolverBase::transfert_boundaries_2d(Direction dir)
                                   211);
   }
 
-} // SolverBase::transfert_boundaries_2d
+} // SolverBase::transfer_boundaries_2d
 
 // =======================================================
 // =======================================================
 void
-SolverBase::transfert_boundaries_3d(Direction dir)
+SolverBase::transfer_boundaries_3d(Direction dir)
 {
 
   const int data_type = params.data_type;
@@ -917,7 +917,7 @@ SolverBase::transfert_boundaries_3d(Direction dir)
                                   311);
   }
 
-} // SolverBase::transfert_boundaries_3d
+} // SolverBase::transfer_boundaries_3d
 
 // =======================================================
 // =======================================================

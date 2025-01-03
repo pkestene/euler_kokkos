@@ -417,9 +417,8 @@ public:
     // for information MPI config used
     {
       std::ostringstream mpiConf;
-      mpiConf << "MPI configuration used to write file: "
-              << "mx,my,mz=" << mx << "," << my << "," << mz << " "
-              << "nx,ny,nz=" << nx << "," << ny << "," << nz;
+      mpiConf << "MPI configuration used to write file: " << "mx,my,mz=" << mx << "," << my << ","
+              << mz << " " << "nx,ny,nz=" << nx << "," << ny << "," << nz;
 
       err = ncmpi_put_att_text(
         ncFileId, NC_GLOBAL, "MPI conf", mpiConf.str().size(), mpiConf.str().c_str());
@@ -454,20 +453,20 @@ public:
     if (dimType == TWO_D)
     {
 
-      counts[IY] = nx;
+      counts[IT] = nx;
       counts[IX] = ny;
 
-      starts[IY] = coords[IX] * nx;
-      starts[IX] = coords[IY] * ny;
+      starts[IT] = coords[IX] * nx;
+      starts[IX] = coords[IT] * ny;
 
       // take care of borders along X
       if (coords[IX] == mx - 1)
       {
-        counts[IY] += 2 * ghostWidth;
+        counts[IT] += 2 * ghostWidth;
       }
 
       // take care of borders along Y
-      if (coords[IY] == my - 1)
+      if (coords[IT] == my - 1)
       {
         counts[IX] += 2 * ghostWidth;
       }
@@ -476,11 +475,11 @@ public:
     { // THREE_D
 
       counts[IZ] = nx;
-      counts[IY] = ny;
+      counts[IT] = ny;
       counts[IX] = nz;
 
       starts[IZ] = coords[IX] * nx;
-      starts[IY] = coords[IY] * ny;
+      starts[IT] = coords[IT] * ny;
       starts[IX] = coords[IZ] * nz;
 
       // take care of borders along X
@@ -489,9 +488,9 @@ public:
         counts[IZ] += 2 * ghostWidth;
       }
       // take care of borders along Y
-      if (coords[IY] == my - 1)
+      if (coords[IT] == my - 1)
       {
-        counts[IY] += 2 * ghostWidth;
+        counts[IT] += 2 * ghostWidth;
       }
       // take care of borders along Z
       if (coords[IZ] == mz - 1)
@@ -502,7 +501,7 @@ public:
     } // end THREE_D
 
 
-    int nItems = counts[IX] * counts[IY];
+    int nItems = counts[IX] * counts[IT];
     if (dimType == THREE_D)
       nItems *= counts[IZ];
 
@@ -518,7 +517,7 @@ public:
 
       if (coords[IX] == mx - 1)
         iStop = nx + 2 * ghostWidth;
-      if (coords[IY] == my - 1)
+      if (coords[IT] == my - 1)
         jStop = ny + 2 * ghostWidth;
       if (coords[IZ] == mz - 1)
         kStop = nz + 2 * ghostWidth;

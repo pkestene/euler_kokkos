@@ -31,7 +31,7 @@ public:
   static void
   apply(HydroParams params, DataArray3d Udata, real_t & invDt)
   {
-    ComputeDtFunctor3D functor(params, Udata);
+    ComputeDtFunctor3D  functor(params, Udata);
     Kokkos::Max<real_t> reducer(invDt);
     Kokkos::parallel_reduce("ComputeDtFunctor3D",
                             Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
@@ -170,7 +170,7 @@ public:
        * in order to satisfy the new CFL, where k = g dx cfl / u^2
        */
       double kk =
-        fabs(gravity(i, j, k, IX)) + fabs(gravity(i, j, k, IY)) + fabs(gravity(i, j, k, IZ));
+        fabs(gravity(i, j, k, IX)) + fabs(gravity(i, j, k, IT)) + fabs(gravity(i, j, k, IZ));
 
       kk *= cfl * dx / (velocity * velocity);
 
@@ -488,11 +488,11 @@ public:
         // gravity predictor (half time step)
 
         qleft[IU] += 0.5 * dt * gravity(i - 1, j, k, IX);
-        qleft[IV] += 0.5 * dt * gravity(i - 1, j, k, IY);
+        qleft[IV] += 0.5 * dt * gravity(i - 1, j, k, IT);
         qleft[IW] += 0.5 * dt * gravity(i - 1, j, k, IZ);
 
         qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
+        qright[IV] += 0.5 * dt * gravity(i, j, k, IT);
         qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
       }
 
@@ -581,11 +581,11 @@ public:
         // gravity predictor (half time step)
 
         qleft[IU] += 0.5 * dt * gravity(i, j - 1, k, IX);
-        qleft[IV] += 0.5 * dt * gravity(i, j - 1, k, IY);
+        qleft[IV] += 0.5 * dt * gravity(i, j - 1, k, IT);
         qleft[IW] += 0.5 * dt * gravity(i, j - 1, k, IZ);
 
         qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
+        qright[IV] += 0.5 * dt * gravity(i, j, k, IT);
         qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
       }
 
@@ -676,11 +676,11 @@ public:
         // gravity predictor (half time step)
 
         qleft[IU] += 0.5 * dt * gravity(i, j, k - 1, IX);
-        qleft[IV] += 0.5 * dt * gravity(i, j, k - 1, IY);
+        qleft[IV] += 0.5 * dt * gravity(i, j, k - 1, IT);
         qleft[IW] += 0.5 * dt * gravity(i, j, k - 1, IZ);
 
         qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
+        qright[IV] += 0.5 * dt * gravity(i, j, k, IT);
         qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
       }
 
@@ -1202,7 +1202,7 @@ public:
           // gravity predictor (half time step)
 
           qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-          qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
+          qright[IV] += 0.5 * dt * gravity(i, j, k, IT);
           qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
         }
 
@@ -1248,7 +1248,7 @@ public:
           // gravity predictor (half time step)
 
           qleft[IU] += 0.5 * dt * gravity(i - 1, j, k, IX);
-          qleft[IV] += 0.5 * dt * gravity(i - 1, j, k, IY);
+          qleft[IV] += 0.5 * dt * gravity(i - 1, j, k, IT);
           qleft[IW] += 0.5 * dt * gravity(i - 1, j, k, IZ);
         }
 
@@ -1276,7 +1276,7 @@ public:
           // gravity predictor (half time step)
 
           qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-          qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
+          qright[IV] += 0.5 * dt * gravity(i, j, k, IT);
           qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
         }
 
@@ -1322,7 +1322,7 @@ public:
           // gravity predictor (half time step)
 
           qleft[IU] += 0.5 * dt * gravity(i, j - 1, k, IX);
-          qleft[IV] += 0.5 * dt * gravity(i, j - 1, k, IY);
+          qleft[IV] += 0.5 * dt * gravity(i, j - 1, k, IT);
           qleft[IW] += 0.5 * dt * gravity(i, j - 1, k, IZ);
         }
 
@@ -1388,7 +1388,7 @@ public:
           // gravity predictor (half time step)
 
           qleft[IU] += 0.5 * dt * gravity(i, j, k - 1, IX);
-          qleft[IV] += 0.5 * dt * gravity(i, j, k - 1, IY);
+          qleft[IV] += 0.5 * dt * gravity(i, j, k - 1, IT);
           qleft[IW] += 0.5 * dt * gravity(i, j, k - 1, IZ);
         }
 
@@ -1631,11 +1631,11 @@ public:
         // gravity predictor (half time step)
 
         qleft[IU] += 0.5 * dt * gravity(i - 1, j, k, IX);
-        qleft[IV] += 0.5 * dt * gravity(i - 1, j, k, IY);
+        qleft[IV] += 0.5 * dt * gravity(i - 1, j, k, IT);
         qleft[IW] += 0.5 * dt * gravity(i - 1, j, k, IZ);
 
         qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
+        qright[IV] += 0.5 * dt * gravity(i, j, k, IT);
         qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
       }
 
@@ -1738,11 +1738,11 @@ public:
         // gravity predictor (half time step)
 
         qleft[IU] += 0.5 * dt * gravity(i, j - 1, k, IX);
-        qleft[IV] += 0.5 * dt * gravity(i, j - 1, k, IY);
+        qleft[IV] += 0.5 * dt * gravity(i, j - 1, k, IT);
         qleft[IW] += 0.5 * dt * gravity(i, j - 1, k, IZ);
 
         qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
+        qright[IV] += 0.5 * dt * gravity(i, j, k, IT);
         qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
       }
 
@@ -1847,11 +1847,11 @@ public:
         // gravity predictor (half time step)
 
         qleft[IU] += 0.5 * dt * gravity(i, j, k - 1, IX);
-        qleft[IV] += 0.5 * dt * gravity(i, j, k - 1, IY);
+        qleft[IV] += 0.5 * dt * gravity(i, j, k - 1, IT);
         qleft[IW] += 0.5 * dt * gravity(i, j, k - 1, IZ);
 
         qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
+        qright[IV] += 0.5 * dt * gravity(i, j, k, IT);
         qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
       }
 
@@ -1958,7 +1958,7 @@ public:
 
       // update momentum
       rhou += 0.5 * dt * gravity(i, j, k, IX) * (rhoOld + rhoNew);
-      rhov += 0.5 * dt * gravity(i, j, k, IY) * (rhoOld + rhoNew);
+      rhov += 0.5 * dt * gravity(i, j, k, IT) * (rhoOld + rhoNew);
       rhow += 0.5 * dt * gravity(i, j, k, IZ) * (rhoOld + rhoNew);
 
       Udata_out(i, j, k, IU) = rhou;

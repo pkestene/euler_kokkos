@@ -30,25 +30,29 @@ enum
 };
 
 // allow processor reordering by the MPI cartesian communicator
-enum {
+enum
+{
   MPI_REORDER_FALSE = 0,
-  MPI_REORDER_TRUE  = 1
+  MPI_REORDER_TRUE = 1
 };
 
-enum {
+enum
+{
   MPI_CART_PERIODIC_FALSE = 0,
-  MPI_CART_PERIODIC_TRUE  = 1
+  MPI_CART_PERIODIC_TRUE = 1
 };
 
 // MPI topology directions
-enum {
+enum
+{
   MPI_TOPO_DIR_X = 0,
   MPI_TOPO_DIR_Y = 1,
   MPI_TOPO_DIR_Z = 2
 };
 
 // MPI topology shift direction
-enum {
+enum
+{
   MPI_SHIFT_NONE = 0,
   MPI_SHIFT_FORWARD = 1
 };
@@ -90,7 +94,7 @@ main(int argc, char * argv[])
     printf("\n");
     printf("In this test, each MPI process of the cartesian grid sends a message\n");
     printf("containing a integer (rank of the current process) to all of its\n");
-    printf("neighbors. So you must chech that arrays \"neighbors\" and \"inbuf\"\n");
+    printf("neighbors. So you must check that arrays \"neighbors\" and \"inbuf\"\n");
     printf("contain the same information !\n");
     printf("\n");
   }

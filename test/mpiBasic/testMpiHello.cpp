@@ -13,7 +13,7 @@
  */
 // the following pragma does the same as -Wno-unused-parameter given
 // in Makefile.am
-//#pragma GCC diagnostic ignored "-Wunused-parameter"
+// #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include <mpi.h>
 
 #include <cstdlib>

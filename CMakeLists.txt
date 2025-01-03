@@ -12,8 +12,7 @@ list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(preventBuildInSource)
 
 #
-# Create project version (using git info ?)
-# TODO
+# Create project version (using git info ?) TODO
 #
 
 #
@@ -22,30 +21,41 @@ include(preventBuildInSource)
 include(initBuildType)
 
 # options
-option (EULER_KOKKOS_BUILD_DOC  "Enable / disable documentation build (sphinx/html)" OFF)
-option (EULER_KOKKOS_USE_SPHINX_EXHALE "Enable / disable building API documentation (very long)" OFF)
-option (EULER_KOKKOS_USE_MPI "Activate / want MPI build" OFF)
-option (EULER_KOKKOS_USE_VTK "Activate / want VTK build" OFF)
-option (EULER_KOKKOS_USE_DOUBLE "build with double precision" ON)
-option (EULER_KOKKOS_USE_HDF5 "build HDF5 input/output support" OFF)
-option (EULER_KOKKOS_USE_PNETCDF "build PNETCDF input/output support (MPI required)" OFF)
-option (EULER_KOKKOS_USE_FPE_DEBUG "build with floating point Nan tracing (signal handler)" OFF)
-option (EULER_KOKKOS_USE_MPI_CUDA_AWARE_ENFORCED "Some MPI cuda-aware implementation are not well detected; use this to enforce" OFF)
+option(EULER_KOKKOS_BUILD_DOC
+       "Enable / disable documentation build (sphinx/html)" OFF)
+option(EULER_KOKKOS_USE_SPHINX_EXHALE
+       "Enable / disable building API documentation (very long)" OFF)
+option(EULER_KOKKOS_USE_MPI "Activate / want MPI build" OFF)
+option(EULER_KOKKOS_USE_VTK "Activate / want VTK build" OFF)
+option(EULER_KOKKOS_USE_DOUBLE "build with double precision" ON)
+option(EULER_KOKKOS_USE_HDF5 "build HDF5 input/output support" OFF)
+option(EULER_KOKKOS_USE_PNETCDF
+       "build PNETCDF input/output support (MPI required)" OFF)
+option(EULER_KOKKOS_USE_FPE_DEBUG
+       "build with floating point Nan tracing (signal handler)" OFF)
+option(
+  EULER_KOKKOS_USE_MPI_CUDA_AWARE_ENFORCED
+  "Some MPI cuda-aware implementation are not well detected; use this to enforce"
+  OFF)
 
 # disable base languages
 unset(PROJECT_LANGUAGES)
 
 set(PROJECT_LANGUAGES ${PROJECT_LANGUAGES} C CXX)
 
-project(euler_kokkos
-  LANGUAGES ${PROJECT_LANGUAGES})
+project(euler_kokkos LANGUAGES ${PROJECT_LANGUAGES})
 
 # Documentation type
 if(EULER_KOKKOS_BUILD_DOC)
-  set(EULER_KOKKOS_DOC_TYPE "Undefined" CACHE STRING
-    "The documentation type to generate. Available values are html and doxygen")
+  set(EULER_KOKKOS_DOC_TYPE
+      "Undefined"
+      CACHE
+        STRING
+        "The documentation type to generate. Available values are html and doxygen"
+  )
   # Set the possible values for documentation type
-  set_property(CACHE EULER_KOKKOS_DOC_TYPE PROPERTY STRINGS "html" "doxygen" "Undefined")
+  set_property(CACHE EULER_KOKKOS_DOC_TYPE PROPERTY STRINGS "html" "doxygen"
+                                                    "Undefined")
   add_subdirectory(doc)
   return()
 endif()
@@ -62,14 +72,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #
 include(write_version)
 
-#####################################################################
+# ##############################################################################
 # External packages: MPI, ...
-#####################################################################
+# ##############################################################################
 
-#####################################################################
-#find_package(MPI REQUIRED)
+# ##############################################################################
+# find_package(MPI REQUIRED)
 find_package(MPI)
-if (EULER_KOKKOS_USE_MPI)
+if(EULER_KOKKOS_USE_MPI)
   if(MPI_CXX_FOUND)
     message(STATUS "MPI support found")
     message(STATUS "MPI compile flags: " ${MPI_CXX_COMPILE_FLAGS})
@@ -77,86 +87,92 @@ if (EULER_KOKKOS_USE_MPI)
     message(STATUS "MPI LINK flags path: " ${MPI_CXX_LINK_FLAGS})
     message(STATUS "MPI libraries: " ${MPI_CXX_LIBRARIES})
 
-    #set(CMAKE_EXE_LINKER_FLAGS ${MPI_CXX_LINK_FLAGS})
-    find_program(OMPI_INFO
+    # set(CMAKE_EXE_LINKER_FLAGS ${MPI_CXX_LINK_FLAGS})
+    find_program(
+      OMPI_INFO
       NAMES ompi_info
       HINTS ${MPI_CXX_LIBRARIES}/../bin)
 
-    # Full command line to probe if cuda support in MPI implementation is enabled
-    # ompi_info --parsable --all | grep mpi_built_with_cuda_support:value
-    if (OMPI_INFO)
-      execute_process(COMMAND ${OMPI_INFO}
-        OUTPUT_VARIABLE _output)
-      if ( (_output MATCHES "smcuda") OR (EULER_KOKKOS_USE_MPI_CUDA_AWARE_ENFORCED) )
+    # Full command line to probe if cuda support in MPI implementation is
+    # enabled ompi_info --parsable --all | grep
+    # mpi_built_with_cuda_support:value
+    if(OMPI_INFO)
+      execute_process(COMMAND ${OMPI_INFO} OUTPUT_VARIABLE _output)
+      if((_output MATCHES "smcuda") OR (EULER_KOKKOS_USE_MPI_CUDA_AWARE_ENFORCED
+                                       ))
         set(MPI_CUDA_AWARE_ENABLED True)
         message(STATUS "Found OpenMPI with CUDA support built.")
       else()
         set(MPI_CUDA_AWARE_ENABLED False)
         message(WARNING "OpenMPI found, but it is not built with CUDA support.")
-	add_compile_options(-DMPI_CUDA_AWARE_OFF)
+        add_compile_options(-DMPI_CUDA_AWARE_OFF)
       endif()
     endif()
   else()
-    message(WARNING "Not compiling with MPI. Suppress this warning with -DEULER_KOKKOS_USE_MPI=OFF")
+    message(
+      WARNING
+        "Not compiling with MPI. Suppress this warning with -DEULER_KOKKOS_USE_MPI=OFF"
+    )
     set(EULER_KOKKOS_USE_MPI OFF)
   endif()
 endif()
 
-if (EULER_KOKKOS_USE_VTK)
-  # look for VTK only if requested; VTK macro might even be not present
-  # on the target platform
-  find_package(VTK COMPONENTS
-    CommonCore
-    CommonDataModel
-    CommonExecutionModel
-    CommonMath
-    CommonMisc
-    CommonSystem
-    CommonTransforms
-    IOCore
-    IOGeometry
-    IOImage
-    IOLegacy
-    IOXML
-    IOXMLParser
-    ParallelCore
-    ParallelMPI
-    IOParallelXML)
+if(EULER_KOKKOS_USE_VTK)
+  # look for VTK only if requested; VTK macro might even be not present on the
+  # target platform
+  find_package(
+    VTK
+    COMPONENTS CommonCore
+               CommonDataModel
+               CommonExecutionModel
+               CommonMath
+               CommonMisc
+               CommonSystem
+               CommonTransforms
+               IOCore
+               IOGeometry
+               IOImage
+               IOLegacy
+               IOXML
+               IOXMLParser
+               ParallelCore
+               ParallelMPI
+               IOParallelXML)
 
-  if (VTK_FOUND)
+  if(VTK_FOUND)
     message("VTK version: ${VTK_VERSION}")
   else()
-    message ("VTK NOT FOUND")
+    message("VTK NOT FOUND")
   endif()
 endif(EULER_KOKKOS_USE_VTK)
 
-#####################################################################
+# ##############################################################################
 # HDF5
-#####################################################################
+# ##############################################################################
 # prefer using parallel HDF5 when build with mpi
-if (EULER_KOKKOS_USE_MPI)
+if(EULER_KOKKOS_USE_MPI)
   set(HDF5_PREFER_PARALLEL TRUE)
 endif(EULER_KOKKOS_USE_MPI)
 
-if (EULER_KOKKOS_USE_HDF5)
+if(EULER_KOKKOS_USE_HDF5)
   find_package(HDF5)
   if(HDF5_FOUND)
     include_directories(${HDF5_INCLUDE_DIRS})
-    set(my_hdf5_libs hdf5 hdf5_cpp)
+    set(MY_HDF5_LIBS hdf5 hdf5_cpp)
     add_compile_options(-DUSE_HDF5)
-    if (HDF5_IS_PARALLEL)
+    if(HDF5_IS_PARALLEL)
       add_compile_options(-DUSE_HDF5_PARALLEL)
     endif()
   endif(HDF5_FOUND)
 endif(EULER_KOKKOS_USE_HDF5)
 
-#####################################################################
+# ##############################################################################
 # PNETCDF
-#####################################################################
-if (EULER_KOKKOS_USE_MPI)
-  if (EULER_KOKKOS_USE_PNETCDF)
+# ##############################################################################
+if(EULER_KOKKOS_USE_MPI)
+  if(EULER_KOKKOS_USE_PNETCDF)
     find_package(PNETCDF)
-    if (PNETCDF_FOUND)
+    if(PNETCDF_FOUND)
       add_compile_options(-DUSE_PNETCDF)
       include_directories(${PNETCDF_INCLUDE_DIRS})
     endif(PNETCDF_FOUND)
@@ -169,11 +185,14 @@ endif(EULER_KOKKOS_USE_MPI)
 include(build_or_find_kokkos)
 
 #
-# if MPI is enabled and kokkos backend is cuda, we need a cuda aware implementation
+# if MPI is enabled and kokkos backend is cuda, we need a cuda aware
+# implementation
 #
-if (EULER_KOKKOS_USE_MPI)
+if(EULER_KOKKOS_USE_MPI)
 
-  if ( MPI_FOUND AND (EULER_KOKKOS_BACKEND MATCHES "Cuda") AND (NOT MPI_CUDA_AWARE_ENABLED) )
+  if(MPI_FOUND
+     AND (EULER_KOKKOS_BACKEND MATCHES "Cuda")
+     AND (NOT MPI_CUDA_AWARE_ENABLED))
 
     message(FATAL_ERROR "You must use a cuda-aware MPI implementation.")
 
@@ -185,25 +204,26 @@ endif()
 # common flags
 #
 
-if (EULER_KOKKOS_USE_DOUBLE)
+if(EULER_KOKKOS_USE_DOUBLE)
   add_compile_options(-DUSE_DOUBLE)
 endif()
 
-if (EULER_KOKKOS_USE_MPI)
+if(EULER_KOKKOS_USE_MPI)
   add_compile_options(-DUSE_MPI)
 endif()
 
-if (EULER_KOKKOS_USE_FPE_DEBUG)
+if(EULER_KOKKOS_USE_FPE_DEBUG)
   add_compile_options(-DUSE_FPE_DEBUG)
 endif()
 
-##
-## Using flags -Wextra, it's to strong for Kokkos, too many warnings
-## But -Wall is really a minimum
-##
-#add_definitions(-Wall -Wextra -Wconversion -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wcast-qual -Wunused -Woverloaded-virtual  -pedantic )
-#add_definitions( -Wall -Wextra )
-add_definitions( -Wall )
+#
+# Using flags -Wextra, it's to strong for Kokkos, too many warnings But -Wall is
+# really a minimum
+#
+# add_definitions(-Wall -Wextra -Wconversion -Wshadow -Wnon-virtual-dtor
+# -Wold-style-cast -Wcast-align -Wcast-qual -Wunused -Woverloaded-virtual
+# -pedantic ) add_definitions( -Wall -Wextra )
+add_definitions(-Wall)
 
 #
 # sources
@@ -211,13 +231,13 @@ add_definitions( -Wall )
 add_subdirectory(test)
 add_subdirectory(src)
 
-##################### PRINT CONFIGURE STATUS ######################
+# #################### PRINT CONFIGURE STATUS ######################
 message("//===================================================")
 message("// ${PROJECT_NAME} build configuration:")
 message("//===================================================")
 message("")
 message("  CMake version          : ${CMAKE_VERSION}")
-if (NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
   message("  CMake build type       : NOT SET !")
 else()
   message("  CMake build type       : ${CMAKE_BUILD_TYPE}")
@@ -227,8 +247,7 @@ message("  CMake system processor : ${CMAKE_SYSTEM_PROCESSOR}")
 message("  CMake system name (OS) : ${CMAKE_SYSTEM_NAME}")
 message("")
 message("  C++ Compiler : ${CMAKE_CXX_COMPILER_ID} "
-                         "${CMAKE_CXX_COMPILER_VERSION} "
-                         "${CMAKE_CXX_COMPILER_WRAPPER}")
+        "${CMAKE_CXX_COMPILER_VERSION} " "${CMAKE_CXX_COMPILER_WRAPPER}")
 message("                 ${CMAKE_CXX_COMPILER}")
 
 message("  MPI enabled                  = ${EULER_KOKKOS_USE_MPI}")
@@ -248,35 +267,35 @@ endif()
 if(Kokkos_ENABLE_CUDA)
   message("  Kokkos_ENABLE_CUDA           = ${Kokkos_ENABLE_CUDA}")
 
-  if( (${Kokkos_CUDA_LAMBDA_ENABLED}) OR (${Kokkos_ENABLE_CUDA_LAMBDA}))
+  if((${Kokkos_CUDA_LAMBDA_ENABLED}) OR (${Kokkos_ENABLE_CUDA_LAMBDA}))
     message("  Kokkos_ENABLE_CUDA_LAMBDA    = ON")
   else()
     message("  Kokkos_ENABLE_CUDA_LAMBDA    = OFF")
   endif()
 
-  if( (${Kokkos_CUDA_CONSTEXPR_ENABLED}) OR (${Kokkos_ENABLE_CUDA_CONSTEXPR}))
+  if((${Kokkos_CUDA_CONSTEXPR_ENABLED}) OR (${Kokkos_ENABLE_CUDA_CONSTEXPR}))
     message("  Kokkos_ENABLE_CUDA_CONSTEXPR = ON")
   else()
     message("  Kokkos_ENABLE_CUDA_CONSTEXPR = OFF")
   endif()
 
-  if( (${Kokkos_CUDA_UVM_ENABLED}) OR (${Kokkos_ENABLE_CUDA_UVM}))
+  if((${Kokkos_CUDA_UVM_ENABLED}) OR (${Kokkos_ENABLE_CUDA_UVM}))
     message("  Kokkos_ENABLE_CUDA_UVM       = ON")
   else()
     message("  Kokkos_ENABLE_CUDA_UVM       = OFF")
   endif()
 
   message("  Kokkos CUDA   flags          = ${KOKKOS_CUDA_OPTIONS}")
-  #message("  CUDA Compiler      : ${CMAKE_CUDA_COMPILER}")
-  #message("  CUDA Compiler exec : ${CUDA_NVCC_EXECUTABLE}")
-  #message("  CUDA Compile flags : ${CUDA_NVCC_FLAGS}")
+  # message("  CUDA Compiler      : ${CMAKE_CUDA_COMPILER}") message("  CUDA
+  # Compiler exec : ${CUDA_NVCC_EXECUTABLE}") message("  CUDA Compile flags :
+  # ${CUDA_NVCC_FLAGS}")
 endif(Kokkos_ENABLE_CUDA)
 
 if(Kokkos_ENABLE_HIP)
   message("  Kokkos_ENABLE_HIP            = ${Kokkos_ENABLE_HIP}")
 endif(Kokkos_ENABLE_HIP)
 
-if ( (${Kokkos_TPLS_HWLOC_ENABLED}) OR (${Kokkos_ENABLE_HWLOC}) )
+if((${Kokkos_TPLS_HWLOC_ENABLED}) OR (${Kokkos_ENABLE_HWLOC}))
   message("  Kokkos_ENABLE_HWLOC          = ON")
 else()
   message("  Kokkos_ENABLE_HWLOC          = OFF")
@@ -284,7 +303,7 @@ endif()
 
 message("  Kokkos architecture          = ${Kokkos_ARCH}")
 
-if (HDF5_FOUND)
+if(HDF5_FOUND)
   message("  HDF5_VERSION                 = ${HDF5_VERSION}")
   message("  HDF5_DEFINITIONS             = ${HDF5_DEFINITIONS}")
   message("  HDF5_IS_PARALLEL             = ${HDF5_IS_PARALLEL}")
@@ -292,7 +311,7 @@ if (HDF5_FOUND)
   message("  HDF5_LIBRARIES               = ${HDF5_LIBRARIES}")
 endif(HDF5_FOUND)
 
-if (PNETCDF_FOUND)
+if(PNETCDF_FOUND)
   message("  PNETCDF_VERSION_STRING       = ${PNETCDF_VERSION_STRING}")
   message("  PNETCDF_INCLUDE_DIRS         = ${PNETCDF_INCLUDE_DIRS}")
   message("  PNETCDF_LIBRARIES            = ${PNETCDF_LIBRARIES}")

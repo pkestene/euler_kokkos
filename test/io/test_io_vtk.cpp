@@ -55,7 +55,7 @@ public:
 
 #ifdef USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IY];
+    const int j_mpi = params.myMpiPos[IT];
 #else
     const int i_mpi = 0;
     const int j_mpi = 0;
@@ -91,7 +91,7 @@ public:
 
 #ifdef USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IY];
+    const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
@@ -195,12 +195,13 @@ run_test_vtk(const std::string input_filename)
 
 // ===========================================================
 // ===========================================================
-int main(int argc, char* argv[])
+int
+main(int argc, char * argv[])
 {
 
   // Create MPI session if MPI enabled
 #ifdef USE_MPI
-  hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
+  hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
 #endif // USE_MPI
 
   Kokkos::initialize(argc, argv);
@@ -210,28 +211,30 @@ int main(int argc, char* argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 #endif
 
-  if (mpi_rank==0) {
+  if (mpi_rank == 0)
+  {
     std::cout << "##########################\n";
     std::cout << "KOKKOS CONFIG             \n";
     std::cout << "##########################\n";
 
     std::ostringstream msg;
     std::cout << "Kokkos configuration" << std::endl;
-    if ( Kokkos::hwloc::available() ) {
-      msg << "hwloc( NUMA[" << Kokkos::hwloc::get_available_numa_count()
-          << "] x CORE["    << Kokkos::hwloc::get_available_cores_per_numa()
-          << "] x HT["      << Kokkos::hwloc::get_available_threads_per_core()
-          << "] )"
-          << std::endl ;
-
+    if (Kokkos::hwloc::available())
+    {
+      msg << "hwloc( NUMA[" << Kokkos::hwloc::get_available_numa_count() << "] x CORE["
+          << Kokkos::hwloc::get_available_cores_per_numa() << "] x HT["
+          << Kokkos::hwloc::get_available_threads_per_core() << "] )" << std::endl;
     }
-    Kokkos::print_configuration( msg );
+    Kokkos::print_configuration(msg);
     std::cout << msg.str();
     std::cout << "##########################\n";
   }
 
-  if (argc != 2) {
-    fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter on the command line\n");
+  if (argc != 2)
+  {
+    fprintf(stderr,
+            "Error: wrong number of argument; input filename must be the only parameter on the "
+            "command line\n");
     Kokkos::finalize();
     exit(EXIT_FAILURE);
   }
@@ -245,5 +248,4 @@ int main(int argc, char* argv[])
   Kokkos::finalize();
 
   return EXIT_SUCCESS;
-
 }

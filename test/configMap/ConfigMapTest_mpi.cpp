@@ -49,7 +49,7 @@ test1(std::string filename)
       std::cout << buffer << '\n';
   }
 
-  // broacast buffer size (collective)
+  // broadcast buffer size (collective)
   MPI_Bcast(&buffer_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   if (myRank > 0)
@@ -83,16 +83,20 @@ test1(std::string filename)
 // =====================================================================
 // =====================================================================
 // =====================================================================
-int main(int argc, char* argv[])
+int
+main(int argc, char * argv[])
 {
 
-  hydroSimu::GlobalMpiSession mpiSession(&argc,&argv);
+  hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
 
   std::string input_file;
 
-  if (argc>1) {
+  if (argc > 1)
+  {
     input_file = std::string(argv[1]);
-  } else {
+  }
+  else
+  {
     input_file = "test_mpi.ini";
   }
 

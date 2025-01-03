@@ -42,7 +42,7 @@ using VectorField3dHost = DataArrayVector3::HostMirror;
 /**
  * Retrieve cartesian coordinate from index, using memory layout information.
  *
- * for each execution space define a prefered layout.
+ * for each execution space define a preferred layout.
  * Prefer left layout  for CUDA execution space.
  * Prefer right layout for OpenMP execution space.
  *
@@ -96,7 +96,7 @@ index2coord(int64_t index, int & i, int & j, int & k, int Nx, int Ny, int Nz)
   j = (index - k * NxNy) / Nx;
   i = index - j * Nx - k * NxNy;
 #else
-  int     NyNz = Ny * Nz;
+  int NyNz = Ny * Nz;
   i = index / NyNz;
   j = (index - i * NyNz) / Nz;
   k = index - j * Nz - i * NyNz;

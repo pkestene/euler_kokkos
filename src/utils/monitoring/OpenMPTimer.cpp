@@ -34,20 +34,19 @@ OpenMPTimer::OpenMPTimer(double t)
 
 } // OpenMPTimer::OpenMPTimer
 
-  // =======================================================
-  // =======================================================
-OpenMPTimer::OpenMPTimer(OpenMPTimer const& aTimer) : start_time(aTimer.start_time), total_time(aTimer.total_time)
-{
-} // OpenMPTimer::OpenMPTimer
+// =======================================================
+// =======================================================
+OpenMPTimer::OpenMPTimer(OpenMPTimer const & aTimer)
+  : start_time(aTimer.start_time)
+  , total_time(aTimer.total_time)
+{} // OpenMPTimer::OpenMPTimer
 
-  // =======================================================
-  // =======================================================
-OpenMPTimer::~OpenMPTimer()
-{
-} // OpenMPTimer::~OpenMPTimer
+// =======================================================
+// =======================================================
+OpenMPTimer::~OpenMPTimer() {} // OpenMPTimer::~OpenMPTimer
 
-  // =======================================================
-  // =======================================================
+// =======================================================
+// =======================================================
 void
 OpenMPTimer::start()
 {
@@ -67,9 +66,10 @@ OpenMPTimer::stop()
 
 } // OpenMPTimer::stop
 
-  // =======================================================
-  // =======================================================
-double OpenMPTimer::elapsed() const
+// =======================================================
+// =======================================================
+double
+OpenMPTimer::elapsed() const
 {
 
   return total_time;

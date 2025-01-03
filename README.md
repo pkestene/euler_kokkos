@@ -53,7 +53,7 @@ Add variable CXX on the cmake command line to change the compiler (clang++, icpc
 ```shell
 mkdir build; cd build
 # If you are compiling and running on the same host, you can omit architecture flags,
-# Kokkos will detect the GPU architecture available on your paltform
+# Kokkos will detect the GPU architecture available on your platform
 cmake -DEULER_KOKKOS_USE_MPI=OFF -DEULER_KOKKOS_BUILD_KOKKOS=ON -DEULER_KOKKOS_BACKEND=Cuda -DKokkos_ARCH_MAXWELL50=ON ..
 make -j 4
 ```
@@ -84,7 +84,7 @@ mpirun -np 4 ./euler_kokkos ./test_implode_2D_mpi.ini
 
 ### Build for AMD GPU with Kokkos Hip backend
 
-Make sure to have rocm/hip tools with version at least 5.2 if build againt kokkos 4.0.
+Make sure to have rocm/hip tools with version at least 5.2 if build against kokkos 4.0.
 
 For example:
 
@@ -96,7 +96,7 @@ make -j 4
 ```
 
 
-### Developping with vim or emacs and semantic completion/navigation from ccls
+### Developing with vim or emacs and semantic completion/navigation from ccls
 
 Make sure to have CMake variable `CMAKE_EXPORT_COMPILE_COMMANDS` set to ON, it will generate a file named _compile_commands.json_.
 Then you can symlink the generated file in the top level source directory.

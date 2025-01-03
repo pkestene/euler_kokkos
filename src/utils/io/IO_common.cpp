@@ -22,7 +22,7 @@ current_date()
   std::tm tm = *std::localtime(&now);
 
   // old versions of g++ don't have std::put_time,
-  // so we provide a slight work arround
+  // so we provide a slight work around
 #if defined(__GNUC__) && (__GNUC__ < 5)
 
   char foo[64];

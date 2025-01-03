@@ -99,7 +99,7 @@ public:
   ~Save_HDF5(){};
 
   /**
-   * Copy Uhost to buffer data (then transfered to HDF5 write route) - 2d.
+   * Copy Uhost to buffer data (then transferred to HDF5 write route) - 2d.
    */
   template <DimensionType d_ = d>
   void
@@ -129,7 +129,7 @@ public:
   } // copy_buffer
 
   /**
-   * Copy Uhost to buffer data (then transfered to HDF5 write route) - 3d.
+   * Copy Uhost to buffer data (then transferred to HDF5 write route) - 3d.
    */
   template <DimensionType d_ = d>
   void
@@ -363,13 +363,13 @@ public:
     {
       const hsize_t chunk_size2D[2] = { (hsize_t)ny, (hsize_t)nx };
       status = H5Pset_chunk(propList_create_id, 2, chunk_size2D);
-      HDF5_CHECK(status, "Can not set hdf5 chunck sizes");
+      HDF5_CHECK(status, "Can not set hdf5 chunk sizes");
     }
     else
     { // THREE_D
       const hsize_t chunk_size3D[3] = { (hsize_t)nz, (hsize_t)ny, (hsize_t)nx };
       status = H5Pset_chunk(propList_create_id, 3, chunk_size3D);
-      HDF5_CHECK(status, "Can not set hdf5 chunck sizes");
+      HDF5_CHECK(status, "Can not set hdf5 chunk sizes");
     }
     H5Pset_shuffle(propList_create_id);
     H5Pset_deflate(propList_create_id, compressionLevel);
@@ -379,7 +379,7 @@ public:
      */
     real_t * data;
 
-    // Some adjustement needed to take into account that strides / layout need
+    // Some adjustment needed to take into account that strides / layout need
     // to be checked at runtime
     // if memory layout is KOKKOS_LAYOUT_RIGHT, we need an extra buffer.
     if (layout == KOKKOS_LAYOUT_RIGHT)
@@ -561,7 +561,7 @@ public:
   ~Save_HDF5_mpi(){};
 
   /**
-   * Copy Uhost to buffer data (then transfered to HDF5 write route) - 2d mpi.
+   * Copy Uhost to buffer data (then transferred to HDF5 write route) - 2d mpi.
    */
   template <DimensionType d_ = d>
   void
@@ -591,7 +591,7 @@ public:
   } // copy_buffer
 
   /**
-   * Copy Uhost to buffer data (then transfered to HDF5 write route) - 3d mpi.
+   * Copy Uhost to buffer data (then transferred to HDF5 write route) - 3d mpi.
    */
   template <DimensionType d_ = d>
   void
@@ -1171,7 +1171,7 @@ public:
      */
     real_t * data;
 
-    // Some adjustement needed to take into account that strides / layout need
+    // Some adjustment needed to take into account that strides / layout need
     // to be checked at runtime
     // if memory layout is KOKKOS_LAYOUT_RIGHT, we need an extra buffer.
     if (layout == KOKKOS_LAYOUT_RIGHT)
@@ -1651,7 +1651,7 @@ public:
           }
 
         } // end for i
-      }   // end for j
+      } // end for j
     }
     else
     {
@@ -1766,8 +1766,8 @@ public:
             }
 
           } // end for i
-        }   // end for j
-      }     // end for k
+        } // end for j
+      } // end for k
     }
     else
     {
@@ -2051,7 +2051,7 @@ public:
     else
       layout = KOKKOS_LAYOUT_RIGHT;
 
-    // Some adjustement needed to take into account that strides / layout need
+    // Some adjustment needed to take into account that strides / layout need
     // to be checked at runtime
     // if memory layout is KOKKOS_LAYOUT_RIGHT, we need an allocation.
     // if memory layout is KOKKOS_LAYOUT_LEFT, allocation not required
@@ -2644,7 +2644,7 @@ public:
     else
       layout = KOKKOS_LAYOUT_RIGHT;
 
-    // Some adjustement needed to take into account that strides / layout need
+    // Some adjustment needed to take into account that strides / layout need
     // to be checked at runtime
     // if memory layout is KOKKOS_LAYOUT_RIGHT, we need an allocation.
     // if memory layout is KOKKOS_LAYOUT_LEFT, allocation not required

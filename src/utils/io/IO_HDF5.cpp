@@ -61,8 +61,8 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
 
 #ifdef USE_MPI
   /*
-   * The follwing only makes sense in MPI: is allghostIncluded is true,
-   * every sub-domain dumps its own local ghosts (might be usefull for debug,
+   * The following only makes sense in MPI: is allghostIncluded is true,
+   * every sub-domain dumps its own local ghosts (might be useful for debug,
    * at least it was useful in ramsesGPU for the shearing box border condition
    * debug).
    */

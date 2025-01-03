@@ -70,7 +70,7 @@ public:
       find_speed_info<THREE_D>(qLoc, fastInfoSpeed, params);
 
       real_t vx = fastInfoSpeed[IX];
-      real_t vy = fastInfoSpeed[IY];
+      real_t vy = fastInfoSpeed[IT];
       real_t vz = fastInfoSpeed[IZ];
 
       invDt = fmax(invDt, vx / dx + vy / dy + vz / dz);
@@ -139,7 +139,7 @@ public:
 
       // get mag field in neighbor cells
       magFieldNeighbors[IX] = Udata(i + 1, j, k, IA);
-      magFieldNeighbors[IY] = Udata(i, j + 1, k, IB);
+      magFieldNeighbors[IT] = Udata(i, j + 1, k, IB);
       magFieldNeighbors[IZ] = Udata(i, j, k + 1, IC);
 
       // get primitive variables in current cell
@@ -337,7 +337,7 @@ public:
       A = HALF_F * (Udata(i    , j, k - 1, IA) + Udata(i, j, k, IA));
       C = HALF_F * (Udata(i - 1, j, k    , IC) + Udata(i, j, k, IC));
 
-      ElecField(i, j, k, IY) = w * A - u * C;
+      ElecField(i, j, k, IT) = w * A - u * C;
 
       // compute Ez
       u = ONE_FOURTH_F * (Qdata(i - 1, j - 1, k, IU) + Qdata(i - 1, j, k, IU) +
@@ -413,16 +413,16 @@ public:
       // sAL0 = +(GLR - GLL) * dtdy * HALF_F - (FLR - FLL) * dtdz * HALF_F
       sFaceMag(i, j, k, IX) =
         (ElecField(i, j + 1, k    , IZ) - ElecField(i, j, k, IZ)) * HALF_F * dtdy -
-        (ElecField(i, j    , k + 1, IY) - ElecField(i, j, k, IY)) * HALF_F * dtdz;
+        (ElecField(i, j    , k + 1, IT) - ElecField(i, j, k, IT)) * HALF_F * dtdz;
 
       // sBL0 = -(GRL - GLL) * dtdx * HALF_F + (ELR - ELL) * dtdz * HALF_F
-      sFaceMag(i, j, k, IY) =
+      sFaceMag(i, j, k, IT) =
         -(ElecField(i + 1, j, k    , IZ) - ElecField(i, j, k, IZ)) * HALF_F * dtdx +
          (ElecField(i    , j, k + 1, IX) - ElecField(i, j, k, IX)) * HALF_F * dtdz;
 
       // sCL0 = +(FRL - FLL) * dtdx * HALF_F - (ERL - ELL) * dtdy * HALF_F
       sFaceMag(i, j, k, IZ) =
-        (ElecField(i + 1, j    , k, IY) - ElecField(i, j, k, IY)) * HALF_F * dtdx -
+        (ElecField(i + 1, j    , k, IT) - ElecField(i, j, k, IT)) * HALF_F * dtdx -
         (ElecField(i    , j + 1, k, IX) - ElecField(i, j, k, IX)) * HALF_F * dtdy;
     }
     // clang-format on
@@ -487,7 +487,7 @@ public:
       real_t dbfSlopes[3][3];
 
       real_t(&dbfX)[3] = dbfSlopes[IX];
-      real_t(&dbfY)[3] = dbfSlopes[IY];
+      real_t(&dbfY)[3] = dbfSlopes[IT];
       real_t(&dbfZ)[3] = dbfSlopes[IZ];
 
       // get magnetic slopes dbf
@@ -520,9 +520,9 @@ public:
       DeltaA(i, j, k, 1) = dbfY[IX];
       DeltaA(i, j, k, 2) = dbfZ[IX];
 
-      DeltaB(i, j, k, 0) = dbfX[IY];
-      DeltaB(i, j, k, 1) = dbfY[IY];
-      DeltaB(i, j, k, 2) = dbfZ[IY];
+      DeltaB(i, j, k, 0) = dbfX[IT];
+      DeltaB(i, j, k, 1) = dbfY[IT];
+      DeltaB(i, j, k, 2) = dbfZ[IT];
 
       DeltaC(i, j, k, 0) = dbfX[IZ];
       DeltaC(i, j, k, 1) = dbfY[IZ];
@@ -691,7 +691,7 @@ public:
       real_t elecFields[3][2][2];
       // alias to electric field components
       real_t(&Ex)[2][2] = elecFields[IX];
-      real_t(&Ey)[2][2] = elecFields[IY];
+      real_t(&Ey)[2][2] = elecFields[IT];
       real_t(&Ez)[2][2] = elecFields[IZ];
 
       MHDState qm[THREE_D];
@@ -723,19 +723,19 @@ public:
       bfNb[5] = Udata(i    , j    , k + 1, IC);
 
       // get dbf (transverse magnetic slopes)
-      dbf[0] = DeltaA(i, j, k, IY);
+      dbf[0] = DeltaA(i, j, k, IT);
       dbf[1] = DeltaA(i, j, k, IZ);
       dbf[2] = DeltaB(i, j, k, IX);
       dbf[3] = DeltaB(i, j, k, IZ);
       dbf[4] = DeltaC(i, j, k, IX);
-      dbf[5] = DeltaC(i, j, k, IY);
+      dbf[5] = DeltaC(i, j, k, IT);
 
-      dbf[6]  = DeltaA(i + 1, j    , k    , IY);
+      dbf[6]  = DeltaA(i + 1, j    , k    , IT);
       dbf[7]  = DeltaA(i + 1, j    , k    , IZ);
       dbf[8]  = DeltaB(i    , j + 1, k    , IX);
       dbf[9]  = DeltaB(i    , j + 1, k    , IZ);
       dbf[10] = DeltaC(i    , j    , k + 1, IX);
-      dbf[11] = DeltaC(i    , j    , k + 1, IY);
+      dbf[11] = DeltaC(i    , j    , k + 1, IT);
 
       // get electric field components
       Ex[0][0] = ElecField(i    , j    , k    , IX); // ELL
@@ -743,10 +743,10 @@ public:
       Ex[1][0] = ElecField(i    , j + 1, k    , IX); // ERL
       Ex[1][1] = ElecField(i    , j + 1, k + 1, IX); // ERR
 
-      Ey[0][0] = ElecField(i    , j    , k    , IY); // FLL
-      Ey[0][1] = ElecField(i    , j    , k + 1, IY); // FLR
-      Ey[1][0] = ElecField(i + 1, j    , k    , IY); // FRL
-      Ey[1][1] = ElecField(i + 1, j    , k + 1, IY); // FRR
+      Ey[0][0] = ElecField(i    , j    , k    , IT); // FLL
+      Ey[0][1] = ElecField(i    , j    , k + 1, IT); // FLR
+      Ey[1][0] = ElecField(i + 1, j    , k    , IT); // FRL
+      Ey[1][1] = ElecField(i + 1, j    , k + 1, IT); // FRR
 
       Ez[0][0] = ElecField(i    , j    , k    , IZ); // GLL
       Ez[0][1] = ElecField(i    , j + 1, k    , IZ); // GLR
@@ -763,7 +763,7 @@ public:
       // if (gravityEnabled) {
 
       // 	real_t grav_x = HALF_F * dt * h_gravity(i,j,k,IX);
-      // 	real_t grav_y = HALF_F * dt * h_gravity(i,j,k,IY);
+      // 	real_t grav_y = HALF_F * dt * h_gravity(i,j,k,IT);
       // 	real_t grav_z = HALF_F * dt * h_gravity(i,j,k,IZ);
 
       // 	qm[0][IU] += grav_x; qm[0][IV] += grav_y; qm[0][IW] += grav_z;
@@ -934,7 +934,7 @@ public:
       get_state(Slopes_x, i, j, k, dq[IX]);
 
       // retrieve hydro slopes along Y
-      get_state(Slopes_y, i, j, k, dq[IY]);
+      get_state(Slopes_y, i, j, k, dq[IT]);
 
       // retrieve hydro slopes along Z
       get_state(Slopes_z, i, j, k, dq[IZ]);
@@ -959,13 +959,13 @@ public:
       auto const & dBx = dq[IX][IB];
 
       // Cell centered TVD slopes in Y direction
-      auto const & dry = dq[IY][ID];
-      auto const & dpy = dq[IY][IP];
-      auto const & duy = dq[IY][IU];
-      auto const & dvy = dq[IY][IV];
-      auto const & dwy = dq[IY][IW];
-      auto const & dCy = dq[IY][IC];
-      auto const & dAy = dq[IY][IA];
+      auto const & dry = dq[IT][ID];
+      auto const & dpy = dq[IT][IP];
+      auto const & duy = dq[IT][IU];
+      auto const & dvy = dq[IT][IV];
+      auto const & dwy = dq[IT][IW];
+      auto const & dCy = dq[IT][IC];
+      auto const & dAy = dq[IT][IA];
 
       // Cell centered TVD slopes in Z direction
       auto const & drz = dq[IZ][ID];
@@ -978,7 +978,7 @@ public:
 
       auto const   db = compute_normal_mag_field_slopes(Udata, i, j, k);
       auto const & dAx = db[IX];
-      auto const & dBy = db[IY];
+      auto const & dBy = db[IT];
       auto const & dCz = db[IZ];
 
       real_t sr0, su0, sv0, sw0, sp0, sA0, sB0, sC0;
@@ -1014,9 +1014,9 @@ public:
     }
   } // operator ()
 
-  DataArray3d Udata, Qdata; // input
+  DataArray3d Udata, Qdata;                 // input
   DataArray3d Slopes_x, Slopes_y, Slopes_z; // input
-  DataArray3d Qdata2;       // output
+  DataArray3d Qdata2;                       // output
   real_t      dtdx, dtdy, dtdz;
 
 }; // ComputeUpdatedPrimvarFunctor3D_MHD
@@ -1162,7 +1162,7 @@ public:
       }
       else if constexpr (dir == DIR_Y)
       {
-        const real_t BL = Udata_in(i, j, k, IB) + sFaceMag(i, j, k, IY);
+        const real_t BL = Udata_in(i, j, k, IB) + sFaceMag(i, j, k, IT);
         qR[IA] = q2[IA] - 0.5 * dq[IA];
         qR[IB] = BL;
         qR[IC] = q2[IC] - 0.5 * dq[IC];
@@ -1453,19 +1453,19 @@ public:
       sign_b1 = -1;
     }
 
-    const real_t B0 = Udata_in(ijk0[IX], ijk0[IY], ijk0[IZ], IA + dir0) +
-                      sFaceMag(ijk0[IX], ijk0[IY], ijk0[IZ], dir0);
+    const real_t B0 = Udata_in(ijk0[IX], ijk0[IT], ijk0[IZ], IA + dir0) +
+                      sFaceMag(ijk0[IX], ijk0[IT], ijk0[IZ], dir0);
     const real_t dB0d1 = compute_limited_slope<static_cast<Direction>(dir1)>(
-      Udata_in, ijk0[IX], ijk0[IY], ijk0[IZ], IA + dir0);
+      Udata_in, ijk0[IX], ijk0[IT], ijk0[IZ], IA + dir0);
 
-    const real_t B1 = Udata_in(ijk1[IX], ijk1[IY], ijk1[IZ], IA + dir1) +
-                      sFaceMag(ijk1[IX], ijk1[IY], ijk1[IZ], dir1);
+    const real_t B1 = Udata_in(ijk1[IX], ijk1[IT], ijk1[IZ], IA + dir1) +
+                      sFaceMag(ijk1[IX], ijk1[IT], ijk1[IZ], dir1);
     const real_t dB1d0 = compute_limited_slope<static_cast<Direction>(dir0)>(
-      Udata_in, ijk1[IX], ijk1[IY], ijk1[IZ], IA + dir1);
+      Udata_in, ijk1[IX], ijk1[IT], ijk1[IZ], IA + dir1);
 
     // get limited slopes
     MHDState dq0, dq1;
-    if constexpr (dir0 == IX and dir1 == IY)
+    if constexpr (dir0 == IX and dir1 == IT)
     {
       get_state(Slopes_x, ic, jc, kc, dq0);
       get_state(Slopes_y, ic, jc, kc, dq1);
@@ -1475,7 +1475,7 @@ public:
       get_state(Slopes_x, ic, jc, kc, dq0);
       get_state(Slopes_z, ic, jc, kc, dq1);
     }
-    else if constexpr (dir0 == IY and dir1 == IZ)
+    else if constexpr (dir0 == IT and dir1 == IZ)
     {
       get_state(Slopes_y, ic, jc, kc, dq0);
       get_state(Slopes_z, ic, jc, kc, dq1);
@@ -1496,7 +1496,7 @@ public:
       qEdge[IA] += 0.5 * (sign_dq0 * dq0[IA] + sign_dq1 * dq1[IA]);
     }
 
-    if (dir0 == IY)
+    if (dir0 == IT)
     {
       qEdge[IB] = B0 + 0.5 * (sign_b0 * dB0d1);
     }
@@ -1505,7 +1505,7 @@ public:
       qEdge[IB] += 0.5 * (sign_dq0 * dq0[IB] + sign_dq1 * dq1[IB]);
     }
 
-    if (dir1 == IY)
+    if (dir1 == IT)
     {
       qEdge[IB] = B1 + 0.5 * (sign_b1 * dB1d0);
     }
@@ -1605,7 +1605,7 @@ public:
           const auto i0 = i;
           const auto j0 = j;
           const auto k0 = k;
-          reconstruct_state_at_edge<IX, IY>(qLB, i0, j0, k0, MHDEdgeLocation::LB);
+          reconstruct_state_at_edge<IX, IT>(qLB, i0, j0, k0, MHDEdgeLocation::LB);
         }
 
         // RT (i-1, j-1, k)
@@ -1613,7 +1613,7 @@ public:
           const auto i0 = i - 1;
           const auto j0 = j - 1;
           const auto k0 = k;
-          reconstruct_state_at_edge<IX, IY>(qRT, i0, j0, k0, MHDEdgeLocation::RT);
+          reconstruct_state_at_edge<IX, IT>(qRT, i0, j0, k0, MHDEdgeLocation::RT);
         }
 
         // RB (i-1, j, k)
@@ -1621,7 +1621,7 @@ public:
           const auto i0 = i - 1;
           const auto j0 = j;
           const auto k0 = k;
-          reconstruct_state_at_edge<IX, IY>(qRB, i0, j0, k0, MHDEdgeLocation::RB);
+          reconstruct_state_at_edge<IX, IT>(qRB, i0, j0, k0, MHDEdgeLocation::RB);
         }
 
         // LT (i, j-1, k)
@@ -1629,7 +1629,7 @@ public:
           const auto i0 = i;
           const auto j0 = j - 1;
           const auto k0 = k;
-          reconstruct_state_at_edge<IX, IY>(qLT, i0, j0, k0, MHDEdgeLocation::LT);
+          reconstruct_state_at_edge<IX, IT>(qLT, i0, j0, k0, MHDEdgeLocation::LT);
         }
 
         const real_t emfZ = compute_emf<EMFZ>(qEdge_emf, params);
@@ -1721,7 +1721,7 @@ public:
           const auto i0 = i;
           const auto j0 = j;
           const auto k0 = k;
-          reconstruct_state_at_edge<IY, IZ>(qLB, i0, j0, k0, MHDEdgeLocation::LB);
+          reconstruct_state_at_edge<IT, IZ>(qLB, i0, j0, k0, MHDEdgeLocation::LB);
         }
 
         // RT (i, j-1, k-1)
@@ -1729,7 +1729,7 @@ public:
           const auto i0 = i;
           const auto j0 = j - 1;
           const auto k0 = k - 1;
-          reconstruct_state_at_edge<IY, IZ>(qRT, i0, j0, k0, MHDEdgeLocation::RT);
+          reconstruct_state_at_edge<IT, IZ>(qRT, i0, j0, k0, MHDEdgeLocation::RT);
         }
 
         // RB (i, j-1, k)
@@ -1737,7 +1737,7 @@ public:
           const auto i0 = i;
           const auto j0 = j - 1;
           const auto k0 = k;
-          reconstruct_state_at_edge<IY, IZ>(qRB, i0, j0, k0, MHDEdgeLocation::RB);
+          reconstruct_state_at_edge<IT, IZ>(qRB, i0, j0, k0, MHDEdgeLocation::RB);
         }
 
         // LT (i, j, k-1)
@@ -1745,7 +1745,7 @@ public:
           const auto i0 = i;
           const auto j0 = j;
           const auto k0 = k - 1;
-          reconstruct_state_at_edge<IY, IZ>(qLT, i0, j0, k0, MHDEdgeLocation::LT);
+          reconstruct_state_at_edge<IT, IZ>(qLT, i0, j0, k0, MHDEdgeLocation::LT);
         }
 
         const real_t emfX = compute_emf<EMFX>(qEdge_emf, params);

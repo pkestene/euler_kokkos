@@ -12,29 +12,22 @@ add_subdirectory(muscl)
 #
 add_executable(${PROJECT_NAME} "")
 
-target_sources(${PROJECT_NAME}
-  PRIVATE
-  main.cpp)
+target_sources(${PROJECT_NAME} PRIVATE main.cpp)
 
-target_include_directories(${PROJECT_NAME}
-  PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_BINARY_DIR}/src
-  )
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+                                                  ${CMAKE_BINARY_DIR}/src)
 
-target_link_libraries(${PROJECT_NAME}
-  PUBLIC
-  EulerKokkos::solver_factory
-  EulerKokkos::config
-  Kokkos::kokkos
-  dl
-  EulerKokkos::muscl
-  EulerKokkos::shared
-  EulerKokkos::io
-  EulerKokkos::monitoring)
+target_link_libraries(
+  ${PROJECT_NAME}
+  PUBLIC EulerKokkos::solver_factory
+         EulerKokkos::config
+         Kokkos::kokkos
+         dl
+         EulerKokkos::muscl
+         EulerKokkos::shared
+         EulerKokkos::io
+         EulerKokkos::monitoring)
 
-if (EULER_KOKKOS_USE_MPI)
-  target_link_libraries(${PROJECT_NAME}
-    PUBLIC
-    EulerKokkos::mpiUtils)
+if(EULER_KOKKOS_USE_MPI)
+  target_link_libraries(${PROJECT_NAME} PUBLIC EulerKokkos::mpiUtils)
 endif(EULER_KOKKOS_USE_MPI)
