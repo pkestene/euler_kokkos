@@ -1,0 +1,28 @@
+version = 1
+SPDX-PackageName = "euler_kokkos"
+SPDX-PackageSupplier = "euler_kokkos authors"
+SPDX-PackageDownloadLocation = "https://github.com/pkestene/euler_kokkos"
+
+[[annotations]]
+path = [
+    ".github/**",  "README.md",  "doc/**", "src/euler_kokkos_version.h.in"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2025 euler_kokkos authors"
+SPDX-License-Identifier = "Apache-2.0 with LLVM-exception"
+
+[[annotations]]
+path = [
+    ".clang-format", ".clang-tidy", ".pre-commit-config.yaml", "REUSE.toml", ".git-blame-ignore-revs", ".editorconfig", ".cmake-format.py", ".gitignore", ".gitmodules", "_typos.toml", "settings/**", "test/io/*.ini", "test/configMap/*.ini"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2025 euler_kokkos authors"
+SPDX-License-Identifier = "Unlicense"
+
+[[annotations]]
+path = [
+    "src/utils/config/inih/**"
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2009, Ben Hoyt"
+SPDX-License-Identifier = "BSD-1-Clause"
