@@ -158,22 +158,6 @@ if(EULER_KOKKOS_USE_MPI)
 endif()
 
 #
-# common flags
-#
-
-if(EULER_KOKKOS_USE_DOUBLE)
-  add_compile_options(-DUSE_DOUBLE)
-endif()
-
-if(EULER_KOKKOS_USE_MPI)
-  add_compile_options(-DUSE_MPI)
-endif()
-
-if(EULER_KOKKOS_USE_FPE_DEBUG)
-  add_compile_options(-DUSE_FPE_DEBUG)
-endif()
-
-#
 # Using flags -Wextra, it's to strong for Kokkos, too many warnings But -Wall is
 # really a minimum
 #
