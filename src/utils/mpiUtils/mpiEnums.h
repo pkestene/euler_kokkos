@@ -1,7 +1,7 @@
 #ifndef MPI_ENUMS_H_
 #define MPI_ENUMS_H_
 
-namespace hydroSimu
+namespace euler_kokkos
 {
 
 //! defgroup mpi_cartesian
@@ -69,6 +69,6 @@ enum
 
 //!@}
 
-} // namespace hydroSimu
+} // namespace euler_kokkos
 
 #endif // MPI_ENUMS_H_

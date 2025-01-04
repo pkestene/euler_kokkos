@@ -1,11 +1,13 @@
 #ifndef IO_HDF5_H_
 #define IO_HDF5_H_
 
+#include <shared/euler_kokkos_config.h>
+
 #include <iostream>
 #include <type_traits>
 
 // for HDF5 file format output
-#ifdef USE_HDF5
+#ifdef EULER_KOKKOS_USE_HDF5
 #  include <hdf5.h>
 
 #  define HDF5_MESG(mesg) std::cerr << "HDF5 :" << mesg << std::endl;
@@ -20,7 +22,7 @@
       }                                                                                         \
     } while (0)
 
-#endif // USE_HDF5
+#endif // EULER_KOKKOS_USE_HDF5
 
 #include <map>
 #include <string>
@@ -32,9 +34,9 @@
 #include "shared/utils.h"
 #include "utils/config/ConfigMap.h"
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 #  include "utils/mpiUtils/MpiComm.h"
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 #include "IO_common.h"
 
@@ -525,7 +527,7 @@ public:
 
 }; // class Save_HDF5
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 // =======================================================
 // =======================================================
 /**
@@ -1511,7 +1513,7 @@ public:
 
 }; // class Save_HDF5_mpi
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 // =======================================================
 // =======================================================
@@ -2152,7 +2154,7 @@ public:
 
 }; // class Load_HDF5
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 
 // =======================================================
 // =======================================================
@@ -2794,7 +2796,7 @@ public:
 
 }; // class Load_HDF5_mpi
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 } // namespace io
 

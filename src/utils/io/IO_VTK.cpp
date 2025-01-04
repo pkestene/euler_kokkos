@@ -408,7 +408,7 @@ save_VTK_3D(DataArray3d                        Udata,
 
 } // end save_VTK_3D
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 // =======================================================
 // =======================================================
 void
@@ -1007,7 +1007,7 @@ write_pvti_header(std::string                        headerFilename,
   // end writing pvti header
 
 } // write_pvti_header
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 } // namespace io
 

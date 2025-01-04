@@ -8,6 +8,7 @@
 #ifndef HYDRO_PARAMS_H_
 #define HYDRO_PARAMS_H_
 
+#include <shared/euler_kokkos_config.h>
 #include "shared/kokkos_shared.h"
 #include "shared/real_type.h"
 #include "utils/config/ConfigMap.h"
@@ -18,9 +19,9 @@
 
 #include "shared/enums.h"
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 #  include "utils/mpiUtils/MpiCommCart.h"
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 namespace euler_kokkos
 {
@@ -70,9 +71,9 @@ struct HydroSettings
 struct HydroParams
 {
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   using MpiCommCart = hydroSimu::MpiCommCart;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   // run parameters
   int    nStepmax;     /*!< maximum number of time steps. */
@@ -131,7 +132,7 @@ struct HydroParams
   // other parameters
   int implementationVersion = 0; /*!< triggers which implementation to use (currently 3 versions)*/
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   //! runtime determination if we are using float ou double (for MPI communication)
   //! initialized in constructor to either MpiComm::FLOAT or MpiComm::DOUBLE
   int data_type;
@@ -164,7 +165,7 @@ struct HydroParams
   //! neighbor MPI processes)
   Kokkos::Array<BoundaryConditionType, 6> neighborsBC;
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   HydroParams()
     : nStepmax(0)
@@ -209,9 +210,9 @@ struct HydroParams
     , niter_riemann(10)
     , riemannSolverType()
     , implementationVersion(0)
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   // init MPI-specific parameters...
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
   {}
 
   virtual ~HydroParams() {}
@@ -220,11 +221,11 @@ struct HydroParams
   virtual void
   setup(ConfigMap & map);
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   //! Initialize MPI-specific parameters
   void
   setup_mpi(ConfigMap & map);
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   void
   init();

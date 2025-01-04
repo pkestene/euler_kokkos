@@ -12,7 +12,9 @@
 #include <sstream>
 #include <fstream>
 
-#if USE_MPI
+#include <shared/euler_kokkos_config.h>
+
+#if EULER_KOKKOS_USE_MPI
 #  include <mpi.h>
 #endif
 
@@ -102,7 +104,7 @@ ConfigMap::setBool(std::string section, std::string name, bool value)
 ConfigMap
 broadcast_parameters(std::string filename)
 {
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 
   int myRank;
   int nTasks;

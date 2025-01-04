@@ -1,0 +1,51 @@
+/**
+ * \file euler_kokkos_config.h
+ */
+#ifndef EULER_KOKKOS_CONFIG_H
+#define EULER_KOKKOS_CONFIG_H 1
+
+/* euler_kokkos_config.h.  Generated from euler_kokkos_config.h.cmake by cmake.  */
+
+/* Define to 1 when cmake build type is "Debug" */
+#cmakedefine EULER_KOKKOS_ENABLE_DEBUG 1
+
+/* Define to 1 when checking array bounds at runtime */
+#cmakedefine EULER_KOKKOS_DEBUG_BOUNDS_CHECK 1
+
+/* floating point type: float or double ? */
+#cmakedefine EULER_KOKKOS_USE_DOUBLE 1
+
+/* debug floating point exception */
+#cmakedefine EULER_KOKKOS_USE_FPE_DEBUG 1
+
+/* timing measurements enabled ? */
+#cmakedefine EULER_KOKKOS_TIMING_ENABLED 1
+
+/* compiler information */
+#define EULER_KOKKOS_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
+#define EULER_KOKKOS_BUILD_COMPILER_ID "@CMAKE_CXX_COMPILER_ID@"
+#define EULER_KOKKOS_BUILD_COMPILER_VERSION "@CMAKE_CXX_COMPILER_VERSION@"
+
+/* system information */
+#define EULER_KOKKOS_SYSTEM_PROCESSOR "@CMAKE_SYSTEM_PROCESSOR@"
+#define EULER_KOKKOS_SYSTEM_NAME "@CMAKE_SYSTEM_NAME@"
+
+/* add here any other useful symbols (e.g. MPI implementation, ...) */
+#cmakedefine EULER_KOKKOS_USE_MPI @EULER_KOKKOS_USE_MPI@
+#cmakedefine EULER_KOKKOS_USE_MPI_EXT @EULER_KOKKOS_USE_MPI_EXT@
+
+/* is MPI GPU (Nvidia, AMD, Intel) support queryable at runtime ? */
+#cmakedefine EULER_KOKKOS_MPI_HAS_QUERY_CUDA_SUPPORT @EULER_KOKKOS_MPI_HAS_QUERY_CUDA_SUPPORT@
+#cmakedefine EULER_KOKKOS_MPI_HAS_QUERY_HIP_SUPPORT @EULER_KOKKOS_MPI_HAS_QUERY_HIP_SUPPORT@
+#cmakedefine EULER_KOKKOS_MPI_HAS_QUERY_ZE_SUPPORT @EULER_KOKKOS_MPI_HAS_QUERY_ZE_SUPPORT@
+
+/* MPI vendor: OpenMPI, MPICH ? */
+#define EULER_KOKKOS_MPI_VENDOR "@MPI_VENDOR@"
+
+/* HDF5 */
+#cmakedefine EULER_KOKKOS_USE_HDF5 @EULER_KOKKOS_USE_HDF5@
+#cmakedefine EULER_KOKKOS_USE_HDF5_PARALLEL @EULER_KOKKOS_USE_HDF5_PARALLEL@
+#cmakedefine EULER_KOKKOS_USE_HDF5_VERSION "@EULER_KOKKOS_USE_HDF5_VERSION@"
+
+
+#endif // EULER_KOKKOS_CONFIG_H

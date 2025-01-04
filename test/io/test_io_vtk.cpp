@@ -14,10 +14,10 @@
 #include "shared/HydroParams.h" // read parameter file
 
 // MPI support
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 #  include "utils/mpiUtils/GlobalMpiSession.h"
 #  include <mpi.h>
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 // VTK IO implementation (to be tested)
 #include "utils/io/IO_VTK.h"
@@ -53,13 +53,13 @@ public:
     const int nx = params.nx;
     const int ny = params.ny;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
 #else
     const int i_mpi = 0;
     const int j_mpi = 0;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
@@ -89,7 +89,7 @@ public:
     const int ny = params.ny;
     const int nz = params.nz;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
@@ -97,7 +97,7 @@ public:
     const int i_mpi = 0;
     const int j_mpi = 0;
     const int k_mpi = 0;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
@@ -158,7 +158,7 @@ run_test_vtk(const std::string input_filename)
       "InitData<2>", Kokkos::RangePolicy<>(0, params.isize * params.jsize), functor);
 
     // save to file
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     // io::save_VTK_2D_mpi(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, "");
 #else
     io::save_VTK_2D(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, "");
@@ -182,7 +182,7 @@ run_test_vtk(const std::string input_filename)
       "InitData<3>", Kokkos::RangePolicy<>(0, params.isize * params.jsize * params.ksize), functor);
 
     // save to file
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     // io::save_VTK_3D_mpi(data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, "");
 #else
     io::save_VTK_3D(data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, "");
@@ -200,14 +200,14 @@ main(int argc, char * argv[])
 {
 
   // Create MPI session if MPI enabled
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   Kokkos::initialize(argc, argv);
 
   int mpi_rank = 0;
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 #endif
 

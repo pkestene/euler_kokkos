@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <iostream>
 
+#include <shared/euler_kokkos_config.h>
 #include "shared/kokkos_shared.h"
 
 #include "shared/real_type.h"    // choose between single and double precision
@@ -18,19 +19,21 @@
 // solver
 #include "shared/SolverFactory.h"
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 #  include "utils/mpiUtils/GlobalMpiSession.h"
 #  include <mpi.h>
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
-#ifdef USE_HDF5
+#ifdef EULER_KOKKOS_USE_HDF5
 #  include "utils/io/IO_HDF5.h"
-#endif // USE_HDF5
+#endif // EULER_KOKKOS_USE_HDF5
 
 // banner
 #include "euler_kokkos_version.h"
+#include <shared/euler_kokkos_git_info.h>
+#include <shared/euler_kokkos_build_info.h>
 
-#ifdef USE_FPE_DEBUG
+#ifdef EULER_KOKKOS_USE_FPE_DEBUG
 // for catching floating point errors
 #  include <fenv.h>
 #  include <signal.h>
@@ -43,7 +46,7 @@ fpehandler(int sig_num)
   printf("SIGFPE: floating point exception occurred of type %d, exiting.\n", sig_num);
   abort();
 }
-#endif // USE_FPE_DEBUG
+#endif // EULER_KOKKOS_USE_FPE_DEBUG
 
 // ===============================================================
 // ===============================================================
@@ -55,9 +58,9 @@ main(int argc, char * argv[])
   namespace ek = ::euler_kokkos;
 
   // Create MPI session if MPI enabled
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   Kokkos::initialize(argc, argv);
 
@@ -85,7 +88,7 @@ main(int argc, char * argv[])
     std::cout << msg.str();
     std::cout << "##########################\n";
 
-#ifdef USE_FPE_DEBUG
+#ifdef EULER_KOKKOS_USE_FPE_DEBUG
     /*
      * Install a signal handler for floating point errors.
      * This only useful when debugging, doing a backtrace in gdb,
@@ -93,9 +96,9 @@ main(int argc, char * argv[])
      */
     feenableexcept(FE_DIVBYZERO | FE_INVALID);
     signal(SIGFPE, fpehandler);
-#endif // USE_FPE_DEBUG
+#endif // EULER_KOKKOS_USE_FPE_DEBUG
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nRanks);
 #  ifdef KOKKOS_ENABLE_CUDA
@@ -115,12 +118,15 @@ main(int argc, char * argv[])
                 << cudaDeviceId << "\n";
     }
 #  endif // KOKKOS_ENABLE_CUDA
-#endif   // USE_MPI
+#endif   // EULER_KOKKOS_USE_MPI
   }
 
   // banner
   if (rank == 0)
-    print_version_info();
+  {
+    ek::GitRevisionInfo::print();
+    ek::BuildInfo::print();
+  }
 
   // if (argc != 2) {
   //   if (rank==0)
@@ -170,14 +176,14 @@ main(int argc, char * argv[])
     solver->save_solution();
 
     // write Xdmf wrapper file if necessary
-#ifdef USE_HDF5
+#ifdef EULER_KOKKOS_USE_HDF5
   bool outputHdf5Enabled = configMap.getBool("output", "hdf5_enabled", false);
   if (outputHdf5Enabled)
   {
     euler_kokkos::io::writeXdmfForHdf5Wrapper(
       params, configMap, solver->m_variables_names, solver->m_times_saved - 1, false);
   }
-#endif // USE_HDF5
+#endif // EULER_KOKKOS_USE_HDF5
 
   if (rank == 0)
     printf("final time is %f\n", solver->m_t);

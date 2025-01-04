@@ -23,6 +23,10 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/HydroParams.h
           ${CMAKE_CURRENT_SOURCE_DIR}/HydroState.h
           ${CMAKE_CURRENT_SOURCE_DIR}/kokkos_shared.h
+          ${CMAKE_CURRENT_SOURCE_DIR}/euler_kokkos_build_info.h
+          ${CMAKE_CURRENT_SOURCE_DIR}/euler_kokkos_build_info.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/euler_kokkos_git_info.h
+          ${CMAKE_CURRENT_SOURCE_DIR}/euler_kokkos_git_info.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/real_type.h
           ${CMAKE_CURRENT_SOURCE_DIR}/enums.h
           ${CMAKE_CURRENT_SOURCE_DIR}/SolverBase.cpp
@@ -33,6 +37,10 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
           ${CMAKE_CURRENT_SOURCE_DIR}/mhd_utils.h
           ${CMAKE_CURRENT_SOURCE_DIR}/solver_utils.h)
+
+target_include_directories(
+  shared PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+                $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/src>)
 
 target_link_libraries(shared PUBLIC Kokkos::kokkos EulerKokkos::config
                                     EulerKokkos::io)
@@ -50,8 +58,10 @@ add_library(solver_factory "")
 target_sources(
   solver_factory PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/SolverFactory.cpp
                          ${CMAKE_CURRENT_SOURCE_DIR}/SolverFactory.h)
-target_include_directories(solver_factory PUBLIC ${CMAKE_SOURCE_DIR}/src
-                                                 ${CMAKE_SOURCE_DIR}/src/muscl)
+target_include_directories(
+  solver_factory PUBLIC ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/muscl
+                        ${CMAKE_BINARY_DIR}/src)
+
 target_link_libraries(solver_factory PUBLIC Kokkos::kokkos)
 if(EULER_KOKKOS_USE_MPI)
   target_link_libraries(solver_factory PUBLIC EulerKokkos::mpiUtils)

@@ -3,10 +3,6 @@
  * \brief A simple derive class of MpiComm to handle cartesian
  * topology.
  *
- * \date 5 Oct 2010
- * \author Pierre Kestener
- *
- * $Id: MpiCommCart.h 1783 2012-02-21 10:20:07Z pkestene $
  */
 #ifndef MPI_COMM_CART_H_
 #define MPI_COMM_CART_H_
@@ -14,7 +10,7 @@
 #include "MpiComm.h"
 #include "mpiEnums.h"
 
-namespace hydroSimu
+namespace euler_kokkos
 {
 
 /**
@@ -184,6 +180,6 @@ MpiCommCart::getNeighborRank() const
   return rank;
 }
 
-} // namespace hydroSimu
+} // namespace euler_kokkos
 
 #endif // MPI_COMM_CART_H_

@@ -2,15 +2,11 @@
  * \file MpiCommCart.cpp
  * \brief Implements class MpiCommCart
  *
- * \date 5 Oct 2010
- * \author Pierre Kestener
- *
- * $Id: MpiCommCart.cpp 1783 2012-02-21 10:20:07Z pkestene $
  */
 
 #include "MpiCommCart.h"
 
-namespace hydroSimu
+namespace euler_kokkos
 {
 
 // =======================================================
@@ -70,4 +66,4 @@ MpiCommCart::~MpiCommCart()
   delete[] myCoords_;
 }
 
-} // namespace hydroSimu
+} // namespace euler_kokkos

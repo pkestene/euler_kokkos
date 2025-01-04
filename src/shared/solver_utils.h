@@ -1,6 +1,7 @@
 #ifndef SOLVER_UTILS_H_
 #define SOLVER_UTILS_H_
 
+#include <shared/euler_kokkos_config.h>
 #include "shared/real_type.h"
 #include "shared/SolverBase.h"
 
@@ -24,10 +25,10 @@ print_solver_monitoring_info(SolverBase * solver)
   int nProcs = 1;
 
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   myRank = solver->params.myRank;
   nProcs = solver->params.nProcs;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   // only print on master
   if (myRank == 0)

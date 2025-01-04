@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 
+#include <shared/euler_kokkos_config.h>
 #include <shared/kokkos_shared.h>
 #include <shared/HydroParams.h>
 #include "utils/config/ConfigMap.h"
@@ -50,7 +51,7 @@ save_VTK_3D(DataArray3d                        Udata,
             std::string                        debug_name);
 
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 /**
  * \param[in] Udata device data to save
  * \param[in,out] Uhost host data temporary array before saving to file
@@ -91,7 +92,7 @@ write_pvti_header(std::string                        headerFilename,
                   int                                nbvar,
                   const std::map<int, std::string> & varNames,
                   int                                iStep);
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 } // namespace io
 

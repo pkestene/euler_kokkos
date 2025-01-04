@@ -14,10 +14,10 @@
 #include "shared/HydroParams.h" // read parameter file
 
 // MPI support
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 #  include "utils/mpiUtils/GlobalMpiSession.h"
 #  include <mpi.h>
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 // HDF5 IO implementation (to be tested)
 #include "utils/io/IO_HDF5.h"
@@ -53,13 +53,13 @@ public:
     const int nx = params.nx;
     const int ny = params.ny;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
 #else
     const int i_mpi = 0;
     const int j_mpi = 0;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
@@ -92,7 +92,7 @@ public:
     const int ny = params.ny;
     const int nz = params.nz;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
@@ -100,7 +100,7 @@ public:
     const int i_mpi = 0;
     const int j_mpi = 0;
     const int k_mpi = 0;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
@@ -148,7 +148,7 @@ run_test_hdf5(const std::string input_filename)
   params.setup(configMap);
 
   int rank = 0;
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   rank = params.myRank;
 #endif
 
@@ -208,7 +208,7 @@ run_test_hdf5(const std::string input_filename)
     if (rank == 0)
       std::cout << "2D test -- save data\n";
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     io::Save_HDF5_mpi<TWO_D> writer(
       data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
@@ -225,7 +225,7 @@ run_test_hdf5(const std::string input_filename)
       if (rank == 0)
         std::cout << "2D test -- reload and save data for comparison\n";
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
       io::Load_HDF5_mpi<TWO_D> reader(data2, params, configMap, HYDRO_2D_NBVAR, var_names);
       reader.load("output2d_0000000.h5");
 
@@ -263,7 +263,7 @@ run_test_hdf5(const std::string input_filename)
       // set restart filename
       configMapUp.setString("run", "restart_filename", "output2d_0000000.h5");
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
       io::Load_HDF5_mpi<TWO_D> reader(data2up, paramsUp, configMapUp, HYDRO_2D_NBVAR, var_names);
       reader.load("output2d_0000000.h5");
 
@@ -321,7 +321,7 @@ run_test_hdf5(const std::string input_filename)
     if (rank == 0)
       std::cout << "3D test -- save data\n";
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     io::Save_HDF5_mpi<THREE_D> writer(
       data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
@@ -331,14 +331,14 @@ run_test_hdf5(const std::string input_filename)
       data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
     writer.save();
     io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
     // try to reload file
     {
       if (rank == 0)
         std::cout << "3D test -- reload and save data for comparison\n";
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
       io::Load_HDF5_mpi<THREE_D> reader(data2, params, configMap, HYDRO_3D_NBVAR, var_names);
       reader.load("output3d_0000000.h5");
 
@@ -362,7 +362,7 @@ run_test_hdf5(const std::string input_filename)
         io::writeXdmfForHdf5Wrapper(params, configMap, var_names, 1, false);
       }
       // the two files should contain the same data
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
     } // end reload test
 
@@ -378,7 +378,7 @@ run_test_hdf5(const std::string input_filename)
       // set restart filename
       configMapUp.setString("run", "restart_filename", "output3d_0000000.h5");
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
       io::Load_HDF5_mpi<THREE_D> reader(data2up, paramsUp, configMapUp, HYDRO_3D_NBVAR, var_names);
       reader.load("output3d_0000000.h5");
 
@@ -418,16 +418,16 @@ main(int argc, char * argv[])
 {
 
   // Create MPI session if MPI enabled
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   Kokkos::initialize(argc, argv);
 
   int mpi_rank = 0;
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-#endif
+#endif // EULER_KOKKOS_USE_MPI
   if (mpi_rank == 0)
   {
     std::cout << "##########################\n";

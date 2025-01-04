@@ -25,7 +25,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
   const int ny = params.ny;
   const int nz = params.nz;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   // sub-domain decomposition sizes
   const int mx = params.mx;
   const int my = params.my;
@@ -40,7 +40,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
 
   const bool mhdEnabled = params.mhdEnabled;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   // global sizes
   int nxg = mx * nx;
   int nyg = my * ny;
@@ -50,7 +50,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
   int nxg = nx;
   int nyg = ny;
   int nzg = nz;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   if (ghostIncluded)
   {
@@ -59,7 +59,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
     nzg += (2 * ghostWidth);
   }
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   /*
    * The following only makes sense in MPI: is allghostIncluded is true,
    * every sub-domain dumps its own local ghosts (might be useful for debug,
@@ -110,7 +110,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
       }
     }
   }
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   // get data type as a string for Xdmf
   std::string dataTypeName;

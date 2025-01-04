@@ -1,6 +1,7 @@
 #ifndef KELVIN_HELMHOLTZ_PARAMS_H_
 #define KELVIN_HELMHOLTZ_PARAMS_H_
 
+#include <shared/euler_kokkos_config.h>
 #include "utils/config/ConfigMap.h"
 
 // #include <cstdlib> // for srand
@@ -59,7 +60,7 @@ struct KHParams
       // choose a different random seed per mpi rank
       seed = configMap.getInteger("KH", "rand_seed", 12);
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
       // srand( seed * (mpiRank+1) );
 
       // get MPI rank in MPI_COMM_WORLD
@@ -67,7 +68,7 @@ struct KHParams
       int mpiRank = 1;
       MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
       seed *= (mpiRank + 1);
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
     }
 
     amplitude = configMap.getFloat("KH", "amplitude", 0.1);

@@ -3,10 +3,10 @@
 #include "shared/utils.h"
 #include "shared/BoundariesFunctors.h"
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 #  include "shared/mpiBorderUtils.h"
 #  include "utils/mpiUtils/MpiCommCart.h"
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 #include "utils/io/IO_ReadWrite.h"
 
@@ -58,7 +58,7 @@ SolverBase::SolverBase(HydroParams & params, ConfigMap & configMap)
   // right now we moved that in SolverFactory's method create
   // init_io();
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   const int gw = params.ghostWidth;
   const int isize = params.isize;
   const int jsize = params.jsize;
@@ -93,7 +93,7 @@ SolverBase::SolverBase(HydroParams & params, ConfigMap & configMap)
     borderBufRecv_zmin_3d = DataArray3d("borderBufRecv_zmin", isize, jsize, gw, nbvar);
     borderBufRecv_zmax_3d = DataArray3d("borderBufRecv_zmax", isize, jsize, gw, nbvar);
   }
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 } // SolverBase::SolverBase
 
@@ -144,7 +144,7 @@ void
 SolverBase::compute_dt()
 {
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 
   // get local time step
   double dt_local = compute_dt_local();
@@ -531,7 +531,7 @@ SolverBase::make_boundaries_serial(DataArray3d Udata, bool mhd_enabled)
 
 } // SolverBase::make_boundaries_serial - 3d
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 // =======================================================
 // =======================================================
 void
@@ -1025,7 +1025,7 @@ SolverBase::copy_boundaries_back(DataArray3d Udata, BoundaryLocation loc)
 
 } // SolverBase::copy_boundaries_back - 3d
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 // =======================================================
 // =======================================================

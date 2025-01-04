@@ -23,7 +23,7 @@ SolverHydroMuscl<2>::make_boundaries(DataArray Udata)
 
   bool mhd_enabled = false;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 
   make_boundaries_mpi(Udata, mhd_enabled);
 
@@ -31,7 +31,7 @@ SolverHydroMuscl<2>::make_boundaries(DataArray Udata)
 
   make_boundaries_serial(Udata, mhd_enabled);
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 } // SolverHydroMuscl<2>::make_boundaries
 
@@ -48,7 +48,7 @@ SolverHydroMuscl<3>::make_boundaries(DataArray Udata)
 
   bool mhd_enabled = false;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 
   make_boundaries_mpi(Udata, mhd_enabled);
 
@@ -56,7 +56,7 @@ SolverHydroMuscl<3>::make_boundaries(DataArray Udata)
 
   make_boundaries_serial(Udata, mhd_enabled);
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 } // SolverHydroMuscl<3>::make_boundaries
 

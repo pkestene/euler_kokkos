@@ -7,9 +7,9 @@
 
 #include "config/inih/ini.h" // our INI file reader
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 using namespace hydroSimu;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 namespace euler_kokkos
 {
@@ -152,13 +152,13 @@ HydroParams::setup(ConfigMap & configMap)
 
   init();
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   setup_mpi(configMap);
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 } // HydroParams::setup
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 // =======================================================
 // =======================================================
 void
@@ -355,7 +355,7 @@ HydroParams::setup_mpi(ConfigMap & configMap)
 
 } // HydroParams::setup_mpi
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 // =======================================================
 // =======================================================
