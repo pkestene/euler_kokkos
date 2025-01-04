@@ -24,8 +24,7 @@ MpiCommCart::MpiCommCart(int mx, int my, int isPeriodic, int allowReorder)
   int periods[NDIM_2D] = { isPeriodic, isPeriodic };
 
   // create virtual topology cartesian 2D
-  errCheck(MPI_Cart_create(MPI_COMM_WORLD, NDIM_2D, dims, periods, allowReorder, &comm_),
-           "MPI_Cart_create");
+  CHECK_MPI_ERR(::MPI_Cart_create(MPI_COMM_WORLD, NDIM_2D, dims, periods, allowReorder, &comm_));
   ;
 
   // fill nProc_ and myRank_
@@ -49,8 +48,7 @@ MpiCommCart::MpiCommCart(int mx, int my, int mz, int isPeriodic, int allowReorde
   int periods[NDIM_3D] = { isPeriodic, isPeriodic, isPeriodic };
 
   // create virtual topology cartesian 3D
-  errCheck(MPI_Cart_create(MPI_COMM_WORLD, NDIM_3D, dims, periods, allowReorder, &comm_),
-           "MPI_Cart_create");
+  CHECK_MPI_ERR(::MPI_Cart_create(MPI_COMM_WORLD, NDIM_3D, dims, periods, allowReorder, &comm_));
 
   // fill nProc_ and myRank_
   init();

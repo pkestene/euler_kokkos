@@ -6,6 +6,7 @@
 #include <shared/euler_kokkos_config.h>
 
 #include <cstring>
+#include <iostream>
 
 namespace euler_kokkos
 {
@@ -36,11 +37,13 @@ ParallelEnv::ParallelEnv(int & argc, char **& argv)
   if (m_initialize_kokkos_before_mpi)
     Kokkos::initialize(argc, argv);
 
+#ifdef EULER_KOKKOS_USE_MPI
   // Create MPI session if MPI enabled
   m_mpiSession = std::make_unique<GlobalMpiSession>(argc, argv);
 
   // create a communicator for MPI_COMM_WORLD
   m_comm_ptr = std::make_unique<MpiComm>();
+#endif // EULER_KOKKOS_USE_MPI
 
   if (!m_initialize_kokkos_before_mpi)
     Kokkos::initialize(argc, argv);
@@ -49,6 +52,7 @@ ParallelEnv::ParallelEnv(int & argc, char **& argv)
 
 } // ParallelEnv::ParallelEnv
 
+#ifdef EULER_KOKKOS_USE_MPI
 // ===================================================================================
 // ===================================================================================
 ParallelEnv::ParallelEnv(int argc, char * argv[], const MPI_Comm & comm)
@@ -64,6 +68,8 @@ ParallelEnv::ParallelEnv(int argc, char * argv[], const MPI_Comm & comm)
   print_kokkos_config();
 
 } // ParallelEnv::ParallelEnv
+#endif // EULER_KOKKOS_USE_MPI
+
 
 // ===================================================================================
 // ===================================================================================

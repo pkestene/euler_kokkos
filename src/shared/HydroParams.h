@@ -20,7 +20,7 @@
 #include "shared/enums.h"
 
 #ifdef EULER_KOKKOS_USE_MPI
-#  include "utils/mpiUtils/MpiCommCart.h"
+#  include "utils/mpi/MpiCommCart.h"
 #endif // EULER_KOKKOS_USE_MPI
 
 namespace euler_kokkos
@@ -70,10 +70,6 @@ struct HydroSettings
  */
 struct HydroParams
 {
-
-#ifdef EULER_KOKKOS_USE_MPI
-  using MpiCommCart = hydroSimu::MpiCommCart;
-#endif // EULER_KOKKOS_USE_MPI
 
   // run parameters
   int    nStepmax;     /*!< maximum number of time steps. */

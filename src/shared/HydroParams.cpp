@@ -7,10 +7,6 @@
 
 #include "config/inih/ini.h" // our INI file reader
 
-#ifdef EULER_KOKKOS_USE_MPI
-using namespace hydroSimu;
-#endif // EULER_KOKKOS_USE_MPI
-
 namespace euler_kokkos
 {
 
@@ -166,8 +162,9 @@ HydroParams::setup_mpi(ConfigMap & configMap)
 {
 
   // runtime determination if we are using float ou double (for MPI communication)
-  data_type = typeid(1.0f).name() == typeid((real_t)1.0f).name() ? hydroSimu::MpiComm::FLOAT
-                                                                 : hydroSimu::MpiComm::DOUBLE;
+  // data_type = typeid(1.0f).name() == typeid((real_t)1.0f).name() ? MpiComm::FLOAT :
+  // MpiComm::DOUBLE;
+  data_type = MpiComm::mpi_type<real_t>();
 
   // MPI parameters :
   mx = configMap.getInteger("mpi", "mx", 1);

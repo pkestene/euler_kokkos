@@ -68,7 +68,7 @@ inline int
 MpiCommCart::getDim() const
 {
   int ndims;
-  errCheck(MPI_Cartdim_get(comm_, &ndims), "MPI_Cartdim_get");
+  CHECK_MPI_ERR(::MPI_Cartdim_get(this->get_MPI_Comm(), &ndims));
   return ndims;
 }
 
@@ -78,7 +78,7 @@ inline int
 MpiCommCart::getCartRank(const int coords[]) const
 {
   int rank;
-  errCheck(MPI_Cart_rank(comm_, const_cast<int *>(coords), &rank), "MPI_Cart_rank");
+  CHECK_MPI_ERR(::MPI_Cart_rank(this->get_MPI_Comm(), const_cast<int *>(coords), &rank));
   return rank;
 }
 
@@ -87,7 +87,7 @@ MpiCommCart::getCartRank(const int coords[]) const
 inline void
 MpiCommCart::getCoords(int rank, int maxdims, int coords[]) const
 {
-  errCheck(MPI_Cart_coords(comm_, rank, maxdims, coords), "MPI_Cart_coords");
+  CHECK_MPI_ERR(::MPI_Cart_coords(this->get_MPI_Comm(), rank, maxdims, coords));
 }
 
 // =======================================================
@@ -107,7 +107,7 @@ MpiCommCart::getMyCoords(int coords[])
 inline void
 MpiCommCart::shift(int direction, int disp, int & rank_source, int & rank_dest) const
 {
-  errCheck(MPI_Cart_shift(comm_, direction, disp, &rank_source, &rank_dest), "MPI_Cart_shift");
+  CHECK_MPI_ERR(::MPI_Cart_shift(this->get_MPI_Comm(), direction, disp, &rank_source, &rank_dest));
 }
 
 // =======================================================

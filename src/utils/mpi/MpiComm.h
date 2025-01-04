@@ -14,8 +14,8 @@
 #define EULER_KOKKOS_UTILS_MPI_MPICOMM_H
 
 #include <utils/mpi/mpi_utils.h>
-
 #include <mpi.h>
+
 #include <memory> // for std::shared_ptr
 #include <vector>
 
@@ -156,6 +156,13 @@ public:
   static constexpr auto LAND = MPI_OP::LAND;
   static constexpr auto BAND = MPI_OP::BAND;
 
+  template <typename T>
+  static auto
+  mpi_type()
+  {
+    return MpiComm_impl::mpi_type<T>();
+  }
+
   //! mapping an MPI_Op_enum to an MPI_Op
   template <MPI_OP mpi_op>
   static MPI_Op
@@ -254,6 +261,8 @@ public:
    */
   MpiComm(const MPI_Comm & comm, comm_create_kind kind);
 
+  virtual ~MpiComm() = default;
+
   //! conversion operator to MPI_Comm
   operator MPI_Comm() const;
 
@@ -348,7 +357,7 @@ protected:
     operator()(MPI_Comm * comm) const
     {
       assertm(comm != 0, "MPI communicator pointer can't be null");
-      assertm(*comm != MPI_COMM_NULL, "MPI comminucator can't be MPI_COMM_NULL");
+      assertm(*comm != MPI_COMM_NULL, "MPI communicator can't be MPI_COMM_NULL");
       int finalized;
       CHECK_MPI_ERR(MPI_Finalized(&finalized));
       if (!finalized)
@@ -362,7 +371,6 @@ public:
   void
   MPI_Reduce(const T * sendbuf, T * recvbuf, int count, int root) const
   {
-    using namespace MpiComm_impl;
     CHECK_MPI_ERR(
       ::MPI_Reduce(sendbuf, recvbuf, count, mpi_type<T>(), MapMpiOp<op>(), root, MPI_Comm(*this)));
   }
