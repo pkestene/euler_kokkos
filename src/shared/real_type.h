@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 euler_kokkos authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 /**
  * \file real_type.h
  * \brief Define macros to switch single/double precision.

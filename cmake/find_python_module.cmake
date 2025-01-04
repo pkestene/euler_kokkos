@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 euler_kokkos authors
+#
+# SPDX-License-Identifier: Unlicense
+
 # this macro is borrowed to https://github.com/melvinvermeeren/template_cpp
 # under unlicence
 function(find_python_module module module_u)

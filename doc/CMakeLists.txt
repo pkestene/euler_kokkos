@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 euler_kokkos authors
+#
+# SPDX-License-Identifier: Unlicense
+
 find_package(Doxygen REQUIRED COMPONENTS dot)
 
 get_target_property(DOXY_DOT_PATH Doxygen::dot IMPORTED_LOCATION)

@@ -1,13 +1,12 @@
+# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
+# perf-dump Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 # ##############################################################################
 # This file was found and adapted from original LLNL tools called perf-dump.
 #
-# Copyright (c) 2013-2014, Lawrence Livermore National Security, LLC. Produced
-# at the Lawrence Livermore National Laboratory.
-#
-# This file is part of perf-dump. Written by Todd Gamblin, tgamblin@llnl.gov,
-# All rights reserved. LLNL-CODE-647187
-#
-# For details, see https://scalability-llnl.github.io/perf-dump
+# For details, see https://github.com/LLNL/perf-dump
 #
 # ##############################################################################
 #

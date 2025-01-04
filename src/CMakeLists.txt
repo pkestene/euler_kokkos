@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 euler_kokkos authors
+#
+# SPDX-License-Identifier: Unlicense
+
 # config file reader / ConfigMap / monitoring timer
 add_subdirectory(utils)
 

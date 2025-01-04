@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 euler_kokkos authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 #ifndef EULER_EQUATIONS_H_
 #define EULER_EQUATIONS_H_
 

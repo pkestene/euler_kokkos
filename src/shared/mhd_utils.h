@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 euler_kokkos authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 /**
  * \file mhd_utils.h
  * \brief Small MHD related utilities common to CPU / GPU code.

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 euler_kokkos authors
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 #
 # FindPNETCDF
 # -----------

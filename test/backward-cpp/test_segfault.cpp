@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 euler_kokkos authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 /**
  * A minimalist example to use library backward-cpp to pretty print
  * error / stack trace...

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 euler_kokkos authors
+#
+# SPDX-License-Identifier: Unlicense
+
 add_subdirectory(kokkos)
 
 # backtrace does not build anymore with cuda 10.1

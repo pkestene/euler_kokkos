@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 euler_kokkos authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 /**
  * \file initRiemannConfig2d.h
  * \brief Implement initialization routine to solve a four quadrant 2D Riemann

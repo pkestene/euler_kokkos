@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 euler_kokkos authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 #ifndef MHD_RUN_FUNCTORS_2D_H_
 #define MHD_RUN_FUNCTORS_2D_H_
 

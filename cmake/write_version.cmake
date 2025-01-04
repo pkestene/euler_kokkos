@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 euler_kokkos authors
+#
+# SPDX-License-Identifier: Unlicense
+
 find_package(Git QUIET)
 if(NOT GIT_FOUND)
   set(GIT_BUILD_STRING "N/A")

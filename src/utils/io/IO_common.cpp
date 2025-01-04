@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 euler_kokkos authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 #include <ctime> // for std::time_t, std::tm, std::localtime
 #include <sstream>
 #include <iomanip> // for std::put_time (only g++ >= 5)

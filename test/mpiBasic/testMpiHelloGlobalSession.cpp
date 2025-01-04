@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 euler_kokkos authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 /**
  * \file testMpiHelloGlobalSession.cpp
  * \brief Mpi helloworld application using CPP wrapper classes from libHydroMpi.

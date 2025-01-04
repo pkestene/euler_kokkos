@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 euler_kokkos authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 #ifndef BOUNDARIES_FUNCTORS_H_
 #define BOUNDARIES_FUNCTORS_H_
 

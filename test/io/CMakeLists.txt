@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 euler_kokkos authors
+#
+# SPDX-License-Identifier: Unlicense
+
 configure_file(test_io_2d.ini test_io_2d.ini COPYONLY)
 configure_file(test_io_3d.ini test_io_3d.ini COPYONLY)
 

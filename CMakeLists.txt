@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 euler_kokkos authors
+#
+# SPDX-License-Identifier: Unlicense
+
 # set minimal version the one requested by kokkos
 cmake_minimum_required(VERSION 3.18)
 

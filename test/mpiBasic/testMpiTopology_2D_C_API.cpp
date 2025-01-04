@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 euler_kokkos authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 /**
  * \file testMpiTopology_2D_C_API.cpp
  * \brief Simple example showing how to use MPI virtual topology (2D).
