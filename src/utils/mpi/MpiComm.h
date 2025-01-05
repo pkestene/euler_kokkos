@@ -480,7 +480,7 @@ public:
     CHECK_MPI_ERR(::MPI_Waitall(count, requests, MPI_STATUSES_IGNORE));
   }
 
-private:
+protected:
   std::shared_ptr<MPI_Comm> comm_ptr;
 
 }; // class MpiComm

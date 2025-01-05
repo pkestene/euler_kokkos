@@ -6,7 +6,7 @@
 #include <cstring>
 #include <sstream> // string stream
 
-#include "utils/mpiUtils/GlobalMpiSession.h"
+#include "utils/mpi/GlobalMpiSession.h"
 #include <mpi.h>
 
 #include "config/ConfigMap.h"
@@ -87,7 +87,7 @@ int
 main(int argc, char * argv[])
 {
 
-  hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
+  auto mpiSession = euler_kokkos::GlobalMpiSession(argc, argv);
 
   std::string input_file;
 

@@ -20,7 +20,7 @@
 #include "shared/SolverFactory.h"
 
 #ifdef EULER_KOKKOS_USE_MPI
-#  include "utils/mpiUtils/GlobalMpiSession.h"
+#  include <utils/mpiUtils/ParallelEnv.h>
 #  include <mpi.h>
 #endif // EULER_KOKKOS_USE_MPI
 
@@ -58,8 +58,23 @@ main(int argc, char * argv[])
   namespace ek = ::euler_kokkos;
 
   // Create MPI session if MPI enabled
+  auto par_env = euler_kokkos::ParallelEnv(argc, argv);
+
+  // read input parameter file
+  // only MPI rank 0 actually reads input file
+  std::string input_file = std::string(argv[1]);
+  auto        configMap = ek::broadcast_parameters(input_file);
+
 #ifdef EULER_KOKKOS_USE_MPI
-  hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
+  auto mx = configMap.getInteger("mpi", "mx", 1);
+  auto my = configMap.getInteger("mpi", "my", 1);
+  auto mz = configMap.getInteger("mpi", "mz", 1);
+  auto dimType = get_dim(configMap);
+
+  if (dimType == TWO_D)
+    par_env.setup_cartesian_topology(mx, my, MPI_CART_PERIODIC_TRUE, MPI_REORDER_TRUE);
+  else if (dimType == THREE_D)
+    par_env.setup_cartesian_topology(mx, my, mz, MPI_CART_PERIODIC_TRUE, MPI_REORDER_TRUE);
 #endif // EULER_KOKKOS_USE_MPI
 
   Kokkos::initialize(argc, argv);
@@ -136,15 +151,10 @@ main(int argc, char * argv[])
   // }
 
   /*
-   * read parameter file and initialize a ConfigMap object
+   * initialize a ConfigMap object
    */
-  // only MPI rank 0 actually reads input file
-  std::string   input_file = std::string(argv[1]);
-  ek::ConfigMap configMap = ek::broadcast_parameters(input_file);
-
   // test: create a HydroParams object
-  ek::HydroParams params = ek::HydroParams();
-  params.setup(configMap);
+  ek::HydroParams params = ek::HydroParams(configMap);
 
   // retrieve solver name from settings
   const std::string solver_name = configMap.getString("run", "solver_name", "Unknown");

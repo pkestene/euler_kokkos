@@ -5,10 +5,11 @@ if(EULER_KOKKOS_USE_MPI)
     APPEND
     MPI_UTILS_SRCS
     GlobalMpiSession.cpp
-    make
     GlobalMpiSession.h
     MpiComm.h
-    MpiComm.cpp)
+    MpiComm.cpp
+    MpiCommCart.h
+    MpiCommCart.cpp)
 endif(EULER_KOKKOS_USE_MPI)
 
 add_library(mpiUtils ${MPI_UTILS_SRCS})

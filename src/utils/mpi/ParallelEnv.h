@@ -10,8 +10,12 @@
 #ifndef EULER_KOKKOS_PARALLEL_ENV_H_
 #define EULER_KOKKOS_PARALLEL_ENV_H_
 
+#include <shared/euler_kokkos_config.h>
+
 #ifdef EULER_KOKKOS_USE_MPI
 #  include <utils/mpi/GlobalMpiSession.h>
+#  include <utils/mpi/MpiComm.h>
+#  include <utils/mpi/MpiCommCart.h>
 #endif // EULER_KOKKOS_USE_MPI
 
 #include <Kokkos_Core.hpp>
@@ -92,9 +96,17 @@ public:
 #endif // EULER_KOKKOS_USE_MPI
   }
 
+  //! 2d cartesian topology
+  void
+  setup_cartesian_topology(int mx, int my, int isPeriodic, int allowReorder);
+
+  //! 3d cartesian topology
+  void
+  setup_cartesian_topology(int mx, int my, int mz, int isPeriodic, int allowReorder);
+
 #ifdef EULER_KOKKOS_USE_MPI
   //! \return MPI communicator (see MPIComm)
-  const MpiComm &
+  MpiComm &
   comm() const
   {
     return *m_comm_ptr;

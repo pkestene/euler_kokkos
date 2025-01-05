@@ -77,9 +77,9 @@ MpiCommCart::getDim() const
 inline int
 MpiCommCart::getCartRank(const int coords[]) const
 {
-  int rank;
-  CHECK_MPI_ERR(::MPI_Cart_rank(this->get_MPI_Comm(), const_cast<int *>(coords), &rank));
-  return rank;
+  int my_rank;
+  CHECK_MPI_ERR(::MPI_Cart_rank(this->get_MPI_Comm(), const_cast<int *>(coords), &my_rank));
+  return my_rank;
 }
 
 // =======================================================

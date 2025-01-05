@@ -18,9 +18,6 @@
  * We already have introduced Cartesian topology inside this
  * framework.
  *
- * \date 27 sept 2010
- * \author Pierre Kestener
- *
  */
 
 #include <mpi.h>
@@ -29,49 +26,35 @@
 #include <cstdlib>
 #include <unistd.h> // for sleep
 
-#include <GlobalMpiSession.h>
+#include <ParallelEnv.h>
 #include <MpiCommCart.h>
 
-#define SIZE_X 2
-#define SIZE_Y 2
-#define SIZE_Z 4
-#define SIZE_2D (SIZE_X * SIZE_Y)
-#define SIZE_3D (SIZE_X * SIZE_Y * SIZE_Z)
+constexpr int SIZE_X = 2;
+constexpr int SIZE_Y = 2;
+constexpr int SIZE_Z = 4;
+constexpr int SIZE_2D = (SIZE_X * SIZE_Y);
+constexpr int SIZE_3D = (SIZE_X * SIZE_Y * SIZE_Z);
 
-#define N_NEIGHBORS_2D 4
-#define N_NEIGHBORS_3D 6
+constexpr int N_NEIGHBORS_2D = 4;
+constexpr int N_NEIGHBORS_3D = 6;
 
-#define NDIM 2
+constexpr int NDIM = 2;
 
-int
-main(int argc, char * argv[])
+namespace euler_kokkos
 {
-  int  myRank, numTasks, namelength;
+// =====================================================================
+// =====================================================================
+void
+test_cartesian_topology(ParallelEnv & par_env, int argc, char * argv[])
+{
+  auto worldComm = euler_kokkos::MpiComm();
+
+  auto       myRank = worldComm.rank();
+  const auto numTasks = worldComm.size();
+
+  int  namelength;
   char processor_name[MPI_MAX_PROCESSOR_NAME];
-
-  int source, dest, outbuf, i, tag = 1;
-  int inbuf[N_NEIGHBORS_2D] = {
-    MPI_PROC_NULL,
-    MPI_PROC_NULL,
-    MPI_PROC_NULL,
-    MPI_PROC_NULL,
-  };
-  int nbrs[N_NEIGHBORS_2D];
-  int periods = hydroSimu::MPI_CART_PERIODIC_TRUE;
-  int reorder = hydroSimu::MPI_REORDER_TRUE;
-  int coords[NDIM];
-
-  MPI_Request reqs[2 * N_NEIGHBORS_2D];
-  MPI_Status  stats[2 * N_NEIGHBORS_2D];
-
-  // MPI resources
-  hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
-  hydroSimu::MpiComm          worldComm = hydroSimu::MpiComm::world();
-
-  myRank = worldComm.getRank();
-  numTasks = worldComm.getNProc();
-
-  int mpierr = ::MPI_Get_processor_name(processor_name, &namelength);
+  CHECK_MPI_ERR(::MPI_Get_processor_name(processor_name, &namelength));
 
   // print warning
   if (myRank == 0)
@@ -87,12 +70,18 @@ main(int argc, char * argv[])
   // 2D CARTESIAN MPI MESH
   if (numTasks == SIZE_2D)
   {
+    int nbrs[N_NEIGHBORS_2D];
+    int periods = euler_kokkos::MPI_CART_PERIODIC_TRUE;
+    int reorder = euler_kokkos::MPI_REORDER_TRUE;
+    int coords[NDIM];
 
     // create the cartesian topology
-    hydroSimu::MpiCommCart cartcomm(SIZE_X, SIZE_Y, (int)periods, (int)reorder);
+    par_env.setup_cartesian_topology(SIZE_X, SIZE_Y, (int)periods, (int)reorder);
 
-    // get rank inside the tolopogy
-    myRank = cartcomm.getRank();
+    auto & cartcomm = dynamic_cast<MpiCommCart &>(par_env.comm());
+
+    // get rank inside the topology
+    myRank = cartcomm.rank();
 
     // get 2D coordinates inside topology
     cartcomm.getMyCoords(coords);
@@ -100,12 +89,21 @@ main(int argc, char * argv[])
     // get rank of source (x-1) and destination (x+1) process
     // take care MPI uses column-major order
     // get rank of source (y-1) and destination (y+1) process
-    nbrs[hydroSimu::X_MIN] = cartcomm.getNeighborRank<hydroSimu::X_MIN>();
-    nbrs[hydroSimu::X_MAX] = cartcomm.getNeighborRank<hydroSimu::X_MAX>();
-    nbrs[hydroSimu::Y_MIN] = cartcomm.getNeighborRank<hydroSimu::Y_MIN>();
-    nbrs[hydroSimu::Y_MAX] = cartcomm.getNeighborRank<hydroSimu::Y_MAX>();
+    nbrs[euler_kokkos::X_MIN] = cartcomm.getNeighborRank<euler_kokkos::X_MIN>();
+    nbrs[euler_kokkos::X_MAX] = cartcomm.getNeighborRank<euler_kokkos::X_MAX>();
+    nbrs[euler_kokkos::Y_MIN] = cartcomm.getNeighborRank<euler_kokkos::Y_MIN>();
+    nbrs[euler_kokkos::Y_MAX] = cartcomm.getNeighborRank<euler_kokkos::Y_MAX>();
 
-    outbuf = myRank;
+    std::vector<MPI_Request> reqs;
+    reqs.reserve(2 * N_NEIGHBORS_2D);
+
+    int source, dest, i, tag = 1;
+
+    auto inbuf = Kokkos::View<int *>("inbuf", N_NEIGHBORS_2D);
+    Kokkos::deep_copy(inbuf, MPI_PROC_NULL);
+
+    auto outbuf = Kokkos::View<int *>("outbuf", N_NEIGHBORS_2D);
+    Kokkos::deep_copy(outbuf, myRank);
 
     // send    my rank to   each of my neighbors
     // receive my rank from each of my neighbors
@@ -114,30 +112,35 @@ main(int argc, char * argv[])
     {
       dest = nbrs[i];
       source = nbrs[i];
-      reqs[i] = cartcomm.Isend(&outbuf, 1, hydroSimu::MpiComm::INT, dest, tag);
-      reqs[i + N_NEIGHBORS_2D] = cartcomm.Irecv(&inbuf[i], 1, hydroSimu::MpiComm::INT, source, tag);
+      auto recv_range = std::pair<std::size_t, std::size_t>(i, i + 1);
+
+      auto outbuf_send = Kokkos::subview(outbuf, recv_range);
+      reqs[i] = cartcomm.MPI_Isend(outbuf_send, dest, tag);
+
+      auto inbuf_recv = Kokkos::subview(inbuf, recv_range);
+      reqs[i + N_NEIGHBORS_2D] = cartcomm.MPI_Irecv(inbuf_recv, source, tag);
     }
-    MPI_Waitall(2 * N_NEIGHBORS_2D, reqs, stats);
+    cartcomm.MPI_Waitall(2 * N_NEIGHBORS_2D, reqs.data());
 
     printf("rank= %2d coords= %d %d  neighbors(x-,+-,y-,y+) = %2d %2d %2d %2d\n",
            myRank,
            coords[0],
            coords[1],
-           nbrs[hydroSimu::X_MIN],
-           nbrs[hydroSimu::X_MAX],
-           nbrs[hydroSimu::Y_MIN],
-           nbrs[hydroSimu::Y_MAX]);
+           nbrs[euler_kokkos::X_MIN],
+           nbrs[euler_kokkos::X_MAX],
+           nbrs[euler_kokkos::Y_MIN],
+           nbrs[euler_kokkos::Y_MAX]);
     printf("rank= %2d coords= %d %d  inbuf    (x-,x+,y-,y+) = %2d %2d %2d %2d\n",
            myRank,
            coords[0],
            coords[1],
-           inbuf[hydroSimu::X_MIN],
-           inbuf[hydroSimu::X_MAX],
-           inbuf[hydroSimu::Y_MIN],
-           inbuf[hydroSimu::Y_MAX]);
+           inbuf[euler_kokkos::X_MIN],
+           inbuf[euler_kokkos::X_MAX],
+           inbuf[euler_kokkos::Y_MIN],
+           inbuf[euler_kokkos::Y_MAX]);
 
     // print topology
-    MPI_Barrier(MPI_COMM_WORLD);
+    cartcomm.MPI_Barrier();
     sleep(1);
 
     if (myRank == 0)
@@ -149,15 +152,30 @@ main(int argc, char * argv[])
            myRank,
            coords[0],
            coords[1],
-           nbrs[hydroSimu::X_MIN],
-           nbrs[hydroSimu::X_MAX],
-           nbrs[hydroSimu::Y_MIN],
-           nbrs[hydroSimu::Y_MAX]);
+           nbrs[euler_kokkos::X_MIN],
+           nbrs[euler_kokkos::X_MAX],
+           nbrs[euler_kokkos::Y_MIN],
+           nbrs[euler_kokkos::Y_MAX]);
   }
   else
   {
     std::cout << "Must specify " << SIZE_2D << " processors. Terminating.\n";
   }
+} // test
+
+} // namespace euler_kokkos
+
+// =====================================================================
+// =====================================================================
+// =====================================================================
+int
+main(int argc, char * argv[])
+{
+  // MPI resources
+  // auto mpiSession = euler_kokkos::GlobalMpiSession(argc, argv);
+  auto par_env = euler_kokkos::ParallelEnv(argc, argv);
+
+  euler_kokkos::test_cartesian_topology(par_env, argc, argv);
 
   return EXIT_SUCCESS;
 }

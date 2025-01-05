@@ -7,8 +7,6 @@
 #ifndef EULER_KOKKOS_GLOBAL_MPI_SESSION_H_
 #define EULER_KOKKOS_GLOBAL_MPI_SESSION_H_
 
-#include <utils/mpi/MpiComm.h>
-
 #include <utils/mpi/mpi_utils.h> // for macro CHECK_MPI_ERR
 
 #include <utility> // for std::make_pair

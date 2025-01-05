@@ -3,8 +3,6 @@
  */
 #include "ParallelEnv.h"
 
-#include <shared/euler_kokkos_config.h>
-
 #include <cstring>
 #include <iostream>
 
@@ -80,6 +78,22 @@ ParallelEnv::~ParallelEnv()
   Kokkos::finalize();
 
 } // ParallelEnv::~ParallelEnv
+
+// ===================================================================================
+// ===================================================================================
+void
+ParallelEnv::setup_cartesian_topology(int mx, int my, int isPeriodic, int allowReorder)
+{
+  m_comm_ptr.reset(new MpiCommCart(mx, my, isPeriodic, allowReorder));
+} // ParallelEnv::setup_cartesian_topology
+
+// ===================================================================================
+// ===================================================================================
+void
+ParallelEnv::setup_cartesian_topology(int mx, int my, int mz, int isPeriodic, int allowReorder)
+{
+  m_comm_ptr.reset(new MpiCommCart(mx, my, mz, isPeriodic, allowReorder));
+} // ParallelEnv::setup_cartesian_topology
 
 // ===================================================================================
 // ===================================================================================
