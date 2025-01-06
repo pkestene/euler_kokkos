@@ -79,6 +79,7 @@ ParallelEnv::~ParallelEnv()
 
 } // ParallelEnv::~ParallelEnv
 
+#ifdef EULER_KOKKOS_USE_MPI
 // ===================================================================================
 // ===================================================================================
 void
@@ -94,6 +95,7 @@ ParallelEnv::setup_cartesian_topology(int mx, int my, int mz, int isPeriodic, in
 {
   m_comm_ptr.reset(new MpiCommCart(mx, my, mz, isPeriodic, allowReorder));
 } // ParallelEnv::setup_cartesian_topology
+#endif // EULER_KOKKOS_USE_MPI
 
 // ===================================================================================
 // ===================================================================================

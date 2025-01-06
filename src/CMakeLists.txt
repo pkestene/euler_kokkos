@@ -26,8 +26,5 @@ target_link_libraries(
          EulerKokkos::muscl
          EulerKokkos::shared
          EulerKokkos::io
-         EulerKokkos::monitoring)
-
-if(EULER_KOKKOS_USE_MPI)
-  target_link_libraries(${PROJECT_NAME} PUBLIC EulerKokkos::mpiUtils)
-endif(EULER_KOKKOS_USE_MPI)
+         EulerKokkos::monitoring
+         EulerKokkos::mpiUtils)

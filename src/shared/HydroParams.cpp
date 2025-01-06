@@ -12,6 +12,28 @@ namespace euler_kokkos
 
 // =======================================================
 // =======================================================
+DimensionType
+get_dim(ConfigMap const & configMap)
+{
+  std::string solver_name = configMap.getString("run", "solver_name", "unknown");
+
+  if (!solver_name.compare("Hydro_Muscl_2D") or !solver_name.compare("MHD_Muscl_2D"))
+  {
+
+    return TWO_D;
+  }
+  else if (!solver_name.compare("Hydro_Muscl_3D") or !solver_name.compare("MHD_Muscl_3D"))
+  {
+    return THREE_D;
+  }
+  // we should probably abort
+  std::cerr << "Solver name not valid : " << solver_name << "\n";
+
+  return TWO_D;
+}
+
+// =======================================================
+// =======================================================
 HydroParams::HydroParams(ConfigMap const & configMap, ParallelEnv & par_env_)
   : nStepmax(configMap.getInteger("run", "nstepmax", 1000))
   , tEnd(configMap.getFloat("run", "tend", 0.0))

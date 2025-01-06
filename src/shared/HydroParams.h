@@ -19,14 +19,16 @@
 
 #include "shared/enums.h"
 
+#include <utils/mpi/ParallelEnv.h>
 #ifdef EULER_KOKKOS_USE_MPI
-#  include <utils/mpi/ParallelEnv.h>
 #  include <utils/mpi/MpiCommCart.h>
 #endif // EULER_KOKKOS_USE_MPI
 
 namespace euler_kokkos
 {
 
+// ==================================================================================
+// ==================================================================================
 struct HydroSettings
 {
 
@@ -66,26 +68,13 @@ struct HydroSettings
 
 }; // struct HydroSettings
 
+// ==================================================================================
+// ==================================================================================
 DimensionType
-get_dim(ConfigMap const & configMap)
-{
-  std::string solver_name = configMap.getString("run", "solver_name", "unknown");
+get_dim(ConfigMap const & configMap);
 
-  if (!solver_name.compare("Hydro_Muscl_2D") or !solver_name.compare("MHD_Muscl_2D"))
-  {
-
-    return TWO_D;
-  }
-  else if (!solver_name.compare("Hydro_Muscl_3D") or !solver_name.compare("MHD_Muscl_3D"))
-  {
-    return THREE_D;
-  }
-  // we should probably abort
-  std::cerr << "Solver name not valid : " << solver_name << "\n";
-
-  return TWO_D;
-}
-
+// ==================================================================================
+// ==================================================================================
 /**
  * Hydro Parameters (declaration).
  */
@@ -180,7 +169,7 @@ public:
 
 #endif // EULER_KOKKOS_USE_MPI
 
-  HydroParams(ConfigMap const & configMap, ParallelEnv & par_env);
+  HydroParams(ConfigMap const & configMap, ParallelEnv & par_env_);
 
   virtual ~HydroParams() {}
 

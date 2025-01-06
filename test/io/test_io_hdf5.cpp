@@ -138,19 +138,13 @@ public:
 // ===========================================================
 // ===========================================================
 void
-run_test_hdf5(const std::string input_filename)
+run_test_hdf5(ParallelEnv & par_env, const std::string input_filename)
 {
 
   ConfigMap configMap(input_filename);
 
   // test: create a HydroParams object
-  HydroParams params = HydroParams();
-  params.setup(configMap);
-
-  int rank = 0;
-#ifdef EULER_KOKKOS_USE_MPI
-  rank = params.myRank;
-#endif
+  auto params = HydroParams(configMap, par_env);
 
   // for upscale test
   ConfigMap configMapUp(configMap);
@@ -170,12 +164,10 @@ run_test_hdf5(const std::string input_filename)
     // enable upscale upon reading
     configMapUp.setBool("run", "restart_upscale", true);
   }
-  // if (rank==0)
+  // if (par_env.rank()==0)
   // std::cout << configMapUp << std::endl;
 
-  HydroParams paramsUp = HydroParams();
-  paramsUp.setup(configMapUp);
-
+  auto paramsUp = HydroParams(configMap, par_env);
 
   std::map<int, std::string> var_names;
   var_names[ID] = "rho";
@@ -190,14 +182,14 @@ run_test_hdf5(const std::string input_filename)
   if (params.nz == 1)
   {
 
-    if (rank == 0)
+    if (par_env.rank() == 0)
       std::cout << "2D test - create data\n";
 
-    DataArray2d     data("data", params.isize, params.jsize, HYDRO_2D_NBVAR);
-    DataArray2dHost data_host = Kokkos::create_mirror(data);
+    auto data = DataArray2d("data", params.isize, params.jsize, HYDRO_2D_NBVAR);
+    auto data_host = Kokkos::create_mirror(data);
 
-    DataArray2d     data2("data2", params.isize, params.jsize, HYDRO_2D_NBVAR);
-    DataArray2dHost data2_host = Kokkos::create_mirror(data2);
+    auto data2 = DataArray2d("data2", params.isize, params.jsize, HYDRO_2D_NBVAR);
+    auto data2_host = Kokkos::create_mirror(data2);
 
     // create fake data
     InitData<2> functor(params, data);
@@ -205,7 +197,7 @@ run_test_hdf5(const std::string input_filename)
       "InitData<2>", Kokkos::RangePolicy<>(0, params.isize * params.jsize), functor);
 
     // save to file
-    if (rank == 0)
+    if (par_env.rank() == 0)
       std::cout << "2D test -- save data\n";
 
 #ifdef EULER_KOKKOS_USE_MPI
@@ -222,7 +214,7 @@ run_test_hdf5(const std::string input_filename)
 
     // try to reload file
     {
-      if (rank == 0)
+      if (par_env.rank() == 0)
         std::cout << "2D test -- reload and save data for comparison\n";
 
 #ifdef EULER_KOKKOS_USE_MPI
@@ -254,10 +246,10 @@ run_test_hdf5(const std::string input_filename)
 
     // reload and upscale test
     {
-      DataArray2d     data2up("data2up", paramsUp.isize, paramsUp.jsize, HYDRO_2D_NBVAR);
-      DataArray2dHost data2up_host = Kokkos::create_mirror(data2up);
+      auto data2up = DataArray2d("data2up", paramsUp.isize, paramsUp.jsize, HYDRO_2D_NBVAR);
+      auto data2up_host = Kokkos::create_mirror(data2up);
 
-      if (rank == 0)
+      if (par_env.rank() == 0)
         std::cout << "2D test -- reload, upscale and save data\n";
 
       // set restart filename
@@ -302,7 +294,7 @@ run_test_hdf5(const std::string input_filename)
   if (params.nz > 1)
   {
 
-    if (rank == 0)
+    if (par_env.rank() == 0)
       std::cout << "3D test -- create data\n";
 
     DataArray3d     data("data", params.isize, params.jsize, params.ksize, HYDRO_3D_NBVAR);
@@ -318,7 +310,7 @@ run_test_hdf5(const std::string input_filename)
 
     // ================ save to file =======================
     // save to file
-    if (rank == 0)
+    if (par_env.rank() == 0)
       std::cout << "3D test -- save data\n";
 
 #ifdef EULER_KOKKOS_USE_MPI
@@ -335,7 +327,7 @@ run_test_hdf5(const std::string input_filename)
 
     // try to reload file
     {
-      if (rank == 0)
+      if (par_env.rank() == 0)
         std::cout << "3D test -- reload and save data for comparison\n";
 
 #ifdef EULER_KOKKOS_USE_MPI
@@ -372,7 +364,7 @@ run_test_hdf5(const std::string input_filename)
         "data2up", paramsUp.isize, paramsUp.jsize, paramsUp.ksize, HYDRO_3D_NBVAR);
       DataArray3dHost data2up_host = Kokkos::create_mirror(data2up);
 
-      if (rank == 0)
+      if (par_env.rank() == 0)
         std::cout << "3D test -- reload, upscale and save data\n";
 
       // set restart filename
@@ -416,19 +408,9 @@ run_test_hdf5(const std::string input_filename)
 int
 main(int argc, char * argv[])
 {
+  auto par_env = euler_kokkos::ParallelEnv(argc, argv);
 
-  // Create MPI session if MPI enabled
-#ifdef EULER_KOKKOS_USE_MPI
-  hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
-#endif // EULER_KOKKOS_USE_MPI
-
-  Kokkos::initialize(argc, argv);
-
-  int mpi_rank = 0;
-#ifdef EULER_KOKKOS_USE_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-#endif // EULER_KOKKOS_USE_MPI
-  if (mpi_rank == 0)
+  if (par_env.rank() == 0)
   {
     std::cout << "##########################\n";
     std::cout << "KOKKOS CONFIG             \n";
@@ -447,18 +429,11 @@ main(int argc, char * argv[])
     std::cout << "##########################\n";
   }
 
-  // if (argc != 2) {
-  //   fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter
-  //   on the command line\n"); Kokkos::finalize(); exit(EXIT_FAILURE);
-  // }
-
   // read parameter file and initialize parameter
   // parse parameters from input file
   std::string input_filename = std::string(argv[1]);
 
-  euler_kokkos::run_test_hdf5(input_filename);
-
-  Kokkos::finalize();
+  euler_kokkos::run_test_hdf5(par_env, input_filename);
 
   return EXIT_SUCCESS;
 

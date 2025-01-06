@@ -96,6 +96,7 @@ public:
 #endif // EULER_KOKKOS_USE_MPI
   }
 
+#ifdef EULER_KOKKOS_USE_MPI
   //! 2d cartesian topology
   void
   setup_cartesian_topology(int mx, int my, int isPeriodic, int allowReorder);
@@ -104,7 +105,6 @@ public:
   void
   setup_cartesian_topology(int mx, int my, int mz, int isPeriodic, int allowReorder);
 
-#ifdef EULER_KOKKOS_USE_MPI
   //! \return MPI communicator (see MPIComm)
   MpiComm &
   comm() const

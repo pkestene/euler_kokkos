@@ -1,8 +1,6 @@
 /**
  * Hydro/MHD solver (Muscl-Hancock).
  *
- * \date April, 16 2016
- * \author P. Kestener
  */
 
 #include <cstdlib>
@@ -12,15 +10,15 @@
 #include <shared/euler_kokkos_config.h>
 #include "shared/kokkos_shared.h"
 
-#include "shared/real_type.h"    // choose between single and double precision
-#include "shared/HydroParams.h"  // read parameter file
-#include "shared/solver_utils.h" // print monitoring information
+#include <shared/real_type.h>    // choose between single and double precision
+#include <shared/HydroParams.h>  // read parameter file
+#include <shared/solver_utils.h> // print monitoring information
 
 // solver
-#include "shared/SolverFactory.h"
+#include <shared/SolverFactory.h>
 
+#include <utils/mpi/ParallelEnv.h>
 #ifdef EULER_KOKKOS_USE_MPI
-#  include <utils/mpiUtils/ParallelEnv.h>
 #  include <mpi.h>
 #endif // EULER_KOKKOS_USE_MPI
 
@@ -77,15 +75,6 @@ main(int argc, char * argv[])
     par_env.setup_cartesian_topology(mx, my, mz, MPI_CART_PERIODIC_TRUE, MPI_REORDER_TRUE);
 #endif // EULER_KOKKOS_USE_MPI
 
-  Kokkos::initialize(argc, argv);
-
-  int rank = 0;
-  int nRanks = 1;
-
-  // just to avoid warning when built without MPI
-  UNUSED(rank);
-  UNUSED(nRanks);
-
   {
     std::cout << "##########################\n";
     std::cout << "KOKKOS CONFIG             \n";
@@ -114,8 +103,6 @@ main(int argc, char * argv[])
 #endif // EULER_KOKKOS_USE_FPE_DEBUG
 
 #ifdef EULER_KOKKOS_USE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &nRanks);
 #  ifdef KOKKOS_ENABLE_CUDA
     {
 
@@ -129,22 +116,22 @@ main(int argc, char * argv[])
 
       int cudaDeviceId;
       cudaGetDevice(&cudaDeviceId);
-      std::cout << "I'm MPI task #" << rank << " (out of " << nRanks << ")" << " pinned to GPU #"
-                << cudaDeviceId << "\n";
+      std::cout << "I'm MPI task #" << par_env.rank() << " (out of " << par_env.size() << ")"
+                << " pinned to GPU #" << cudaDeviceId << "\n";
     }
 #  endif // KOKKOS_ENABLE_CUDA
 #endif   // EULER_KOKKOS_USE_MPI
   }
 
   // banner
-  if (rank == 0)
+  if (par_env.rank() == 0)
   {
     ek::GitRevisionInfo::print();
     ek::BuildInfo::print();
   }
 
   // if (argc != 2) {
-  //   if (rank==0)
+  //   if (par_env.rank()==0)
   //     fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter
   //     on the command line\n");
   //   exit(EXIT_FAILURE);
@@ -154,7 +141,7 @@ main(int argc, char * argv[])
    * initialize a ConfigMap object
    */
   // test: create a HydroParams object
-  ek::HydroParams params = ek::HydroParams(configMap);
+  ek::HydroParams params = ek::HydroParams(configMap, par_env);
 
   // retrieve solver name from settings
   const std::string solver_name = configMap.getString("run", "solver_name", "Unknown");
@@ -166,7 +153,7 @@ main(int argc, char * argv[])
     solver->save_solution();
 
   // start computation
-  if (rank == 0)
+  if (par_env.rank() == 0)
     std::cout << "Start computation....\n";
   solver->timers[TIMER_TOTAL]->start();
 
@@ -195,14 +182,12 @@ main(int argc, char * argv[])
   }
 #endif // EULER_KOKKOS_USE_HDF5
 
-  if (rank == 0)
+  if (par_env.rank() == 0)
     printf("final time is %f\n", solver->m_t);
 
   ek::print_solver_monitoring_info(solver);
 
   delete solver;
-
-  Kokkos::finalize();
 
   return EXIT_SUCCESS;
 

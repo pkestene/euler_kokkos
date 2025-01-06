@@ -13,9 +13,10 @@
 #include "shared/real_type.h"   // choose between single and double precision
 #include "shared/HydroParams.h" // read parameter file
 
+#include <utils/mpi/ParallelEnv.h>
+
 // MPI support
 #ifdef EULER_KOKKOS_USE_MPI
-#  include "utils/mpiUtils/GlobalMpiSession.h"
 #  include <mpi.h>
 #endif // EULER_KOKKOS_USE_MPI
 
@@ -125,14 +126,12 @@ public:
 // ===========================================================
 // ===========================================================
 void
-run_test_vtk(const std::string input_filename)
+run_test_vtk(ParallelEnv & par_env, const std::string input_filename)
 {
-
   ConfigMap configMap(input_filename);
 
   // test: create a HydroParams object
-  HydroParams params = HydroParams();
-  params.setup(configMap);
+  auto params = HydroParams(configMap, par_env);
 
   std::map<int, std::string> var_names;
   var_names[ID] = "rho";
@@ -199,19 +198,9 @@ int
 main(int argc, char * argv[])
 {
 
-  // Create MPI session if MPI enabled
-#ifdef EULER_KOKKOS_USE_MPI
-  hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
-#endif // EULER_KOKKOS_USE_MPI
+  auto par_env = euler_kokkos::ParallelEnv(argc, argv);
 
-  Kokkos::initialize(argc, argv);
-
-  int mpi_rank = 0;
-#ifdef EULER_KOKKOS_USE_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-#endif
-
-  if (mpi_rank == 0)
+  if (par_env.rank() == 0)
   {
     std::cout << "##########################\n";
     std::cout << "KOKKOS CONFIG             \n";
@@ -235,7 +224,6 @@ main(int argc, char * argv[])
     fprintf(stderr,
             "Error: wrong number of argument; input filename must be the only parameter on the "
             "command line\n");
-    Kokkos::finalize();
     exit(EXIT_FAILURE);
   }
 
@@ -243,9 +231,7 @@ main(int argc, char * argv[])
   // parse parameters from input file
   std::string input_filename = std::string(argv[1]);
 
-  euler_kokkos::run_test_vtk(input_filename);
-
-  Kokkos::finalize();
+  euler_kokkos::run_test_vtk(par_env, input_filename);
 
   return EXIT_SUCCESS;
-}
+} // main
