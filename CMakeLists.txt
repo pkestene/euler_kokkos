@@ -1,6 +1,18 @@
 # set minimal version the one requested by kokkos
 cmake_minimum_required(VERSION 3.18)
 
+# The ``target_sources()`` command converts relative paths to absolute.
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
+  message(STATUS "Setting policy CMP0076 to use new behavior")
+  cmake_policy(SET CMP0076 NEW)
+endif()
+
+# CMake 3.24 and above prefers to set the timestamps of all extracted contents
+# to the time of the extraction.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+
 #
 # default local cmake macro repository
 #
@@ -140,22 +152,6 @@ endif(EULER_KOKKOS_USE_MPI)
 # Kokkos : https://github.com/kokkos/kokkos
 #
 include(build_or_find_kokkos)
-
-#
-# if MPI is enabled and kokkos backend is cuda, we need a cuda aware
-# implementation
-#
-if(EULER_KOKKOS_USE_MPI)
-
-  if(MPI_FOUND
-     AND (EULER_KOKKOS_BACKEND MATCHES "Cuda")
-     AND (NOT MPI_CUDA_AWARE_ENABLED))
-
-    message(FATAL_ERROR "You must use a cuda-aware MPI implementation.")
-
-  endif()
-
-endif()
 
 #
 # Using flags -Wextra, it's to strong for Kokkos, too many warnings But -Wall is

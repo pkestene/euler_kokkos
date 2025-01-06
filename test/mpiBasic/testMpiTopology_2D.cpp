@@ -31,12 +31,7 @@
 
 constexpr int SIZE_X = 2;
 constexpr int SIZE_Y = 2;
-constexpr int SIZE_Z = 4;
 constexpr int SIZE_2D = (SIZE_X * SIZE_Y);
-constexpr int SIZE_3D = (SIZE_X * SIZE_Y * SIZE_Z);
-
-constexpr int N_NEIGHBORS_2D = 4;
-constexpr int N_NEIGHBORS_3D = 6;
 
 constexpr int NDIM = 2;
 
@@ -71,12 +66,12 @@ test_cartesian_topology(ParallelEnv & par_env, int argc, char * argv[])
   if (numTasks == SIZE_2D)
   {
     int nbrs[N_NEIGHBORS_2D];
-    int periods = euler_kokkos::MPI_CART_PERIODIC_TRUE;
-    int reorder = euler_kokkos::MPI_REORDER_TRUE;
+    int periods = MPI_CART_PERIODIC_TRUE;
+    int reorder = MPI_REORDER_TRUE;
     int coords[NDIM];
 
     // create the cartesian topology
-    par_env.setup_cartesian_topology(SIZE_X, SIZE_Y, (int)periods, (int)reorder);
+    par_env.setup_cartesian_topology(SIZE_X, SIZE_Y, periods, reorder);
 
     auto & cartcomm = dynamic_cast<MpiCommCart &>(par_env.comm());
 
@@ -99,10 +94,10 @@ test_cartesian_topology(ParallelEnv & par_env, int argc, char * argv[])
 
     int source, dest, i, tag = 1;
 
-    auto inbuf = Kokkos::View<int *>("inbuf", N_NEIGHBORS_2D);
+    auto inbuf = Kokkos::View<int *, Kokkos::DefaultExecutionSpace>("inbuf", N_NEIGHBORS_2D);
     Kokkos::deep_copy(inbuf, MPI_PROC_NULL);
 
-    auto outbuf = Kokkos::View<int *>("outbuf", N_NEIGHBORS_2D);
+    auto outbuf = Kokkos::View<int *, Kokkos::DefaultExecutionSpace>("outbuf", N_NEIGHBORS_2D);
     Kokkos::deep_copy(outbuf, myRank);
 
     // send    my rank to   each of my neighbors
@@ -122,6 +117,8 @@ test_cartesian_topology(ParallelEnv & par_env, int argc, char * argv[])
     }
     cartcomm.MPI_Waitall(2 * N_NEIGHBORS_2D, reqs.data());
 
+    auto inbuf_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, inbuf);
+
     printf("rank= %2d coords= %d %d  neighbors(x-,+-,y-,y+) = %2d %2d %2d %2d\n",
            myRank,
            coords[0],
@@ -134,10 +131,10 @@ test_cartesian_topology(ParallelEnv & par_env, int argc, char * argv[])
            myRank,
            coords[0],
            coords[1],
-           inbuf[euler_kokkos::X_MIN],
-           inbuf[euler_kokkos::X_MAX],
-           inbuf[euler_kokkos::Y_MIN],
-           inbuf[euler_kokkos::Y_MAX]);
+           inbuf_h[euler_kokkos::X_MIN],
+           inbuf_h[euler_kokkos::X_MAX],
+           inbuf_h[euler_kokkos::Y_MIN],
+           inbuf_h[euler_kokkos::Y_MAX]);
 
     // print topology
     cartcomm.MPI_Barrier();

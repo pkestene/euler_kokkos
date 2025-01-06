@@ -23,7 +23,7 @@ macro(CHECK_MPI_FEATURES)
 
     # set(cmake_required_includes ${MPI_INCLUDE_PATH})
     # set(cmake_required_libraries ${MPI_LIBRARIES})
-    set(cmake_required_libraries MPI::MPI_C)
+    set(CMAKE_REQUIRED_LIBRARIES MPI::MPI_C)
 
     # We cannot use check_include_file here as <mpi.h> needs to be included
     # before <mpi-ext.h>, and check_include_file doesn't support this.
@@ -35,7 +35,7 @@ macro(CHECK_MPI_FEATURES)
           return 0;
         }
       "
-      EULER_KOKKOS_USE_MPI_EXT)
+      EULER_KOKKOS_USE_MPI_EXT FAIL_REGEX "")
 
     if(NOT EULER_KOKKOS_USE_MPI_EXT)
       set(EULER_KOKKOS_USE_MPI_EXT 0)

@@ -35,7 +35,8 @@
 #include "utils/config/ConfigMap.h"
 
 #ifdef EULER_KOKKOS_USE_MPI
-#  include "utils/mpiUtils/MpiComm.h"
+#  include <utils/mpi/ParallelEnv.h>
+#  include <utils/mpi/MpiComm.h>
 #endif // EULER_KOKKOS_USE_MPI
 
 #include "IO_common.h"
@@ -294,14 +295,6 @@ public:
       dataspace_memory = H5Screate_simple(3, dims_memory, NULL);
       dataspace_file = H5Screate_simple(3, dims_file, NULL);
     }
-
-    // Create the datasets.
-    hid_t dataType;
-    if (sizeof(real_t) == sizeof(float))
-      dataType = H5T_NATIVE_FLOAT;
-    else
-      dataType = H5T_NATIVE_DOUBLE;
-
 
     // select data with or without ghost zones
     if (ghostIncluded)
@@ -677,7 +670,6 @@ public:
   void
   save()
   {
-    using namespace hydroSimu; // for MpiComm (this namespace is tout-pourri)
 
     // sub-domain sizes
     const int nx = params.nx;
@@ -734,25 +726,28 @@ public:
       stringDateSize = stringDate.size();
     }
     // broadcast stringDate size to all other MPI tasks
-    params.communicator->bcast(&stringDateSize, 1, MpiComm::INT, 0);
+    params.communicator().MPI_Bcast(&stringDateSize, 1, 0);
 
     // broadcast stringDate to all other MPI task
     if (myRank != 0)
       stringDate.reserve(stringDateSize);
     char * cstr = const_cast<char *>(stringDate.c_str());
-    params.communicator->bcast(cstr, stringDateSize, MpiComm::CHAR, 0);
+    params.communicator().MPI_Bcast(cstr, stringDateSize, 0);
 
     /*
      * get MPI coords corresponding to MPI rank iPiece
      */
+
+    auto & cartcomm = dynamic_cast<MpiCommCart &>(params.communicator());
+
     int coords[3];
     if (dimType == TWO_D)
     {
-      params.communicator->getCoords(myRank, 2, coords);
+      cartcomm.getCoords(myRank, 2, coords);
     }
     else
     {
-      params.communicator->getCoords(myRank, 3, coords);
+      cartcomm.getCoords(myRank, 3, coords);
     }
 
     herr_t status;
@@ -774,7 +769,7 @@ public:
     if (hdf5_verbose)
     {
       // MPI_Barrier(params.communicator->getComm());
-      params.communicator->synchronize();
+      params.communicator().MPI_Barrier();
       write_timing = MPI_Wtime();
     }
 
@@ -784,8 +779,7 @@ public:
     // Create a new file using property list with parallel I/O access.
     MPI_Info mpi_info = MPI_INFO_NULL;
     hid_t    propList_create_id = H5Pcreate(H5P_FILE_ACCESS);
-    status = H5Pset_fapl_mpio(
-      propList_create_id, /*MPI_COMM_WORLD*/ params.communicator->getComm(), mpi_info);
+    status = H5Pset_fapl_mpio(propList_create_id, params.communicator().get_MPI_Comm(), mpi_info);
     HDF5_CHECK(status, "Can not access MPI IO parameters");
 
     hid_t file_id =
@@ -1457,13 +1451,7 @@ public:
       // write_size = U.sizeBytes();
       sum_write_size = write_size * params.nProcs;
 
-      MPI_Reduce(&write_timing,
-                 &max_write_timing,
-                 1,
-                 MPI_DOUBLE,
-                 MPI_MAX,
-                 0,
-                 params.communicator->getComm());
+      params.communicator().MPI_Reduce<MpiComm::MAX>(&write_timing, &max_write_timing, 1, 0);
 
       if (myRank == 0)
       {
@@ -2331,15 +2319,17 @@ public:
     read_size *= nbvar;
     read_size *= sizeof(real_t);
 
+    auto & cartcomm = dynamic_cast<MpiCommCart &>(this->params.communicator());
+
     // get MPI coords corresponding to MPI rank iPiece
     int coords[3];
     if (dimType == TWO_D)
     {
-      this->params.communicator->getCoords(myRank, 2, coords);
+      cartcomm.getCoords(myRank, 2, coords);
     }
     else
     {
-      this->params.communicator->getCoords(myRank, 3, coords);
+      cartcomm.getCoords(myRank, 3, coords);
     }
 
     herr_t status;
@@ -2615,7 +2605,7 @@ public:
     // measure time ??
     if (hdf5_verbose)
     {
-      MPI_Barrier(this->params.communicator->getComm());
+      this->params.communicator().MPI_Barrier();
       read_timing = MPI_Wtime();
     }
 
@@ -2626,8 +2616,8 @@ public:
     /* Set up MPIO file access property lists */
     // MPI_Info mpi_info   = MPI_INFO_NULL;
     hid_t access_plist = H5Pcreate(H5P_FILE_ACCESS);
-    status = H5Pset_fapl_mpio(
-      access_plist, /*MPI_COMM_WORLD*/ this->params.communicator->getComm(), MPI_INFO_NULL);
+    status =
+      H5Pset_fapl_mpio(access_plist, this->params.communicator().get_MPI_Comm(), MPI_INFO_NULL);
 
     /* Open the file */
     hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, access_plist);
@@ -2748,13 +2738,8 @@ public:
 
       sum_read_size = read_size * nProcs;
 
-      MPI_Reduce(&read_timing,
-                 &max_read_timing,
-                 1,
-                 MPI_DOUBLE,
-                 MPI_MAX,
-                 0,
-                 this->params.communicator->getComm());
+      this->params.communicator().template MPI_Reduce<MpiComm::MAX>(
+        &read_timing, &max_read_timing, 1, 0);
 
       if (myRank == 0)
       {

@@ -8,8 +8,8 @@
 #include <iostream>
 
 #include <shared/euler_kokkos_config.h>
-#include "shared/kokkos_shared.h"
 
+#include <shared/kokkos_shared.h>
 #include <shared/real_type.h>    // choose between single and double precision
 #include <shared/HydroParams.h>  // read parameter file
 #include <shared/solver_utils.h> // print monitoring information
@@ -18,16 +18,17 @@
 #include <shared/SolverFactory.h>
 
 #include <utils/mpi/ParallelEnv.h>
+
 #ifdef EULER_KOKKOS_USE_MPI
 #  include <mpi.h>
 #endif // EULER_KOKKOS_USE_MPI
 
 #ifdef EULER_KOKKOS_USE_HDF5
-#  include "utils/io/IO_HDF5.h"
+#  include <utils/io/IO_HDF5.h>
 #endif // EULER_KOKKOS_USE_HDF5
 
 // banner
-#include "euler_kokkos_version.h"
+#include <euler_kokkos_version.h>
 #include <shared/euler_kokkos_git_info.h>
 #include <shared/euler_kokkos_build_info.h>
 
@@ -56,7 +57,8 @@ main(int argc, char * argv[])
   namespace ek = ::euler_kokkos;
 
   // Create MPI session if MPI enabled
-  auto par_env = euler_kokkos::ParallelEnv(argc, argv);
+  // initialize kokkos and print kokkos config
+  auto par_env = ek::ParallelEnv(argc, argv);
 
   // read input parameter file
   // only MPI rank 0 actually reads input file
@@ -69,59 +71,22 @@ main(int argc, char * argv[])
   auto mz = configMap.getInteger("mpi", "mz", 1);
   auto dimType = get_dim(configMap);
 
-  if (dimType == TWO_D)
-    par_env.setup_cartesian_topology(mx, my, MPI_CART_PERIODIC_TRUE, MPI_REORDER_TRUE);
-  else if (dimType == THREE_D)
-    par_env.setup_cartesian_topology(mx, my, mz, MPI_CART_PERIODIC_TRUE, MPI_REORDER_TRUE);
+  if (dimType == ek::TWO_D)
+    par_env.setup_cartesian_topology(mx, my, ek::MPI_CART_PERIODIC_TRUE, ek::MPI_REORDER_TRUE);
+  else if (dimType == ek::THREE_D)
+    par_env.setup_cartesian_topology(mx, my, mz, ek::MPI_CART_PERIODIC_TRUE, ek::MPI_REORDER_TRUE);
 #endif // EULER_KOKKOS_USE_MPI
 
-  {
-    std::cout << "##########################\n";
-    std::cout << "KOKKOS CONFIG             \n";
-    std::cout << "##########################\n";
-
-    std::ostringstream msg;
-    std::cout << "Kokkos configuration" << std::endl;
-    if (Kokkos::hwloc::available())
-    {
-      msg << "hwloc( NUMA[" << Kokkos::hwloc::get_available_numa_count() << "] x CORE["
-          << Kokkos::hwloc::get_available_cores_per_numa() << "] x HT["
-          << Kokkos::hwloc::get_available_threads_per_core() << "] )" << std::endl;
-    }
-    Kokkos::print_configuration(msg);
-    std::cout << msg.str();
-    std::cout << "##########################\n";
-
 #ifdef EULER_KOKKOS_USE_FPE_DEBUG
-    /*
-     * Install a signal handler for floating point errors.
-     * This only useful when debugging, doing a backtrace in gdb,
-     * tracking for NaN
-     */
-    feenableexcept(FE_DIVBYZERO | FE_INVALID);
-    signal(SIGFPE, fpehandler);
+  /*
+   * Install a signal handler for floating point errors.
+   * This only useful when debugging, doing a backtrace in gdb,
+   * tracking for NaN
+   */
+  feenableexcept(FE_DIVBYZERO | FE_INVALID);
+  signal(SIGFPE, fpehandler);
 #endif // EULER_KOKKOS_USE_FPE_DEBUG
 
-#ifdef EULER_KOKKOS_USE_MPI
-#  ifdef KOKKOS_ENABLE_CUDA
-    {
-
-      // To enable kokkos accessing multiple GPUs don't forget to
-      // add option "--ndevices=X" where X is the number of GPUs
-      // you want to use per node.
-
-      // on a large cluster, the scheduler should assign resources
-      // in a way that each MPI task is mapped to a different GPU
-      // let's cross-checked that:
-
-      int cudaDeviceId;
-      cudaGetDevice(&cudaDeviceId);
-      std::cout << "I'm MPI task #" << par_env.rank() << " (out of " << par_env.size() << ")"
-                << " pinned to GPU #" << cudaDeviceId << "\n";
-    }
-#  endif // KOKKOS_ENABLE_CUDA
-#endif   // EULER_KOKKOS_USE_MPI
-  }
 
   // banner
   if (par_env.rank() == 0)

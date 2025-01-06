@@ -9,7 +9,9 @@
 namespace euler_kokkos
 {
 
-using Device = Kokkos::DefaultExecutionSpace;
+// using Device = Kokkos::DefaultExecutionSpace;
+using Device =
+  Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space>;
 
 enum KokkosLayout
 {

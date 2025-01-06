@@ -200,25 +200,6 @@ main(int argc, char * argv[])
 
   auto par_env = euler_kokkos::ParallelEnv(argc, argv);
 
-  if (par_env.rank() == 0)
-  {
-    std::cout << "##########################\n";
-    std::cout << "KOKKOS CONFIG             \n";
-    std::cout << "##########################\n";
-
-    std::ostringstream msg;
-    std::cout << "Kokkos configuration" << std::endl;
-    if (Kokkos::hwloc::available())
-    {
-      msg << "hwloc( NUMA[" << Kokkos::hwloc::get_available_numa_count() << "] x CORE["
-          << Kokkos::hwloc::get_available_cores_per_numa() << "] x HT["
-          << Kokkos::hwloc::get_available_threads_per_core() << "] )" << std::endl;
-    }
-    Kokkos::print_configuration(msg);
-    std::cout << msg.str();
-    std::cout << "##########################\n";
-  }
-
   if (argc != 2)
   {
     fprintf(stderr,

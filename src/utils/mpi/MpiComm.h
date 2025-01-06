@@ -480,6 +480,33 @@ public:
     CHECK_MPI_ERR(::MPI_Waitall(count, requests, MPI_STATUSES_IGNORE));
   }
 
+  template <typename Kokkos_View_send_t, typename Kokkos_View_recv_t>
+  void
+  MPI_Sendrecv(const Kokkos_View_send_t & view_send,
+               int                        dest,
+               int                        tag_send,
+               const Kokkos_View_recv_t & view_recv,
+               int                        source,
+               int                        tag_recv) const
+  {
+    using namespace MpiComm_impl;
+    MPI_Datatype type_send = mpi_type<typename Kokkos_View_send_t::value_type>();
+    MPI_Datatype type_recv = mpi_type<typename Kokkos_View_recv_t::value_type>();
+
+    CHECK_MPI_ERR(::MPI_Sendrecv(view_send.data(),
+                                 view_send.size(),
+                                 type_send,
+                                 dest,
+                                 tag_send,
+                                 view_recv.data(),
+                                 view_recv.size(),
+                                 type_recv,
+                                 source,
+                                 tag_recv,
+                                 MPI_Comm(*this),
+                                 MPI_STATUSES_IGNORE));
+  } // MPI_Sendrecv
+
 protected:
   std::shared_ptr<MPI_Comm> comm_ptr;
 

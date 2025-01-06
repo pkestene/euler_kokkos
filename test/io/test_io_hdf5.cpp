@@ -7,15 +7,16 @@
 #include <type_traits> // for std::conditional
 
 // minimal kokkos support
-#include "shared/kokkos_shared.h"
+#include <shared/kokkos_shared.h>
 
-#include "shared/HydroState.h"  // for constants
-#include "shared/real_type.h"   // choose between single and double precision
-#include "shared/HydroParams.h" // read parameter file
+#include <shared/HydroState.h>  // for constants
+#include <shared/real_type.h>   // choose between single and double precision
+#include <shared/HydroParams.h> // read parameter file
+
+#include <utils/mpi/ParallelEnv.h>
 
 // MPI support
 #ifdef EULER_KOKKOS_USE_MPI
-#  include "utils/mpiUtils/GlobalMpiSession.h"
 #  include <mpi.h>
 #endif // EULER_KOKKOS_USE_MPI
 
@@ -409,25 +410,6 @@ int
 main(int argc, char * argv[])
 {
   auto par_env = euler_kokkos::ParallelEnv(argc, argv);
-
-  if (par_env.rank() == 0)
-  {
-    std::cout << "##########################\n";
-    std::cout << "KOKKOS CONFIG             \n";
-    std::cout << "##########################\n";
-
-    std::ostringstream msg;
-    std::cout << "Kokkos configuration" << std::endl;
-    if (Kokkos::hwloc::available())
-    {
-      msg << "hwloc( NUMA[" << Kokkos::hwloc::get_available_numa_count() << "] x CORE["
-          << Kokkos::hwloc::get_available_cores_per_numa() << "] x HT["
-          << Kokkos::hwloc::get_available_threads_per_core() << "] )" << std::endl;
-    }
-    Kokkos::print_configuration(msg);
-    std::cout << msg.str();
-    std::cout << "##########################\n";
-  }
 
   // read parameter file and initialize parameter
   // parse parameters from input file

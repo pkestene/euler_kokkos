@@ -934,6 +934,8 @@ write_pvti_header(std::string                        headerFilename,
   }
   outHeader << "    </PCellData>" << std::endl;
 
+  auto & cartcomm = dynamic_cast<MpiCommCart &>(params.communicator());
+
   // one piece per MPI process
   if (dimType == TWO_D)
   {
@@ -947,7 +949,7 @@ write_pvti_header(std::string                        headerFilename,
         outputPrefix + "_time" + timeFormat.str() + "_mpi" + pieceFormat.str() + ".vti";
       // get MPI coords corresponding to MPI rank iPiece
       int coords[2];
-      params.communicator->getCoords(iPiece, 2, coords);
+      cartcomm.getCoords(iPiece, 2, coords);
       outHeader << "    <Piece Extent=\"";
 
       // pieces in first line of column are different (due to the special
@@ -976,7 +978,7 @@ write_pvti_header(std::string                        headerFilename,
         outputPrefix + "_time" + timeFormat.str() + "_mpi" + pieceFormat.str() + ".vti";
       // get MPI coords corresponding to MPI rank iPiece
       int coords[3];
-      params.communicator->getCoords(iPiece, 3, coords);
+      cartcomm.getCoords(iPiece, 3, coords);
       outHeader << " <Piece Extent=\"";
 
       if (coords[0] == 0)
