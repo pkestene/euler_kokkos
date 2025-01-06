@@ -11,6 +11,7 @@
 
 #include <math.h>
 
+#include <shared/euler_kokkos_config.h>
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_MathematicalConstants.hpp>
@@ -22,11 +23,11 @@ namespace euler_kokkos
 /**
  * \typedef real_t (alias to float or double)
  */
-#ifdef USE_DOUBLE
+#ifdef EULER_KOKKOS_USE_DOUBLE
 using real_t = double;
 #else
 using real_t = float;
-#endif // USE_DOUBLE
+#endif // EULER_KOKKOS_USE_DOUBLE
 
 #if KOKKOS_VERSION_MAJOR > 3
 using Kokkos::exp;
@@ -75,11 +76,11 @@ constexpr auto PI_F = PI_v<real_t>;
 constexpr auto TWOPI_F = 2 * PI_v<real_t>;
 
 // math function
-#if defined(USE_DOUBLE) || defined(USE_MIXED_PRECISION)
+#if defined(EULER_KOKKOS_USE_DOUBLE) || defined(EULER_KOKKOS_USE_MIXED_PRECISION)
 #  define COPYSIGN(x, y) copysign(x, y)
 #else
 #  define COPYSIGN(x, y) copysignf(x, y)
-#endif // USE_DOUBLE
+#endif // EULER_KOKKOS_USE_DOUBLE
 
 // other useful macros
 #define SQR(x) ((x) * (x))

@@ -4,8 +4,9 @@
 macro(MPI_TEST_ADD_EXEC test_name)
   set(EXE_NAME ${test_name})
   add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
-  target_link_libraries(${EXE_NAME} PRIVATE EulerKokkos::monitoring
-                                            EulerKokkos::mpiUtils)
+  target_link_libraries(
+    ${EXE_NAME} PRIVATE Kokkos::kokkos EulerKokkos::monitoring
+                        EulerKokkos::mpiUtils)
 endmacro(MPI_TEST_ADD_EXEC)
 
 #

@@ -8,6 +8,7 @@
 #ifndef HYDRO_PARAMS_H_
 #define HYDRO_PARAMS_H_
 
+#include <shared/euler_kokkos_config.h>
 #include "shared/kokkos_shared.h"
 #include "shared/real_type.h"
 #include "utils/config/ConfigMap.h"
@@ -18,13 +19,16 @@
 
 #include "shared/enums.h"
 
-#ifdef USE_MPI
-#  include "utils/mpiUtils/MpiCommCart.h"
-#endif // USE_MPI
+#include <utils/mpi/ParallelEnv.h>
+#ifdef EULER_KOKKOS_USE_MPI
+#  include <utils/mpi/MpiCommCart.h>
+#endif // EULER_KOKKOS_USE_MPI
 
 namespace euler_kokkos
 {
 
+// ==================================================================================
+// ==================================================================================
 struct HydroSettings
 {
 
@@ -64,16 +68,19 @@ struct HydroSettings
 
 }; // struct HydroSettings
 
+// ==================================================================================
+// ==================================================================================
+DimensionType
+get_dim(ConfigMap const & configMap);
+
+// ==================================================================================
+// ==================================================================================
 /**
  * Hydro Parameters (declaration).
  */
-struct HydroParams
+class HydroParams
 {
-
-#ifdef USE_MPI
-  using MpiCommCart = hydroSimu::MpiCommCart;
-#endif // USE_MPI
-
+public:
   // run parameters
   int    nStepmax;     /*!< maximum number of time steps. */
   real_t tEnd;         /*!< end of simulation time. */
@@ -131,16 +138,12 @@ struct HydroParams
   // other parameters
   int implementationVersion = 0; /*!< triggers which implementation to use (currently 3 versions)*/
 
-#ifdef USE_MPI
-  //! runtime determination if we are using float ou double (for MPI communication)
-  //! initialized in constructor to either MpiComm::FLOAT or MpiComm::DOUBLE
-  int data_type;
+#ifdef EULER_KOKKOS_USE_MPI
+  //! parallel environment
+  ParallelEnv & par_env;
 
   //! size of the MPI cartesian grid
   int mx, my, mz;
-
-  //! MPI communicator in a cartesian virtual topology
-  MpiCommCart * communicator;
 
   //! number of dimension
   int nDim;
@@ -164,72 +167,32 @@ struct HydroParams
   //! neighbor MPI processes)
   Kokkos::Array<BoundaryConditionType, 6> neighborsBC;
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
-  HydroParams()
-    : nStepmax(0)
-    , tEnd(0.0)
-    , nOutput(0)
-    , enableOutput(true)
-    , mhdEnabled(false)
-    , nlog(10)
-    , nx(0)
-    , ny(0)
-    , nz(0)
-    , ghostWidth(2)
-    , nbvar(4)
-    , dimType(TWO_D)
-    , imin(0)
-    , imax(0)
-    , jmin(0)
-    , jmax(0)
-    , kmin(0)
-    , kmax(0)
-    , isize(0)
-    , jsize(0)
-    , ksize(0)
-    , xmin(0.0)
-    , xmax(1.0)
-    , ymin(0.0)
-    , ymax(1.0)
-    , zmin(0.0)
-    , zmax(1.0)
-    , dx(0.0)
-    , dy(0.0)
-    , dz(0.0)
-    , boundary_type_xmin(BC_UNDEFINED)
-    , boundary_type_xmax(BC_UNDEFINED)
-    , boundary_type_ymin(BC_UNDEFINED)
-    , boundary_type_ymax(BC_UNDEFINED)
-    , boundary_type_zmin(BC_UNDEFINED)
-    , boundary_type_zmax(BC_UNDEFINED)
-    , ioVTK(true)
-    , ioHDF5(false)
-    , settings()
-    , niter_riemann(10)
-    , riemannSolverType()
-    , implementationVersion(0)
-#ifdef USE_MPI
-  // init MPI-specific parameters...
-#endif // USE_MPI
-  {}
+  HydroParams(ConfigMap const & configMap, ParallelEnv & par_env_);
 
   virtual ~HydroParams() {}
 
-  //! This is the genuine initialization / setup (fed by parameter file)
-  virtual void
-  setup(ConfigMap & map);
-
-#ifdef USE_MPI
-  //! Initialize MPI-specific parameters
-  void
-  setup_mpi(ConfigMap & map);
-#endif // USE_MPI
-
-  void
-  init();
   void
   print();
+
+private:
+  void
+  init();
+
+#ifdef EULER_KOKKOS_USE_MPI
+  //! Initialize MPI-specific parameters
+  void
+  setup_mpi(ConfigMap const & map);
+
+public:
+  MpiComm &
+  communicator()
+  {
+    return par_env.comm();
+  }
+#endif // EULER_KOKKOS_USE_MPI
+
 
 }; // struct HydroParams
 

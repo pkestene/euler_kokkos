@@ -7,15 +7,16 @@
 #include <map>
 #include <string>
 
+#include <shared/euler_kokkos_config.h>
 #include <shared/kokkos_shared.h>
 // class HydroParams;
 // class ConfigMap;
 #include "shared/HydroParams.h"
 #include "utils/config/ConfigMap.h"
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 #  include "utils/mpiUtils/MpiComm.h"
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 // for Parallel-netCDF support
 #include <pnetcdf.h>

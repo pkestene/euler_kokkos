@@ -6,13 +6,13 @@
 
 #include "IO_VTK.h"
 
-#ifdef USE_HDF5
+#ifdef EULER_KOKKOS_USE_HDF5
 #  include "IO_HDF5.h"
 #endif
 
-#ifdef USE_PNETCDF
+#ifdef EULER_KOKKOS_USE_PNETCDF
 #  include "IO_PNETCDF.h"
-#endif // USE_PNETCDF
+#endif // EULER_KOKKOS_USE_PNETCDF
 
 namespace euler_kokkos
 {
@@ -85,19 +85,19 @@ IO_ReadWrite::save_data_impl(DataArray2d             Udata,
   if (vtk_enabled)
   {
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     save_VTK_2D_mpi(
       Udata, Uhost, params, configMap, params.nbvar, variables_names, iStep, debug_name);
 #else
     save_VTK_2D(Udata, Uhost, params, configMap, params.nbvar, variables_names, iStep, debug_name);
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
   }
 
-#ifdef USE_HDF5
+#ifdef EULER_KOKKOS_USE_HDF5
   if (hdf5_enabled)
   {
 
-#  ifdef USE_MPI
+#  ifdef EULER_KOKKOS_USE_MPI
     euler_kokkos::io::Save_HDF5_mpi<TWO_D> writer(
       Udata, Uhost, params, configMap, HYDRO_2D_NBVAR, variables_names, iStep, time, debug_name);
     writer.save();
@@ -105,18 +105,18 @@ IO_ReadWrite::save_data_impl(DataArray2d             Udata,
     euler_kokkos::io::Save_HDF5<TWO_D> writer(
       Udata, Uhost, params, configMap, HYDRO_2D_NBVAR, variables_names, iStep, time, debug_name);
     writer.save();
-#  endif // USE_MPI
+#  endif // EULER_KOKKOS_USE_MPI
   }
-#endif // USE_HDF5
+#endif // EULER_KOKKOS_USE_HDF5
 
-#ifdef USE_PNETCDF
+#ifdef EULER_KOKKOS_USE_PNETCDF
   if (pnetcdf_enabled)
   {
     euler_kokkos::io::Save_PNETCDF<TWO_D> writer(
       Udata, Uhost, params, configMap, HYDRO_2D_NBVAR, variables_names, iStep, time, debug_name);
     writer.save();
   }
-#endif // USE_PNETCDF
+#endif // EULER_KOKKOS_USE_PNETCDF
 
 } // IO_ReadWrite::save_data_impl
 
@@ -133,19 +133,19 @@ IO_ReadWrite::save_data_impl(DataArray3d             Udata,
   if (vtk_enabled)
   {
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     save_VTK_3D_mpi(
       Udata, Uhost, params, configMap, params.nbvar, variables_names, iStep, debug_name);
 #else
     save_VTK_3D(Udata, Uhost, params, configMap, params.nbvar, variables_names, iStep, debug_name);
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
   }
 
-#ifdef USE_HDF5
+#ifdef EULER_KOKKOS_USE_HDF5
   if (hdf5_enabled)
   {
 
-#  ifdef USE_MPI
+#  ifdef EULER_KOKKOS_USE_MPI
     euler_kokkos::io::Save_HDF5_mpi<THREE_D> writer(
       Udata, Uhost, params, configMap, HYDRO_3D_NBVAR, variables_names, iStep, time, debug_name);
     writer.save();
@@ -153,18 +153,18 @@ IO_ReadWrite::save_data_impl(DataArray3d             Udata,
     euler_kokkos::io::Save_HDF5<THREE_D> writer(
       Udata, Uhost, params, configMap, HYDRO_3D_NBVAR, variables_names, iStep, time, debug_name);
     writer.save();
-#  endif // USE_MPI
+#  endif // EULER_KOKKOS_USE_MPI
   }
-#endif // USE_HDF5
+#endif // EULER_KOKKOS_USE_HDF5
 
-#ifdef USE_PNETCDF
+#ifdef EULER_KOKKOS_USE_PNETCDF
   if (pnetcdf_enabled)
   {
     euler_kokkos::io::Save_PNETCDF<THREE_D> writer(
       Udata, Uhost, params, configMap, HYDRO_2D_NBVAR, variables_names, iStep, time, debug_name);
     writer.save();
   }
-#endif // USE_PNETCDF
+#endif // EULER_KOKKOS_USE_PNETCDF
 
 } // IO_ReadWrite::save_data_impl
 
@@ -210,7 +210,8 @@ IO_ReadWrite::load_data_impl(DataArray2d             Udata,
   std::string h5Suffix(".h5");
   std::string ncSuffix(".nc"); // pnetcdf file only available when MPI is activated
 
-  bool isHdf5 = false, isNcdf = false;
+  bool                  isHdf5 = false;
+  [[maybe_unused]] bool isNcdf = false;
   if (inputFilename.length() >= 3)
   {
     isHdf5 = (0 == inputFilename.compare(
@@ -219,11 +220,11 @@ IO_ReadWrite::load_data_impl(DataArray2d             Udata,
                      inputFilename.length() - ncSuffix.length(), ncSuffix.length(), ncSuffix));
   }
 
-#ifdef USE_HDF5
+#ifdef EULER_KOKKOS_USE_HDF5
   if (hdf5_enabled and isHdf5)
   {
 
-#  ifdef USE_MPI
+#  ifdef EULER_KOKKOS_USE_MPI
     euler_kokkos::io::Load_HDF5_mpi<TWO_D> reader(
       Udata, params, configMap, HYDRO_2D_NBVAR, variables_names);
     reader.load(inputFilename);
@@ -231,12 +232,12 @@ IO_ReadWrite::load_data_impl(DataArray2d             Udata,
     euler_kokkos::io::Load_HDF5<TWO_D> reader(
       Udata, params, configMap, HYDRO_2D_NBVAR, variables_names);
     reader.load(inputFilename);
-#  endif // USE_MPI
+#  endif // EULER_KOKKOS_USE_MPI
 
     iStep = reader.iStep;
     time = reader.totalTime;
   }
-#endif // USE_HDF5
+#endif // EULER_KOKKOS_USE_HDF5
 
 } // IO_ReadWrite::load_data_impl - 2d
 
@@ -256,7 +257,8 @@ IO_ReadWrite::load_data_impl(DataArray3d             Udata,
   std::string h5Suffix(".h5");
   std::string ncSuffix(".nc"); // pnetcdf file only available when MPI is activated
 
-  bool isHdf5 = false, isNcdf = false;
+  bool                  isHdf5 = false;
+  [[maybe_unused]] bool isNcdf = false;
   if (inputFilename.length() >= 3)
   {
     isHdf5 = (0 == inputFilename.compare(
@@ -265,11 +267,11 @@ IO_ReadWrite::load_data_impl(DataArray3d             Udata,
                      inputFilename.length() - ncSuffix.length(), ncSuffix.length(), ncSuffix));
   }
 
-#ifdef USE_HDF5
+#ifdef EULER_KOKKOS_USE_HDF5
   if (hdf5_enabled and isHdf5)
   {
 
-#  ifdef USE_MPI
+#  ifdef EULER_KOKKOS_USE_MPI
     euler_kokkos::io::Load_HDF5_mpi<THREE_D> reader(
       Udata, params, configMap, HYDRO_3D_NBVAR, variables_names);
     reader.load(inputFilename);
@@ -277,12 +279,12 @@ IO_ReadWrite::load_data_impl(DataArray3d             Udata,
     euler_kokkos::io::Load_HDF5<THREE_D> reader(
       Udata, params, configMap, HYDRO_3D_NBVAR, variables_names);
     reader.load(inputFilename);
-#  endif // USE_MPI
+#  endif // EULER_KOKKOS_USE_MPI
 
     iStep = reader.iStep;
     time = reader.totalTime;
   }
-#endif // USE_HDF5
+#endif // EULER_KOKKOS_USE_HDF5
 
 } // IO_ReadWrite::load_data_impl - 3d
 

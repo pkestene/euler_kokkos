@@ -286,9 +286,9 @@ SolverHydroMuscl<dim>::SolverHydroMuscl(HydroParams & params, ConfigMap & config
   compute_dt();
 
   int myRank = 0;
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   myRank = params.myRank;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   if (myRank == 0)
   {
@@ -514,9 +514,9 @@ SolverHydroMuscl<dim>::init_restart(DataArray Udata)
 {
 
   int myRank = 0;
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   myRank = params.myRank;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   // load data
   auto reader = std::make_shared<io::IO_ReadWrite>(params, configMap, m_variables_names);
@@ -640,9 +640,9 @@ SolverHydroMuscl<dim>::next_iteration_impl()
 
   int myRank = 0;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   myRank = params.myRank;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   if (m_iteration % m_nlog == 0)
   {

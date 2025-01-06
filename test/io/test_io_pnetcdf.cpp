@@ -7,18 +7,21 @@
 #include <type_traits> // for std::conditional
 
 // minimal kokkos support
-#include "shared/kokkos_shared.h"
+#include <shared/kokkos_shared.h>
 
-#include "shared/HydroState.h"  // for constants
-#include "shared/real_type.h"   // choose between single and double precision
-#include "shared/HydroParams.h" // read parameter file
+#include <shared/HydroState.h>  // for constants
+#include <shared/real_type.h>   // choose between single and double precision
+#include <shared/HydroParams.h> // read parameter file
+
+#include <utils/mpi/ParallelEnv.h>
 
 // MPI support
-#include "utils/mpiUtils/GlobalMpiSession.h"
-#include <mpi.h>
+#ifdef EULER_KOKKOS_USE_MPI
+#  include <mpi.h>
+#endif // EULER_KOKKOS_USE_MPI
 
 // PNETCDF IO implementation (to be tested)
-#include "utils/io/IO_PNETCDF.h"
+#include <utils/io/IO_PNETCDF.h>
 
 namespace euler_kokkos
 {
@@ -51,8 +54,13 @@ public:
     const int nx = params.nx;
     const int ny = params.ny;
 
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
+#else
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+#endif // EULER_KOKKOS_USE_MPI
 
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
@@ -85,9 +93,15 @@ public:
     const int ny = params.ny;
     const int nz = params.nz;
 
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
+#else
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+    const int k_mpi = 0;
+#endif // EULER_KOKKOS_USE_MPI
 
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
@@ -125,16 +139,13 @@ public:
 // ===========================================================
 // ===========================================================
 void
-run_test_pnetcdf(const std::string input_filename)
+run_test_pnetcdf(ParallelEnv & par_env, const std::string input_filename)
 {
-
-  int mpi_rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
   ConfigMap configMap(input_filename);
 
   // test: create a HydroParams object
-  HydroParams params = HydroParams();
+  auto params = HydroParams(configMap, par_env);
   params.setup(configMap);
 
   std::map<int, std::string> var_names;
@@ -150,11 +161,11 @@ run_test_pnetcdf(const std::string input_filename)
   if (params.nz == 1)
   {
 
-    if (mpi_rank == 0)
-      std::cout << "2D test\n";
+    if (par_env.rank() == 0)
+      std::cout << "2D test - create data\n";
 
-    DataArray2d     data("data", params.isize, params.jsize, HYDRO_2D_NBVAR);
-    DataArray2dHost data_host = Kokkos::create_mirror(data);
+    auto data = DataArray2d("data", params.isize, params.jsize, HYDRO_2D_NBVAR);
+    auto data_host = Kokkos::create_mirror(data);
 
     // create fake data
     InitData<2> functor(params, data);
@@ -173,7 +184,7 @@ run_test_pnetcdf(const std::string input_filename)
   if (params.nz > 1)
   {
 
-    if (mpi_rank == 0)
+    if (par_env.rank() == 0)
       std::cout << "3D test\n";
 
     DataArray3d     data("data", params.isize, params.jsize, params.ksize, HYDRO_3D_NBVAR);
@@ -184,6 +195,7 @@ run_test_pnetcdf(const std::string input_filename)
     Kokkos::parallel_for(
       "InitData<3>", Kokkos::RangePolicy<>(0, params.isize * params.jsize * params.ksize), functor);
 
+    // ================ save to file =======================
     // save to file
     io::Save_PNETCDF<THREE_D> writer(
       data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, 0.0, "");
@@ -199,47 +211,18 @@ run_test_pnetcdf(const std::string input_filename)
 int
 main(int argc, char * argv[])
 {
+  auto par_env = euler_kokkos::ParallelEnv(argc, argv);
 
-  // Create MPI session if MPI enabled
-  hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
+  // if (argc != 2) {
+  //   fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter
+  //   on the command line\n"); Kokkos::finalize(); exit(EXIT_FAILURE);
+  // }
 
-  Kokkos::initialize(argc, argv);
+  // read parameter file and initialize parameter
+  // parse parameters from input file
+  std::string input_filename = std::string(argv[1]);
 
-  {
-    int mpi_rank = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-    if (mpi_rank == 0)
-    {
-      std::cout << "##########################\n";
-      std::cout << "KOKKOS CONFIG             \n";
-      std::cout << "##########################\n";
-
-      std::ostringstream msg;
-      std::cout << "Kokkos configuration" << std::endl;
-      if (Kokkos::hwloc::available())
-      {
-        msg << "hwloc( NUMA[" << Kokkos::hwloc::get_available_numa_count() << "] x CORE["
-            << Kokkos::hwloc::get_available_cores_per_numa() << "] x HT["
-            << Kokkos::hwloc::get_available_threads_per_core() << "] )" << std::endl;
-      }
-      Kokkos::print_configuration(msg);
-      std::cout << msg.str();
-      std::cout << "##########################\n";
-    }
-
-    // if (argc != 2) {
-    //   fprintf(stderr, "Error: wrong number of argument; input filename must be the only parameter
-    //   on the command line\n"); Kokkos::finalize(); exit(EXIT_FAILURE);
-    // }
-
-    // read parameter file and initialize parameter
-    // parse parameters from input file
-    std::string input_filename = std::string(argv[1]);
-
-    euler_kokkos::run_test_pnetcdf(input_filename);
-  }
-
-  Kokkos::finalize();
+  euler_kokkos::run_test_pnetcdf(par_env, input_filename);
 
   return EXIT_SUCCESS;
 

@@ -2,10 +2,6 @@
  * \file ConfigMap.h
  * \brief Define an object will allow to easily retrieve parameter from a dictionary.
  *
- * \date 12 November 2010
- * \author Pierre Kestener.
- *
- * $Id: ConfigMap.h 1783 2012-02-21 10:20:07Z pkestene $
  */
 #ifndef CONFIG_MAP_H_
 #define CONFIG_MAP_H_

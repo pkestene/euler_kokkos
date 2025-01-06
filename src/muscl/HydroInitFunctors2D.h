@@ -6,6 +6,7 @@
 #  include <math_constants.h> // for cuda math constants, e.g. CUDART_INF
 #endif                        // __CUDA_ARCH__
 
+#include <shared/euler_kokkos_config.h>
 #include "shared/kokkos_shared.h"
 #include "HydroBaseFunctor2D.h"
 
@@ -56,7 +57,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
 #else
@@ -150,7 +151,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
 #else
@@ -238,7 +239,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
 #else
@@ -373,7 +374,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
 #else
@@ -495,7 +496,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
 #else
@@ -593,7 +594,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
 #else
@@ -696,7 +697,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
 #else

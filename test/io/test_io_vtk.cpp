@@ -13,11 +13,12 @@
 #include "shared/real_type.h"   // choose between single and double precision
 #include "shared/HydroParams.h" // read parameter file
 
+#include <utils/mpi/ParallelEnv.h>
+
 // MPI support
-#ifdef USE_MPI
-#  include "utils/mpiUtils/GlobalMpiSession.h"
+#ifdef EULER_KOKKOS_USE_MPI
 #  include <mpi.h>
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 // VTK IO implementation (to be tested)
 #include "utils/io/IO_VTK.h"
@@ -53,13 +54,13 @@ public:
     const int nx = params.nx;
     const int ny = params.ny;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
 #else
     const int i_mpi = 0;
     const int j_mpi = 0;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
@@ -89,7 +90,7 @@ public:
     const int ny = params.ny;
     const int nz = params.nz;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
@@ -97,7 +98,7 @@ public:
     const int i_mpi = 0;
     const int j_mpi = 0;
     const int k_mpi = 0;
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
     const real_t xmin = params.xmin;
     const real_t ymin = params.ymin;
@@ -125,14 +126,12 @@ public:
 // ===========================================================
 // ===========================================================
 void
-run_test_vtk(const std::string input_filename)
+run_test_vtk(ParallelEnv & par_env, const std::string input_filename)
 {
-
   ConfigMap configMap(input_filename);
 
   // test: create a HydroParams object
-  HydroParams params = HydroParams();
-  params.setup(configMap);
+  auto params = HydroParams(configMap, par_env);
 
   std::map<int, std::string> var_names;
   var_names[ID] = "rho";
@@ -158,7 +157,7 @@ run_test_vtk(const std::string input_filename)
       "InitData<2>", Kokkos::RangePolicy<>(0, params.isize * params.jsize), functor);
 
     // save to file
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     // io::save_VTK_2D_mpi(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, "");
 #else
     io::save_VTK_2D(data, data_host, params, configMap, HYDRO_2D_NBVAR, var_names, 0, "");
@@ -182,7 +181,7 @@ run_test_vtk(const std::string input_filename)
       "InitData<3>", Kokkos::RangePolicy<>(0, params.isize * params.jsize * params.ksize), functor);
 
     // save to file
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     // io::save_VTK_3D_mpi(data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, "");
 #else
     io::save_VTK_3D(data, data_host, params, configMap, HYDRO_3D_NBVAR, var_names, 0, "");
@@ -199,43 +198,13 @@ int
 main(int argc, char * argv[])
 {
 
-  // Create MPI session if MPI enabled
-#ifdef USE_MPI
-  hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
-#endif // USE_MPI
-
-  Kokkos::initialize(argc, argv);
-
-  int mpi_rank = 0;
-#ifdef USE_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-#endif
-
-  if (mpi_rank == 0)
-  {
-    std::cout << "##########################\n";
-    std::cout << "KOKKOS CONFIG             \n";
-    std::cout << "##########################\n";
-
-    std::ostringstream msg;
-    std::cout << "Kokkos configuration" << std::endl;
-    if (Kokkos::hwloc::available())
-    {
-      msg << "hwloc( NUMA[" << Kokkos::hwloc::get_available_numa_count() << "] x CORE["
-          << Kokkos::hwloc::get_available_cores_per_numa() << "] x HT["
-          << Kokkos::hwloc::get_available_threads_per_core() << "] )" << std::endl;
-    }
-    Kokkos::print_configuration(msg);
-    std::cout << msg.str();
-    std::cout << "##########################\n";
-  }
+  auto par_env = euler_kokkos::ParallelEnv(argc, argv);
 
   if (argc != 2)
   {
     fprintf(stderr,
             "Error: wrong number of argument; input filename must be the only parameter on the "
             "command line\n");
-    Kokkos::finalize();
     exit(EXIT_FAILURE);
   }
 
@@ -243,9 +212,7 @@ main(int argc, char * argv[])
   // parse parameters from input file
   std::string input_filename = std::string(argv[1]);
 
-  euler_kokkos::run_test_vtk(input_filename);
-
-  Kokkos::finalize();
+  euler_kokkos::run_test_vtk(par_env, input_filename);
 
   return EXIT_SUCCESS;
-}
+} // main

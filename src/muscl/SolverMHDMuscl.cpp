@@ -22,7 +22,7 @@ SolverMHDMuscl<2>::make_boundaries(DataArray Udata)
 
   bool mhd_enabled = true;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 
   make_boundaries_mpi(Udata, mhd_enabled);
 
@@ -30,7 +30,7 @@ SolverMHDMuscl<2>::make_boundaries(DataArray Udata)
 
   make_boundaries_serial(Udata, mhd_enabled);
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 } // SolverMHDMuscl<2>::make_boundaries
 
@@ -47,7 +47,7 @@ SolverMHDMuscl<3>::make_boundaries(DataArray Udata)
 
   bool mhd_enabled = true;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 
   make_boundaries_mpi(Udata, mhd_enabled);
 
@@ -55,7 +55,7 @@ SolverMHDMuscl<3>::make_boundaries(DataArray Udata)
 
   make_boundaries_serial(Udata, mhd_enabled);
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 } // SolverMHDMuscl<3>::make_boundaries
 

@@ -1,6 +1,7 @@
 #ifndef SOLVER_BASE_H_
 #define SOLVER_BASE_H_
 
+#include <shared/euler_kokkos_config.h> // for EULER_KOKKOS_USE_HDF5, ...
 #include "shared/HydroParams.h"
 #include "utils/config/ConfigMap.h"
 #include "shared/kokkos_shared.h"
@@ -194,7 +195,7 @@ public:
   virtual void
   make_boundaries_serial(DataArray3d Udata, bool mhd_enabled);
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   virtual void
   make_boundaries_mpi(DataArray2d Udata, bool mhd_enabled);
   virtual void
@@ -215,7 +216,7 @@ public:
   void
   copy_boundaries_back(DataArray3d Udata, BoundaryLocation loc);
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   //! initialize m_io_writer (can be override in a derived class)
   virtual void
@@ -225,7 +226,7 @@ protected:
   //! io writer
   std::shared_ptr<io::IO_ReadWriteBase> m_io_reader_writer;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   //! \defgroup BorderBuffer data arrays for border exchange handling
   //! we assume that we use a cuda-aware version of OpenMPI / MVAPICH
   //! @{
@@ -253,7 +254,7 @@ protected:
   DataArray3d borderBufRecv_zmin_3d;
   DataArray3d borderBufRecv_zmax_3d;
   //! @}
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 }; // class SolverBase
 

@@ -1,6 +1,18 @@
 # set minimal version the one requested by kokkos
 cmake_minimum_required(VERSION 3.18)
 
+# The ``target_sources()`` command converts relative paths to absolute.
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
+  message(STATUS "Setting policy CMP0076 to use new behavior")
+  cmake_policy(SET CMP0076 NEW)
+endif()
+
+# CMake 3.24 and above prefers to set the timestamps of all extracted contents
+# to the time of the extraction.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+
 #
 # default local cmake macro repository
 #
@@ -43,7 +55,22 @@ unset(PROJECT_LANGUAGES)
 
 set(PROJECT_LANGUAGES ${PROJECT_LANGUAGES} C CXX)
 
-project(euler_kokkos LANGUAGES ${PROJECT_LANGUAGES})
+set(EULER_KOKKOS_VERSION "0.9.0")
+
+# deduce EULER_KOKKOS_SHORT_VERSION using regex
+string(REGEX MATCH "^[0-9]+\.[0-9]+\.[0-9]+" EULER_KOKKOS_SHORT_VERSION
+             ${EULER_KOKKOS_VERSION})
+if("${EULER_KOKKOS_SHORT_VERSION}" STREQUAL "")
+  message(
+    FATAL_ERROR
+      "Unable to compute short version from EULER_KOKKOS_VERSION=${EULER_KOKKOS_VERSION}"
+  )
+endif()
+
+project(
+  euler_kokkos
+  VERSION ${EULER_KOKKOS_SHORT_VERSION}
+  LANGUAGES ${PROJECT_LANGUAGES})
 
 # Documentation type
 if(EULER_KOKKOS_BUILD_DOC)
@@ -67,55 +94,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# ##############################################################################
 #
-# Write a small header with build data, git version, etc...
+# check MPI, VTK, HDF5, PNETCDF, ...
 #
-include(write_version)
-
 # ##############################################################################
-# External packages: MPI, ...
-# ##############################################################################
-
-# ##############################################################################
-# find_package(MPI REQUIRED)
-find_package(MPI)
-if(EULER_KOKKOS_USE_MPI)
-  if(MPI_CXX_FOUND)
-    message(STATUS "MPI support found")
-    message(STATUS "MPI compile flags: " ${MPI_CXX_COMPILE_FLAGS})
-    message(STATUS "MPI include path: " ${MPI_CXX_INCLUDE_PATH})
-    message(STATUS "MPI LINK flags path: " ${MPI_CXX_LINK_FLAGS})
-    message(STATUS "MPI libraries: " ${MPI_CXX_LIBRARIES})
-
-    # set(CMAKE_EXE_LINKER_FLAGS ${MPI_CXX_LINK_FLAGS})
-    find_program(
-      OMPI_INFO
-      NAMES ompi_info
-      HINTS ${MPI_CXX_LIBRARIES}/../bin)
-
-    # Full command line to probe if cuda support in MPI implementation is
-    # enabled ompi_info --parsable --all | grep
-    # mpi_built_with_cuda_support:value
-    if(OMPI_INFO)
-      execute_process(COMMAND ${OMPI_INFO} OUTPUT_VARIABLE _output)
-      if((_output MATCHES "smcuda") OR (EULER_KOKKOS_USE_MPI_CUDA_AWARE_ENFORCED
-                                       ))
-        set(MPI_CUDA_AWARE_ENABLED True)
-        message(STATUS "Found OpenMPI with CUDA support built.")
-      else()
-        set(MPI_CUDA_AWARE_ENABLED False)
-        message(WARNING "OpenMPI found, but it is not built with CUDA support.")
-        add_compile_options(-DMPI_CUDA_AWARE_OFF)
-      endif()
-    endif()
-  else()
-    message(
-      WARNING
-        "Not compiling with MPI. Suppress this warning with -DEULER_KOKKOS_USE_MPI=OFF"
-    )
-    set(EULER_KOKKOS_USE_MPI OFF)
-  endif()
-endif()
+include(cmake/config_mpi.cmake)
 
 if(EULER_KOKKOS_USE_VTK)
   # look for VTK only if requested; VTK macro might even be not present on the
@@ -149,22 +133,7 @@ endif(EULER_KOKKOS_USE_VTK)
 # ##############################################################################
 # HDF5
 # ##############################################################################
-# prefer using parallel HDF5 when build with mpi
-if(EULER_KOKKOS_USE_MPI)
-  set(HDF5_PREFER_PARALLEL TRUE)
-endif(EULER_KOKKOS_USE_MPI)
-
-if(EULER_KOKKOS_USE_HDF5)
-  find_package(HDF5)
-  if(HDF5_FOUND)
-    include_directories(${HDF5_INCLUDE_DIRS})
-    set(MY_HDF5_LIBS hdf5 hdf5_cpp)
-    add_compile_options(-DUSE_HDF5)
-    if(HDF5_IS_PARALLEL)
-      add_compile_options(-DUSE_HDF5_PARALLEL)
-    endif()
-  endif(HDF5_FOUND)
-endif(EULER_KOKKOS_USE_HDF5)
+include(cmake/config_hdf5.cmake)
 
 # ##############################################################################
 # PNETCDF
@@ -185,38 +154,6 @@ endif(EULER_KOKKOS_USE_MPI)
 include(build_or_find_kokkos)
 
 #
-# if MPI is enabled and kokkos backend is cuda, we need a cuda aware
-# implementation
-#
-if(EULER_KOKKOS_USE_MPI)
-
-  if(MPI_FOUND
-     AND (EULER_KOKKOS_BACKEND MATCHES "Cuda")
-     AND (NOT MPI_CUDA_AWARE_ENABLED))
-
-    message(FATAL_ERROR "You must use a cuda-aware MPI implementation.")
-
-  endif()
-
-endif()
-
-#
-# common flags
-#
-
-if(EULER_KOKKOS_USE_DOUBLE)
-  add_compile_options(-DUSE_DOUBLE)
-endif()
-
-if(EULER_KOKKOS_USE_MPI)
-  add_compile_options(-DUSE_MPI)
-endif()
-
-if(EULER_KOKKOS_USE_FPE_DEBUG)
-  add_compile_options(-DUSE_FPE_DEBUG)
-endif()
-
-#
 # Using flags -Wextra, it's to strong for Kokkos, too many warnings But -Wall is
 # really a minimum
 #
@@ -224,6 +161,11 @@ endif()
 # -Wold-style-cast -Wcast-align -Wcast-qual -Wunused -Woverloaded-virtual
 # -pedantic ) add_definitions( -Wall -Wextra )
 add_definitions(-Wall)
+
+# Generate euler_kokkos_config.h and euler_kokkos_version.h (with git info and
+# build date)
+#
+include(cmake/generate_config_h.cmake)
 
 #
 # sources

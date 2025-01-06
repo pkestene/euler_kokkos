@@ -3,10 +3,6 @@
  * \brief A simple derive class of MpiComm to handle cartesian
  * topology.
  *
- * \date 5 Oct 2010
- * \author Pierre Kestener
- *
- * $Id: MpiCommCart.h 1783 2012-02-21 10:20:07Z pkestene $
  */
 #ifndef MPI_COMM_CART_H_
 #define MPI_COMM_CART_H_
@@ -14,7 +10,7 @@
 #include "MpiComm.h"
 #include "mpiEnums.h"
 
-namespace hydroSimu
+namespace euler_kokkos
 {
 
 /**
@@ -72,7 +68,7 @@ inline int
 MpiCommCart::getDim() const
 {
   int ndims;
-  errCheck(MPI_Cartdim_get(comm_, &ndims), "MPI_Cartdim_get");
+  CHECK_MPI_ERR(::MPI_Cartdim_get(this->get_MPI_Comm(), &ndims));
   return ndims;
 }
 
@@ -81,9 +77,9 @@ MpiCommCart::getDim() const
 inline int
 MpiCommCart::getCartRank(const int coords[]) const
 {
-  int rank;
-  errCheck(MPI_Cart_rank(comm_, const_cast<int *>(coords), &rank), "MPI_Cart_rank");
-  return rank;
+  int my_rank;
+  CHECK_MPI_ERR(::MPI_Cart_rank(this->get_MPI_Comm(), const_cast<int *>(coords), &my_rank));
+  return my_rank;
 }
 
 // =======================================================
@@ -91,7 +87,7 @@ MpiCommCart::getCartRank(const int coords[]) const
 inline void
 MpiCommCart::getCoords(int rank, int maxdims, int coords[]) const
 {
-  errCheck(MPI_Cart_coords(comm_, rank, maxdims, coords), "MPI_Cart_coords");
+  CHECK_MPI_ERR(::MPI_Cart_coords(this->get_MPI_Comm(), rank, maxdims, coords));
 }
 
 // =======================================================
@@ -111,7 +107,7 @@ MpiCommCart::getMyCoords(int coords[])
 inline void
 MpiCommCart::shift(int direction, int disp, int & rank_source, int & rank_dest) const
 {
-  errCheck(MPI_Cart_shift(comm_, direction, disp, &rank_source, &rank_dest), "MPI_Cart_shift");
+  CHECK_MPI_ERR(::MPI_Cart_shift(this->get_MPI_Comm(), direction, disp, &rank_source, &rank_dest));
 }
 
 // =======================================================
@@ -184,6 +180,6 @@ MpiCommCart::getNeighborRank() const
   return rank;
 }
 
-} // namespace hydroSimu
+} // namespace euler_kokkos
 
 #endif // MPI_COMM_CART_H_

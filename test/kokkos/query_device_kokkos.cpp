@@ -46,9 +46,9 @@
 
 #include <Kokkos_Macros.hpp>
 
-#if defined(USE_MPI)
+#if defined(EULER_KOKKOS_USE_MPI)
 #  include <mpi.h>
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 #include <Kokkos_Core.hpp>
 
@@ -75,7 +75,7 @@ main(int argc, char ** argv)
   UNUSED(mpi_rank);
   UNUSED(nRanks);
 
-#if defined(USE_MPI)
+#if defined(EULER_KOKKOS_USE_MPI)
 
   MPI_Init(&argc, &argv);
 
@@ -84,7 +84,7 @@ main(int argc, char ** argv)
 
   msg << "MPI rank(" << mpi_rank << ") ";
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
   Kokkos::initialize(argc, argv);
 
@@ -130,7 +130,7 @@ main(int argc, char ** argv)
 
   Kokkos::finalize();
 
-#if defined(USE_MPI)
+#if defined(EULER_KOKKOS_USE_MPI)
 
   MPI_Finalize();
 

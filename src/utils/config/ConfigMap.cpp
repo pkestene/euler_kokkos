@@ -2,17 +2,14 @@
  * \file ConfigMap.cpp
  * \brief Implement ConfigMap, essentially a INIReader with additional get methods.
  *
- * \date 12 November 2010
- * \author Pierre Kestener.
- *
- * $Id: ConfigMap.cpp 1783 2012-02-21 10:20:07Z pkestene $
  */
+#include <shared/euler_kokkos_config.h> // for EULER_KOKKOS_USE_MPI
 #include "ConfigMap.h"
 #include <cstdlib> // for strtof
 #include <sstream>
 #include <fstream>
 
-#if USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 #  include <mpi.h>
 #endif
 
@@ -102,7 +99,7 @@ ConfigMap::setBool(std::string section, std::string name, bool value)
 ConfigMap
 broadcast_parameters(std::string filename)
 {
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 
   int myRank;
   int nTasks;
@@ -118,36 +115,55 @@ broadcast_parameters(std::string filename)
 
     // open file and go to the end to get file size in bytes
     std::ifstream filein(filename.c_str(), std::ifstream::ate);
-    int           file_size = filein.tellg();
+    if (filein.is_open())
+    {
+      int file_size = filein.tellg();
 
-    filein.seekg(0); // rewind
+      filein.seekg(0); // rewind
 
-    buffer_size = file_size;
-    buffer = new char[buffer_size];
+      buffer_size = file_size;
+      buffer = new char[buffer_size];
 
-    filein.read(buffer, buffer_size);
+      filein.read(buffer, buffer_size);
+    }
+    else
+    {
+      printf(
+        "Error : can't read input parameter file \"%s\"\nPlease check file actually exists !\n",
+        filename.c_str());
+    }
   }
 
   // broadcast buffer size (collective)
   MPI_Bcast(&buffer_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  // all other MPI task need to allocate buffer
-  if (myRank > 0)
+  if (buffer_size > 0)
   {
-    // printf("I'm rank %d allocating buffer of size %d\n",myRank,buffer_size);
-    buffer = new char[buffer_size];
+
+    // all other MPI task need to allocate buffer
+    if (myRank > 0)
+    {
+      // printf("I'm rank %d allocating buffer of size %d\n",myRank,buffer_size);
+      buffer = new char[buffer_size];
+    }
+
+    // broastcast buffer itself (collective)
+    MPI_Bcast(&buffer[0], buffer_size, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+    // now all MPI rank should have buffer filled, try to build a ConfigMap
+    ConfigMap configMap(buffer, buffer_size);
+
+    if (buffer)
+      delete[] buffer;
+
+    return configMap;
   }
 
-  // broastcast buffer itself (collective)
-  MPI_Bcast(&buffer[0], buffer_size, MPI_CHAR, 0, MPI_COMM_WORLD);
+  // return default configMap (surely not what we wanted)
+  char *    null_buffer;
+  ConfigMap defaultConfig(null_buffer, 0);
 
-  // now all MPI rank should have buffer filled, try to build a ConfigMap
-  ConfigMap configMap(buffer, buffer_size);
-
-  if (buffer)
-    delete[] buffer;
-
-  return configMap;
+  return defaultConfig;
 
 #else
   ConfigMap configMap(filename);

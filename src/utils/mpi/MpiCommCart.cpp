@@ -2,15 +2,11 @@
  * \file MpiCommCart.cpp
  * \brief Implements class MpiCommCart
  *
- * \date 5 Oct 2010
- * \author Pierre Kestener
- *
- * $Id: MpiCommCart.cpp 1783 2012-02-21 10:20:07Z pkestene $
  */
 
 #include "MpiCommCart.h"
 
-namespace hydroSimu
+namespace euler_kokkos
 {
 
 // =======================================================
@@ -28,15 +24,15 @@ MpiCommCart::MpiCommCart(int mx, int my, int isPeriodic, int allowReorder)
   int periods[NDIM_2D] = { isPeriodic, isPeriodic };
 
   // create virtual topology cartesian 2D
-  errCheck(MPI_Cart_create(MPI_COMM_WORLD, NDIM_2D, dims, periods, allowReorder, &comm_),
-           "MPI_Cart_create");
-  ;
+  MPI_Comm new_comm;
+  CHECK_MPI_ERR(::MPI_Cart_create(MPI_COMM_WORLD, NDIM_2D, dims, periods, allowReorder, &new_comm));
 
-  // fill nProc_ and myRank_
-  init();
+  // take ownership
+  this->comm_ptr.reset(new MPI_Comm(new_comm), comm_free());
 
-  // get cartesian coordinates (myCoords_) of current process (myRank_)
-  getCoords(myRank_, NDIM_2D, myCoords_);
+  // get cartesian coordinates (myCoords_) of current process
+  const auto my_rank = this->rank();
+  getCoords(my_rank, NDIM_2D, myCoords_);
 }
 
 // =======================================================
@@ -53,14 +49,15 @@ MpiCommCart::MpiCommCart(int mx, int my, int mz, int isPeriodic, int allowReorde
   int periods[NDIM_3D] = { isPeriodic, isPeriodic, isPeriodic };
 
   // create virtual topology cartesian 3D
-  errCheck(MPI_Cart_create(MPI_COMM_WORLD, NDIM_3D, dims, periods, allowReorder, &comm_),
-           "MPI_Cart_create");
+  MPI_Comm new_comm;
+  CHECK_MPI_ERR(::MPI_Cart_create(MPI_COMM_WORLD, NDIM_3D, dims, periods, allowReorder, &new_comm));
 
-  // fill nProc_ and myRank_
-  init();
+  // take ownership
+  this->comm_ptr.reset(new MPI_Comm(new_comm), comm_free());
 
-  // get cartesian coordinates (myCoords_) of current process (myRank_)
-  getCoords(myRank_, NDIM_3D, myCoords_);
+  // get cartesian coordinates (myCoords_) of current process
+  const auto my_rank = this->rank();
+  getCoords(my_rank, NDIM_3D, myCoords_);
 }
 
 // =======================================================
@@ -70,4 +67,4 @@ MpiCommCart::~MpiCommCart()
   delete[] myCoords_;
 }
 
-} // namespace hydroSimu
+} // namespace euler_kokkos

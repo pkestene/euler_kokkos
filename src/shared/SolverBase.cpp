@@ -3,10 +3,10 @@
 #include "shared/utils.h"
 #include "shared/BoundariesFunctors.h"
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 #  include "shared/mpiBorderUtils.h"
-#  include "utils/mpiUtils/MpiCommCart.h"
-#endif // USE_MPI
+#  include "utils/mpi/MpiCommCart.h"
+#endif // EULER_KOKKOS_USE_MPI
 
 #include "utils/io/IO_ReadWrite.h"
 
@@ -58,7 +58,7 @@ SolverBase::SolverBase(HydroParams & params, ConfigMap & configMap)
   // right now we moved that in SolverFactory's method create
   // init_io();
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   const int gw = params.ghostWidth;
   const int isize = params.isize;
   const int jsize = params.jsize;
@@ -93,7 +93,7 @@ SolverBase::SolverBase(HydroParams & params, ConfigMap & configMap)
     borderBufRecv_zmin_3d = DataArray3d("borderBufRecv_zmin", isize, jsize, gw, nbvar);
     borderBufRecv_zmax_3d = DataArray3d("borderBufRecv_zmax", isize, jsize, gw, nbvar);
   }
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 } // SolverBase::SolverBase
 
@@ -144,18 +144,17 @@ void
 SolverBase::compute_dt()
 {
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 
   // get local time step
   double dt_local = compute_dt_local();
 
   // synchronize all MPI processes
-  params.communicator->synchronize();
+  params.communicator().MPI_Barrier();
 
   // perform MPI_Reduceall to get global time step
   double dt_global;
-  params.communicator->allReduce(
-    &dt_local, &dt_global, 1, params.data_type, hydroSimu::MpiComm::MIN);
+  params.communicator().MPI_Allreduce<MpiComm::MIN>(&dt_local, &dt_global, 1);
 
   m_dt = dt_global;
 
@@ -531,14 +530,12 @@ SolverBase::make_boundaries_serial(DataArray3d Udata, bool mhd_enabled)
 
 } // SolverBase::make_boundaries_serial - 3d
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 // =======================================================
 // =======================================================
 void
 SolverBase::make_boundaries_mpi(DataArray2d Udata, bool mhd_enabled)
 {
-
-  using namespace hydroSimu;
 
   // for each direction:
   // 1. copy boundary to MPI buffer
@@ -569,7 +566,7 @@ SolverBase::make_boundaries_mpi(DataArray2d Udata, bool mhd_enabled)
     make_boundary(Udata, FACE_XMAX, mhd_enabled);
   }
 
-  params.communicator->synchronize();
+  params.communicator().MPI_Barrier();
 
   // ======
   // YDIR
@@ -595,7 +592,7 @@ SolverBase::make_boundaries_mpi(DataArray2d Udata, bool mhd_enabled)
     make_boundary(Udata, FACE_YMAX, mhd_enabled);
   }
 
-  params.communicator->synchronize();
+  params.communicator().MPI_Barrier();
 
 } // SolverBase::make_boundaries_mpi - 2d
 
@@ -604,8 +601,6 @@ SolverBase::make_boundaries_mpi(DataArray2d Udata, bool mhd_enabled)
 void
 SolverBase::make_boundaries_mpi(DataArray3d Udata, bool mhd_enabled)
 {
-
-  using namespace hydroSimu;
 
   // ======
   // XDIR
@@ -631,7 +626,7 @@ SolverBase::make_boundaries_mpi(DataArray3d Udata, bool mhd_enabled)
     make_boundary(Udata, FACE_XMAX, mhd_enabled);
   }
 
-  params.communicator->synchronize();
+  params.communicator().MPI_Barrier();
 
   // ======
   // YDIR
@@ -657,7 +652,7 @@ SolverBase::make_boundaries_mpi(DataArray3d Udata, bool mhd_enabled)
     make_boundary(Udata, FACE_YMAX, mhd_enabled);
   }
 
-  params.communicator->synchronize();
+  params.communicator().MPI_Barrier();
 
   // ======
   // ZDIR
@@ -683,7 +678,7 @@ SolverBase::make_boundaries_mpi(DataArray3d Udata, bool mhd_enabled)
     make_boundary(Udata, FACE_ZMAX, mhd_enabled);
   }
 
-  params.communicator->synchronize();
+  params.communicator().MPI_Barrier();
 
 } // SolverBase::make_boundaries_mpi - 3d
 
@@ -768,10 +763,6 @@ void
 SolverBase::transfer_boundaries_2d(Direction dir)
 {
 
-  const int data_type = params.data_type;
-
-  using namespace hydroSimu;
-
   /*
    * use MPI_Sendrecv
    */
@@ -781,52 +772,36 @@ SolverBase::transfer_boundaries_2d(Direction dir)
   if (dir == XDIR)
   {
 
-    params.communicator->sendrecv(borderBufSend_xmin_2d.data(),
-                                  borderBufSend_xmin_2d.size(),
-                                  data_type,
-                                  params.neighborsRank[X_MIN],
-                                  111,
-                                  borderBufRecv_xmax_2d.data(),
-                                  borderBufRecv_xmax_2d.size(),
-                                  data_type,
-                                  params.neighborsRank[X_MAX],
-                                  111);
+    params.communicator().MPI_Sendrecv(borderBufSend_xmin_2d,
+                                       params.neighborsRank[X_MIN],
+                                       111,
+                                       borderBufRecv_xmax_2d,
+                                       params.neighborsRank[X_MAX],
+                                       111);
 
-    params.communicator->sendrecv(borderBufSend_xmax_2d.data(),
-                                  borderBufSend_xmax_2d.size(),
-                                  data_type,
-                                  params.neighborsRank[X_MAX],
-                                  111,
-                                  borderBufRecv_xmin_2d.data(),
-                                  borderBufRecv_xmin_2d.size(),
-                                  data_type,
-                                  params.neighborsRank[X_MIN],
-                                  111);
+    params.communicator().MPI_Sendrecv(borderBufSend_xmax_2d,
+                                       params.neighborsRank[X_MAX],
+                                       111,
+                                       borderBufRecv_xmin_2d,
+                                       params.neighborsRank[X_MIN],
+                                       111);
   }
   else if (dir == YDIR)
   {
 
-    params.communicator->sendrecv(borderBufSend_ymin_2d.data(),
-                                  borderBufSend_ymin_2d.size(),
-                                  data_type,
-                                  params.neighborsRank[Y_MIN],
-                                  211,
-                                  borderBufRecv_ymax_2d.data(),
-                                  borderBufRecv_ymax_2d.size(),
-                                  data_type,
-                                  params.neighborsRank[Y_MAX],
-                                  211);
+    params.communicator().MPI_Sendrecv(borderBufSend_ymin_2d,
+                                       params.neighborsRank[Y_MIN],
+                                       211,
+                                       borderBufRecv_ymax_2d,
+                                       params.neighborsRank[Y_MAX],
+                                       211);
 
-    params.communicator->sendrecv(borderBufSend_ymax_2d.data(),
-                                  borderBufSend_ymax_2d.size(),
-                                  data_type,
-                                  params.neighborsRank[Y_MAX],
-                                  211,
-                                  borderBufRecv_ymin_2d.data(),
-                                  borderBufRecv_ymin_2d.size(),
-                                  data_type,
-                                  params.neighborsRank[Y_MIN],
-                                  211);
+    params.communicator().MPI_Sendrecv(borderBufSend_ymax_2d,
+                                       params.neighborsRank[Y_MAX],
+                                       211,
+                                       borderBufRecv_ymin_2d,
+                                       params.neighborsRank[Y_MIN],
+                                       211);
   }
 
 } // SolverBase::transfer_boundaries_2d
@@ -837,84 +812,56 @@ void
 SolverBase::transfer_boundaries_3d(Direction dir)
 {
 
-  const int data_type = params.data_type;
-
-  using namespace hydroSimu;
-
   if (dir == XDIR)
   {
 
-    params.communicator->sendrecv(borderBufSend_xmin_3d.data(),
-                                  borderBufSend_xmin_3d.size(),
-                                  data_type,
-                                  params.neighborsRank[X_MIN],
-                                  111,
-                                  borderBufRecv_xmax_3d.data(),
-                                  borderBufRecv_xmax_3d.size(),
-                                  data_type,
-                                  params.neighborsRank[X_MAX],
-                                  111);
+    params.communicator().MPI_Sendrecv(borderBufSend_xmin_3d,
+                                       params.neighborsRank[X_MIN],
+                                       111,
+                                       borderBufRecv_xmax_3d,
+                                       params.neighborsRank[X_MAX],
+                                       111);
 
-    params.communicator->sendrecv(borderBufSend_xmax_3d.data(),
-                                  borderBufSend_xmax_3d.size(),
-                                  data_type,
-                                  params.neighborsRank[X_MAX],
-                                  111,
-                                  borderBufRecv_xmin_3d.data(),
-                                  borderBufRecv_xmin_3d.size(),
-                                  data_type,
-                                  params.neighborsRank[X_MIN],
-                                  111);
+    params.communicator().MPI_Sendrecv(borderBufSend_xmax_3d,
+                                       params.neighborsRank[X_MAX],
+                                       111,
+                                       borderBufRecv_xmin_3d,
+                                       params.neighborsRank[X_MIN],
+                                       111);
   }
   else if (dir == YDIR)
   {
 
-    params.communicator->sendrecv(borderBufSend_ymin_3d.data(),
-                                  borderBufSend_ymin_3d.size(),
-                                  data_type,
-                                  params.neighborsRank[Y_MIN],
-                                  211,
-                                  borderBufRecv_ymax_3d.data(),
-                                  borderBufRecv_ymax_3d.size(),
-                                  data_type,
-                                  params.neighborsRank[Y_MAX],
-                                  211);
+    params.communicator().MPI_Sendrecv(borderBufSend_ymin_3d,
+                                       params.neighborsRank[Y_MIN],
+                                       211,
+                                       borderBufRecv_ymax_3d,
+                                       params.neighborsRank[Y_MAX],
+                                       211);
 
-    params.communicator->sendrecv(borderBufSend_ymax_3d.data(),
-                                  borderBufSend_ymax_3d.size(),
-                                  data_type,
-                                  params.neighborsRank[Y_MAX],
-                                  211,
-                                  borderBufRecv_ymin_3d.data(),
-                                  borderBufRecv_ymin_3d.size(),
-                                  data_type,
-                                  params.neighborsRank[Y_MIN],
-                                  211);
+    params.communicator().MPI_Sendrecv(borderBufSend_ymax_3d,
+                                       params.neighborsRank[Y_MAX],
+                                       211,
+                                       borderBufRecv_ymin_3d,
+                                       params.neighborsRank[Y_MIN],
+                                       211);
   }
   else if (dir == ZDIR)
   {
 
-    params.communicator->sendrecv(borderBufSend_zmin_3d.data(),
-                                  borderBufSend_zmin_3d.size(),
-                                  data_type,
-                                  params.neighborsRank[Z_MIN],
-                                  311,
-                                  borderBufRecv_zmax_3d.data(),
-                                  borderBufRecv_zmax_3d.size(),
-                                  data_type,
-                                  params.neighborsRank[Z_MAX],
-                                  311);
+    params.communicator().MPI_Sendrecv(borderBufSend_zmin_3d,
+                                       params.neighborsRank[Z_MIN],
+                                       311,
+                                       borderBufRecv_zmax_3d,
+                                       params.neighborsRank[Z_MAX],
+                                       311);
 
-    params.communicator->sendrecv(borderBufSend_zmax_3d.data(),
-                                  borderBufSend_zmax_3d.size(),
-                                  data_type,
-                                  params.neighborsRank[Z_MAX],
-                                  311,
-                                  borderBufRecv_zmin_3d.data(),
-                                  borderBufRecv_zmin_3d.size(),
-                                  data_type,
-                                  params.neighborsRank[Z_MIN],
-                                  311);
+    params.communicator().MPI_Sendrecv(borderBufSend_zmax_3d,
+                                       params.neighborsRank[Z_MAX],
+                                       311,
+                                       borderBufRecv_zmin_3d,
+                                       params.neighborsRank[Z_MIN],
+                                       311);
   }
 
 } // SolverBase::transfer_boundaries_3d
@@ -1025,7 +972,7 @@ SolverBase::copy_boundaries_back(DataArray3d Udata, BoundaryLocation loc)
 
 } // SolverBase::copy_boundaries_back - 3d
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 // =======================================================
 // =======================================================

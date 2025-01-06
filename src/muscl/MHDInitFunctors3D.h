@@ -6,6 +6,7 @@
 #  include <math_constants.h> // for cuda math constants, e.g. CUDART_INF
 #endif                        // __CUDA_ARCH__
 
+#include <shared/euler_kokkos_config.h>
 #include "shared/kokkos_shared.h"
 #include "MHDBaseFunctor3D.h"
 
@@ -57,7 +58,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
@@ -178,7 +179,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     // const int j_mpi = params.myMpiPos[IT];
     // const int k_mpi = params.myMpiPos[IZ];
@@ -282,7 +283,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
@@ -402,7 +403,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     [[maybe_unused]] const int i_mpi = params.myMpiPos[IX];
     [[maybe_unused]] const int j_mpi = params.myMpiPos[IT];
     [[maybe_unused]] const int k_mpi = params.myMpiPos[IZ];
@@ -576,7 +577,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
@@ -782,7 +783,7 @@ public:
 
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
     const int k_mpi = params.myMpiPos[IZ];
@@ -969,7 +970,7 @@ public:
     const int ny = params.ny;
     // const int nz = params.nz;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
     // const int k_mpi = params.myMpiPos[IZ];
@@ -1017,7 +1018,7 @@ public:
     const int ksize = params.ksize;
     const int ghostWidth = params.ghostWidth;
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
     const int j_mpi = params.myMpiPos[IT];
     // const int k_mpi = params.myMpiPos[IZ];

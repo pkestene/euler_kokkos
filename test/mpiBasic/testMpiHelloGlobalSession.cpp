@@ -28,7 +28,7 @@ main(int argc, char ** argv)
   struct tm * loctime;
 
   // MPI resources
-  hydroSimu::GlobalMpiSession mpiSession(&argc, &argv);
+  auto mpiSession = euler_kokkos::GlobalMpiSession(argc, argv);
 
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);

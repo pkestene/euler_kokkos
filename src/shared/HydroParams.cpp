@@ -7,113 +7,118 @@
 
 #include "config/inih/ini.h" // our INI file reader
 
-#ifdef USE_MPI
-using namespace hydroSimu;
-#endif // USE_MPI
-
 namespace euler_kokkos
 {
 
 // =======================================================
 // =======================================================
-/*
- * Hydro Parameters (read parameter file)
- */
-void
-HydroParams::setup(ConfigMap & configMap)
+DimensionType
+get_dim(ConfigMap const & configMap)
 {
+  std::string solver_name = configMap.getString("run", "solver_name", "unknown");
 
-  /* initialize RUN parameters */
-  nStepmax = configMap.getInteger("run", "nstepmax", 1000);
-  tEnd = configMap.getFloat("run", "tend", 0.0);
-  nOutput = configMap.getInteger("run", "noutput", 100);
-  if (nOutput == 0)
-    enableOutput = false;
+  if (!solver_name.compare("Hydro_Muscl_2D") or !solver_name.compare("MHD_Muscl_2D"))
+  {
 
-  nlog = configMap.getInteger("run", "nlog", 10);
+    return TWO_D;
+  }
+  else if (!solver_name.compare("Hydro_Muscl_3D") or !solver_name.compare("MHD_Muscl_3D"))
+  {
+    return THREE_D;
+  }
+  // we should probably abort
+  std::cerr << "Solver name not valid : " << solver_name << "\n";
+
+  return TWO_D;
+}
+
+// =======================================================
+// =======================================================
+HydroParams::HydroParams(ConfigMap const & configMap, ParallelEnv & par_env_)
+  : nStepmax(configMap.getInteger("run", "nstepmax", 1000))
+  , tEnd(configMap.getFloat("run", "tend", 0.0))
+  , nOutput(configMap.getInteger("run", "noutput", 100))
+  , enableOutput(nOutput == 0 ? false : true)
+  , mhdEnabled(false)
+  , nlog(configMap.getInteger("run", "nlog", 10))
+  , nx(configMap.getInteger("mesh", "nx", 1))
+  , ny(configMap.getInteger("mesh", "ny", 1))
+  , nz(configMap.getInteger("mesh", "nz", 1))
+  , ghostWidth(2)
+  , nbvar(4)
+  , dimType(TWO_D)
+  , imin(0)
+  , imax(0)
+  , jmin(0)
+  , jmax(0)
+  , kmin(0)
+  , kmax(0)
+  , isize(0)
+  , jsize(0)
+  , ksize(0)
+  , xmin(configMap.getFloat("mesh", "xmin", 0.0))
+  , xmax(configMap.getFloat("mesh", "xmax", 1.0))
+  , ymin(configMap.getFloat("mesh", "ymin", 0.0))
+  , ymax(configMap.getFloat("mesh", "ymax", 1.0))
+  , zmin(configMap.getFloat("mesh", "zmin", 0.0))
+  , zmax(configMap.getFloat("mesh", "zmax", 1.0))
+  , dx(0.0)
+  , dy(0.0)
+  , dz(0.0)
+  , boundary_type_xmin(static_cast<BoundaryConditionType>(
+      configMap.getInteger("mesh", "boundary_type_xmin", BC_DIRICHLET)))
+  , boundary_type_xmax(static_cast<BoundaryConditionType>(
+      configMap.getInteger("mesh", "boundary_type_xmax", BC_DIRICHLET)))
+  , boundary_type_ymin(static_cast<BoundaryConditionType>(
+      configMap.getInteger("mesh", "boundary_type_ymin", BC_DIRICHLET)))
+  , boundary_type_ymax(static_cast<BoundaryConditionType>(
+      configMap.getInteger("mesh", "boundary_type_ymax", BC_DIRICHLET)))
+  , boundary_type_zmin(static_cast<BoundaryConditionType>(
+      configMap.getInteger("mesh", "boundary_type_zmin", BC_DIRICHLET)))
+  , boundary_type_zmax(static_cast<BoundaryConditionType>(
+      configMap.getInteger("mesh", "boundary_type_zmax", BC_DIRICHLET)))
+  , ioVTK(true)
+  , ioHDF5(false)
+  , settings()
+  , niter_riemann(configMap.getInteger("hydro", "niter_riemann", 10))
+  , riemannSolverType()
+  , implementationVersion(0)
+#ifdef EULER_KOKKOS_USE_MPI
+  , par_env(par_env_)
+#endif // EULER_KOKKOS_USE_MPI
+{
+  dimType = get_dim(configMap);
 
   std::string solver_name = configMap.getString("run", "solver_name", "unknown");
 
   if (!solver_name.compare("Hydro_Muscl_2D"))
   {
-
-    dimType = TWO_D;
     nbvar = 4;
     ghostWidth = 2;
   }
   else if (!solver_name.compare("Hydro_Muscl_3D"))
   {
-
-    dimType = THREE_D;
     nbvar = 5;
     ghostWidth = 2;
   }
   else if (!solver_name.compare("MHD_Muscl_2D"))
   {
-
-    dimType = TWO_D;
     nbvar = 8;
     ghostWidth = 3;
     mhdEnabled = true;
   }
   else if (!solver_name.compare("MHD_Muscl_3D"))
   {
-
-    dimType = THREE_D;
     nbvar = 8;
     ghostWidth = 3;
     mhdEnabled = true;
   }
   else
   {
-
     // we should probably abort
     std::cerr << "Solver name not valid : " << solver_name << "\n";
   }
 
-  /* initialize MESH parameters */
-  nx = configMap.getInteger("mesh", "nx", 1);
-  ny = configMap.getInteger("mesh", "ny", 1);
-  nz = configMap.getInteger("mesh", "nz", 1);
-
-  xmin = configMap.getFloat("mesh", "xmin", 0.0);
-  ymin = configMap.getFloat("mesh", "ymin", 0.0);
-  zmin = configMap.getFloat("mesh", "zmin", 0.0);
-
-  xmax = configMap.getFloat("mesh", "xmax", 1.0);
-  ymax = configMap.getFloat("mesh", "ymax", 1.0);
-  zmax = configMap.getFloat("mesh", "zmax", 1.0);
-
-  boundary_type_xmin = static_cast<BoundaryConditionType>(
-    configMap.getInteger("mesh", "boundary_type_xmin", BC_DIRICHLET));
-  boundary_type_xmax = static_cast<BoundaryConditionType>(
-    configMap.getInteger("mesh", "boundary_type_xmax", BC_DIRICHLET));
-  boundary_type_ymin = static_cast<BoundaryConditionType>(
-    configMap.getInteger("mesh", "boundary_type_ymin", BC_DIRICHLET));
-  boundary_type_ymax = static_cast<BoundaryConditionType>(
-    configMap.getInteger("mesh", "boundary_type_ymax", BC_DIRICHLET));
-  boundary_type_zmin = static_cast<BoundaryConditionType>(
-    configMap.getInteger("mesh", "boundary_type_zmin", BC_DIRICHLET));
-  boundary_type_zmax = static_cast<BoundaryConditionType>(
-    configMap.getInteger("mesh", "boundary_type_zmax", BC_DIRICHLET));
-
-  settings.gamma0 = configMap.getFloat("hydro", "gamma0", 1.4);
-  settings.cfl = configMap.getFloat("hydro", "cfl", 0.5);
-  settings.iorder = configMap.getInteger("hydro", "iorder", 2);
-  settings.slope_type = configMap.getFloat("hydro", "slope_type", 1.0);
-  settings.smallc = configMap.getFloat("hydro", "smallc", 1e-10);
-  settings.smallr = configMap.getFloat("hydro", "smallr", 1e-10);
-
-  // specific heat
-  settings.cp = configMap.getFloat("hydro", "cp", 0.0);
-
-  // dynamic viscosity
-  settings.mu = configMap.getFloat("hydro", "mu", 0.0);
-
-  // thermal diffusivity
-  settings.kappa = configMap.getFloat("hydro", "kappa", 0.0);
-
-  niter_riemann = configMap.getInteger("hydro", "niter_riemann", 10);
   std::string riemannSolverStr = std::string(configMap.getString("hydro", "riemann", "approx"));
   if (!riemannSolverStr.compare("approx"))
   {
@@ -150,24 +155,36 @@ HydroParams::setup(ConfigMap & configMap)
     implementationVersion = 0;
   }
 
+  settings.gamma0 = configMap.getFloat("hydro", "gamma0", 1.4);
+  settings.cfl = configMap.getFloat("hydro", "cfl", 0.5);
+  settings.iorder = configMap.getInteger("hydro", "iorder", 2);
+  settings.slope_type = configMap.getFloat("hydro", "slope_type", 1.0);
+  settings.smallc = configMap.getFloat("hydro", "smallc", 1e-10);
+  settings.smallr = configMap.getFloat("hydro", "smallr", 1e-10);
+
+  // specific heat
+  settings.cp = configMap.getFloat("hydro", "cp", 0.0);
+
+  // dynamic viscosity
+  settings.mu = configMap.getFloat("hydro", "mu", 0.0);
+
+  // thermal diffusivity
+  settings.kappa = configMap.getFloat("hydro", "kappa", 0.0);
+
   init();
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
   setup_mpi(configMap);
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
-} // HydroParams::setup
+} // HydroParams::HydroParams
 
-#ifdef USE_MPI
+#ifdef EULER_KOKKOS_USE_MPI
 // =======================================================
 // =======================================================
 void
-HydroParams::setup_mpi(ConfigMap & configMap)
+HydroParams::setup_mpi(ConfigMap const & configMap)
 {
-
-  // runtime determination if we are using float ou double (for MPI communication)
-  data_type = typeid(1.0f).name() == typeid((real_t)1.0f).name() ? hydroSimu::MpiComm::FLOAT
-                                                                 : hydroSimu::MpiComm::DOUBLE;
 
   // MPI parameters :
   mx = configMap.getInteger("mpi", "mx", 1);
@@ -181,27 +198,17 @@ HydroParams::setup_mpi(ConfigMap & configMap)
   error |= (mz < 1);
 
   // get world communicator size and check it is consistent with mesh grid sizes
-  nProcs = MpiComm::world().getNProc();
+  nProcs = par_env.comm().size();
   if (nProcs != mx * my * mz)
   {
     std::cerr << "Inconsistent MPI cartesian virtual topology geometry; \n mx*my*mz must match "
                  "with parameter given to mpirun !!!\n";
   }
 
-  // create the MPI communicator for our cartesian mesh
-  if (dimType == TWO_D)
-  {
-    communicator = new MpiCommCart(mx, my, MPI_CART_PERIODIC_TRUE, MPI_REORDER_TRUE);
-    nDim = 2;
-  }
-  else
-  {
-    communicator = new MpiCommCart(mx, my, mz, MPI_CART_PERIODIC_TRUE, MPI_REORDER_TRUE);
-    nDim = 3;
-  }
-
   // get my MPI rank inside topology
-  myRank = communicator->getRank();
+  myRank = par_env.comm().rank();
+
+  auto & cartcomm = dynamic_cast<MpiCommCart &>(par_env.comm());
 
   // get my coordinates inside topology
   // myMpiPos[0] is between 0 and mx-1
@@ -210,7 +217,7 @@ HydroParams::setup_mpi(ConfigMap & configMap)
   // myMpiPos.resize(nDim);
   {
     int mpiPos[3] = { 0, 0, 0 };
-    communicator->getMyCoords(&mpiPos[0]);
+    cartcomm.getMyCoords(&mpiPos[0]);
     myMpiPos[0] = mpiPos[0];
     myMpiPos[1] = mpiPos[1];
     myMpiPos[2] = mpiPos[2];
@@ -223,10 +230,10 @@ HydroParams::setup_mpi(ConfigMap & configMap)
   if (dimType == TWO_D)
   {
     nNeighbors = N_NEIGHBORS_2D;
-    neighborsRank[X_MIN] = communicator->getNeighborRank<X_MIN>();
-    neighborsRank[X_MAX] = communicator->getNeighborRank<X_MAX>();
-    neighborsRank[Y_MIN] = communicator->getNeighborRank<Y_MIN>();
-    neighborsRank[Y_MAX] = communicator->getNeighborRank<Y_MAX>();
+    neighborsRank[X_MIN] = cartcomm.getNeighborRank<X_MIN>();
+    neighborsRank[X_MAX] = cartcomm.getNeighborRank<X_MAX>();
+    neighborsRank[Y_MIN] = cartcomm.getNeighborRank<Y_MIN>();
+    neighborsRank[Y_MAX] = cartcomm.getNeighborRank<Y_MAX>();
     neighborsRank[Z_MIN] = 0;
     neighborsRank[Z_MAX] = 0;
 
@@ -240,12 +247,12 @@ HydroParams::setup_mpi(ConfigMap & configMap)
   else
   {
     nNeighbors = N_NEIGHBORS_3D;
-    neighborsRank[X_MIN] = communicator->getNeighborRank<X_MIN>();
-    neighborsRank[X_MAX] = communicator->getNeighborRank<X_MAX>();
-    neighborsRank[Y_MIN] = communicator->getNeighborRank<Y_MIN>();
-    neighborsRank[Y_MAX] = communicator->getNeighborRank<Y_MAX>();
-    neighborsRank[Z_MIN] = communicator->getNeighborRank<Z_MIN>();
-    neighborsRank[Z_MAX] = communicator->getNeighborRank<Z_MAX>();
+    neighborsRank[X_MIN] = cartcomm.getNeighborRank<X_MIN>();
+    neighborsRank[X_MAX] = cartcomm.getNeighborRank<X_MAX>();
+    neighborsRank[Y_MIN] = cartcomm.getNeighborRank<Y_MIN>();
+    neighborsRank[Y_MAX] = cartcomm.getNeighborRank<Y_MAX>();
+    neighborsRank[Z_MIN] = cartcomm.getNeighborRank<Z_MIN>();
+    neighborsRank[Z_MAX] = cartcomm.getNeighborRank<Z_MAX>();
 
     neighborsBC[X_MIN] = BC_COPY;
     neighborsBC[X_MAX] = BC_COPY;
@@ -294,49 +301,6 @@ HydroParams::setup_mpi(ConfigMap & configMap)
 
   } // end THREE_D
 
-  /*
-   * Initialize CUDA device if needed.
-   *
-   * Let's assume hwloc is doing its job !
-   *
-   * Old comments from RamsesGPU:
-   * When running on a Linux machine with multiple GPU per node, it might be
-   * very helpful if admin has set the CUDA device compute mode to exclusive
-   * so that a device is only attached to 1 host thread (i.e. 2 different host
-   * thread can not communicate with the same GPU).
-   *
-   * As a sys-admin, just run for all devices command:
-   *   nvidia-smi -g $(DEV_ID) -c 1
-   *
-   * If compute mode is set to normal mode, we need to use cudaSetDevice,
-   * so that each MPI device is mapped onto a different GPU device.
-   *
-   * At CCRT, on machine Titane, each node (2 quadri-proc) "sees" only
-   * half a Tesla S1070, that means cudaGetDeviceCount should return 2.
-   * If we want the ration 1 MPI process <-> 1 GPU, we need to allocate
-   * N nodes and 2*N tasks (MPI process).
-   */
-#  ifdef KOKKOS_ENABLE_CUDA
-  // // get device count
-  // int count;
-  // cutilSafeCall( cudaGetDeviceCount(&count) );
-
-  // int devId = myRank % count;
-  // cutilSafeCall( cudaSetDevice(devId) );
-
-  // cudaDeviceProp deviceProp;
-  // int myDevId = -1;
-  // cutilSafeCall( cudaGetDevice( &myDevId ) );
-  // cutilSafeCall( cudaGetDeviceProperties( &deviceProp, myDevId ) );
-  // // faire un cudaSetDevice et cudaGetDeviceProp et aficher le nom
-  // // ajouter un boolean dans le constructeur pour savoir si on veut faire ca
-  // // sachant que sure Titane, probablement que le mode exclusif est active
-  // // a verifier demain
-
-  // std::cout << "MPI process " << myRank << " is using GPU device num " << myDevId << std::endl;
-
-#  endif // KOKKOS_ENABLE_CUDA
-
   // fix space resolution :
   // need to take into account number of MPI process in each direction
   dx = (xmax - xmin) / (nx * mx);
@@ -355,7 +319,7 @@ HydroParams::setup_mpi(ConfigMap & configMap)
 
 } // HydroParams::setup_mpi
 
-#endif // USE_MPI
+#endif // EULER_KOKKOS_USE_MPI
 
 // =======================================================
 // =======================================================
