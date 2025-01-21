@@ -1,8 +1,8 @@
 # ##############################################################################
 # MPI
 # ##############################################################################
-find_package(MPI)
 if(EULER_KOKKOS_USE_MPI)
+  find_package(MPI)
   if(MPI_CXX_FOUND)
     message(STATUS "MPI support found")
     message(STATUS "MPI compile flags: " ${MPI_CXX_COMPILE_FLAGS})
@@ -30,16 +30,17 @@ if(EULER_KOKKOS_USE_MPI)
         message(WARNING "OpenMPI found, but it is not built with CUDA support.")
         add_compile_options(-DMPI_CUDA_AWARE_OFF)
       endif()
-    endif()
+    endif(OMPI_INFO)
 
-  else()
+  else(MPI_CXX_FOUND)
     message(
       WARNING
         "Not compiling with MPI. Suppress this warning with -DEULER_KOKKOS_USE_MPI=OFF"
     )
     set(EULER_KOKKOS_USE_MPI OFF)
-  endif()
-endif()
+  endif(MPI_CXX_FOUND)
 
-# test if mpi-ext.h is available
-include(cmake/CheckMPIFeatures.cmake)
+  # test if mpi-ext.h is available
+  include(cmake/CheckMPIFeatures.cmake)
+
+endif(EULER_KOKKOS_USE_MPI)
