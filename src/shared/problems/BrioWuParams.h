@@ -42,7 +42,7 @@ struct BrioWuParams
     rhoR = configMap.getFloat("brio-wu", "rhoR", 0.125);
     pR = configMap.getFloat("brio-wu", "pR", 0.1);
     uR = configMap.getFloat("brio-wu", "uR", 0.0);
-    ByR = configMap.getFloat("brio-wu", "ByL", -1.0);
+    ByR = configMap.getFloat("brio-wu", "ByR", -1.0);
 
     Bx = configMap.getFloat("brio-wu", "Bx", 0.75);
 
