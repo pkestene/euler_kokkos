@@ -156,7 +156,7 @@ public:
        * u / dx has to be corrected by a factor k / (sqrt(1 + 2k) - 1)
        * in order to satisfy the new CFL, where k = g dx cfl / u^2
        */
-      double k = fabs(gravity(i, j, IX)) + fabs(gravity(i, j, IT));
+      double k = fabs(gravity(i, j, IX)) + fabs(gravity(i, j, IY));
 
       k *= cfl * dx / (velocity * velocity);
 
@@ -657,10 +657,10 @@ public:
         // gravity predictor (half time step)
 
         qleft[IU] += 0.5 * dt * gravity(i - 1, j, IX);
-        qleft[IV] += 0.5 * dt * gravity(i - 1, j, IT);
+        qleft[IV] += 0.5 * dt * gravity(i - 1, j, IY);
 
         qright[IU] += 0.5 * dt * gravity(i, j, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, IT);
+        qright[IV] += 0.5 * dt * gravity(i, j, IY);
       }
 
       // Solve Riemann problem at X-interfaces and compute X-fluxes
@@ -731,10 +731,10 @@ public:
         // gravity predictor (half time step)
 
         qleft[IU] += 0.5 * dt * gravity(i, j - 1, IX);
-        qleft[IV] += 0.5 * dt * gravity(i, j - 1, IT);
+        qleft[IV] += 0.5 * dt * gravity(i, j - 1, IY);
 
         qright[IU] += 0.5 * dt * gravity(i, j, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, IT);
+        qright[IV] += 0.5 * dt * gravity(i, j, IY);
       }
 
       // Solve Riemann problem at Y-interfaces and compute Y-fluxes
@@ -1147,7 +1147,7 @@ public:
           // gravity predictor (half time step)
 
           qright[IU] += 0.5 * dt * gravity(i, j, IX);
-          qright[IV] += 0.5 * dt * gravity(i, j, IT);
+          qright[IV] += 0.5 * dt * gravity(i, j, IY);
         }
 
         qLocNeighbor[ID] = Qdata(i - 1, j, ID);
@@ -1176,7 +1176,7 @@ public:
           // gravity predictor (half time step)
 
           qleft[IU] += 0.5 * dt * gravity(i - 1, j, IX);
-          qleft[IV] += 0.5 * dt * gravity(i - 1, j, IT);
+          qleft[IV] += 0.5 * dt * gravity(i - 1, j, IY);
         }
 
         // Solve Riemann problem at X-interfaces and compute X-fluxes
@@ -1202,7 +1202,7 @@ public:
           // gravity predictor (half time step)
 
           qright[IU] += 0.5 * dt * gravity(i, j, IX);
-          qright[IV] += 0.5 * dt * gravity(i, j, IT);
+          qright[IV] += 0.5 * dt * gravity(i, j, IY);
         }
 
         qLocNeighbor[ID] = Qdata(i, j - 1, ID);
@@ -1231,7 +1231,7 @@ public:
           // gravity predictor (half time step)
 
           qleft[IU] += 0.5 * dt * gravity(i, j - 1, IX);
-          qleft[IV] += 0.5 * dt * gravity(i, j - 1, IT);
+          qleft[IV] += 0.5 * dt * gravity(i, j - 1, IY);
         }
 
         // Solve Riemann problem at Y-interfaces and compute Y-fluxes
@@ -1421,10 +1421,10 @@ public:
         // gravity predictor (half time step)
 
         qleft[IU] += 0.5 * dt * gravity(i - 1, j, IX);
-        qleft[IV] += 0.5 * dt * gravity(i - 1, j, IT);
+        qleft[IV] += 0.5 * dt * gravity(i - 1, j, IY);
 
         qright[IU] += 0.5 * dt * gravity(i, j, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, IT);
+        qright[IV] += 0.5 * dt * gravity(i, j, IY);
       }
 
       // Solve Riemann problem at X-interfaces and compute X-fluxes
@@ -1505,10 +1505,10 @@ public:
         // gravity predictor (half time step)
 
         qleft[IU] += 0.5 * dt * gravity(i, j - 1, IX);
-        qleft[IV] += 0.5 * dt * gravity(i, j - 1, IT);
+        qleft[IV] += 0.5 * dt * gravity(i, j - 1, IY);
 
         qright[IU] += 0.5 * dt * gravity(i, j, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, IT);
+        qright[IV] += 0.5 * dt * gravity(i, j, IY);
       }
 
       // Solve Riemann problem at Y-interfaces and compute Y-fluxes
@@ -1609,7 +1609,7 @@ public:
 
       // update momentum
       rhou += 0.5 * dt * gravity(i, j, IX) * (rhoOld + rhoNew);
-      rhov += 0.5 * dt * gravity(i, j, IT) * (rhoOld + rhoNew);
+      rhov += 0.5 * dt * gravity(i, j, IY) * (rhoOld + rhoNew);
       Udata_out(i, j, IU) = rhou;
       Udata_out(i, j, IV) = rhov;
 

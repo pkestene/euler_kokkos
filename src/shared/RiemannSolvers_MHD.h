@@ -448,10 +448,10 @@ mag_riemann2d_hlld(const MHDState (&qLLRR)[4], real_t eLLRR[4], const HydroParam
   real_t cFastRRx = find_speed_fast<IX>(qRR, params);
 
   // Compute 4 fast magnetosonic velocity relative to y direction
-  real_t cFastLLy = find_speed_fast<IT>(qLL, params);
-  real_t cFastLRy = find_speed_fast<IT>(qLR, params);
-  real_t cFastRLy = find_speed_fast<IT>(qRL, params);
-  real_t cFastRRy = find_speed_fast<IT>(qRR, params);
+  real_t cFastLLy = find_speed_fast<IY>(qLL, params);
+  real_t cFastLRy = find_speed_fast<IY>(qLR, params);
+  real_t cFastRLy = find_speed_fast<IY>(qRL, params);
+  real_t cFastRRy = find_speed_fast<IY>(qRR, params);
 
   // TODO : write a find_speed that computes the 2 speeds together (in
   // a single routine -> factorize computation of cFastLLx and cFastLLy

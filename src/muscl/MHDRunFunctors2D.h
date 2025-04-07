@@ -68,7 +68,7 @@ public:
       find_speed_info<TWO_D>(qLoc, fastInfoSpeed, params);
 
       real_t vx = fastInfoSpeed[IX];
-      real_t vy = fastInfoSpeed[IT];
+      real_t vy = fastInfoSpeed[IY];
 
       invDt = fmax(invDt, vx / dx + vy / dy);
     }
@@ -135,7 +135,7 @@ public:
 
       // get mag field in neighbor cells
       magFieldNeighbors[IX] = Udata(i + 1, j, IA);
-      magFieldNeighbors[IT] = Udata(i, j + 1, IB);
+      magFieldNeighbors[IY] = Udata(i, j + 1, IB);
       magFieldNeighbors[IZ] = 0.0;
 
       // get primitive variables in current cell
@@ -356,7 +356,7 @@ public:
       sFaceMag(i, j, IX) = (ElecField(i    , j + 1, 0) - ElecField(i, j, 0)) * 0.5 * dtdy;
 
       // sBL0 = -(ERL - ELL) * 0.5 * dtdx;
-      sFaceMag(i, j, IT) = -(ElecField(i + 1, j    , 0) - ElecField(i, j, 0)) * 0.5 * dtdx;
+      sFaceMag(i, j, IY) = -(ElecField(i + 1, j    , 0) - ElecField(i, j, 0)) * 0.5 * dtdx;
 
     }
     // clang-format on
@@ -981,7 +981,7 @@ public:
       get_state(Slopes_x, i, j, dq[IX]);
 
       // retrieve hydro slopes along Y
-      get_state(Slopes_y, i, j, dq[IT]);
+      get_state(Slopes_y, i, j, dq[IY]);
 
       // Cell centered values
       auto const & r = q[ID];
@@ -1003,17 +1003,17 @@ public:
       auto const & dCx = dq[IX][IC];
 
       // Cell centered TVD slopes in Y direction
-      auto const & dry = dq[IT][ID];
-      auto const & dpy = dq[IT][IP];
-      auto const & duy = dq[IT][IU];
-      auto const & dvy = dq[IT][IV];
-      auto const & dwy = dq[IT][IW];
-      auto const & dAy = dq[IT][IA];
-      auto const & dCy = dq[IT][IC];
+      auto const & dry = dq[IY][ID];
+      auto const & dpy = dq[IY][IP];
+      auto const & duy = dq[IY][IU];
+      auto const & dvy = dq[IY][IV];
+      auto const & dwy = dq[IY][IW];
+      auto const & dAy = dq[IY][IA];
+      auto const & dCy = dq[IY][IC];
 
       auto const   db = compute_normal_mag_field_slopes(Udata, i, j);
       auto const & dAx = db[IX];
-      auto const & dBy = db[IT];
+      auto const & dBy = db[IY];
 
       real_t sr0, su0, sv0, sw0, sp0, sA0, sB0, sC0;
       {
@@ -1167,7 +1167,7 @@ public:
       }
       else if constexpr (dir == DIR_Y)
       {
-        const real_t BL = Udata_in(i, j, IB) + sFaceMag(i, j, IT);
+        const real_t BL = Udata_in(i, j, IB) + sFaceMag(i, j, IY);
         qR[IA] = q2[IA] - 0.5 * dq[IA];
         qR[IB] = BL;
         qR[IC] = q2[IC] - 0.5 * dq[IC];
@@ -1412,7 +1412,7 @@ public:
     const real_t A = Udata_in(ia, ja, IA) + sFaceMag(ia, ja, IX);
     const real_t dAy = compute_limited_slope<DIR_Y>(Udata_in, ia, ja, IA);
 
-    const real_t B = Udata_in(ib, jb, IB) + sFaceMag(ib, jb, IT);
+    const real_t B = Udata_in(ib, jb, IB) + sFaceMag(ib, jb, IY);
     const real_t dBx = compute_limited_slope<DIR_X>(Udata_in, ib, jb, IB);
 
     // get limited slopes

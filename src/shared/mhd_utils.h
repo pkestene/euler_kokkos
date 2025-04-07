@@ -106,7 +106,7 @@ find_speed_fast(const MHDState & qvar, const HydroParams & params)
   if (dir == IX)
     cf = sqrt(d2 + sqrt(d2 * d2 - c2 * a * a / d));
 
-  if (dir == IT)
+  if (dir == IY)
     cf = sqrt(d2 + sqrt(d2 * d2 - c2 * b * b / d));
 
   if (dir == IZ)
@@ -283,7 +283,7 @@ fast_mhd_speed(const MHDState & qState, real_t (&fastMagSpeed)[3], const HydroPa
   fast_speed = 0.5 * (some_vit + sqrt(delta));
   fast_speed = sqrt(fast_speed);
 
-  fastMagSpeed[IT] = fast_speed;
+  fastMagSpeed[IY] = fast_speed;
 
   // compute fast magnetosonic speed along Z
   if (NDIM == THREE_D)
@@ -352,7 +352,7 @@ find_speed_info(const MHDState qState, real_t (&fastInfoSpeed)[3], const HydroPa
   // compute fastest info speed along Y
   cf = sqrt(d2 + sqrt(d2 * d2 - c2 * b * b / d));
 
-  fastInfoSpeed[IT] = cf + fabs(v);
+  fastInfoSpeed[IY] = cf + fabs(v);
 
 
   // compute fastest info speed along Z

@@ -59,7 +59,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
 #else
     const int i_mpi = 0;
     const int j_mpi = 0;
@@ -153,7 +153,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
 #else
     const int i_mpi = 0;
     const int j_mpi = 0;
@@ -241,7 +241,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
 #else
     const int i_mpi = 0;
     const int j_mpi = 0;
@@ -376,7 +376,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
 #else
     const int i_mpi = 0;
     const int j_mpi = 0;
@@ -498,7 +498,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
 #else
     const int i_mpi = 0;
     const int j_mpi = 0;
@@ -596,7 +596,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
 #else
     const int i_mpi = 0;
     const int j_mpi = 0;
@@ -699,7 +699,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
 #else
     const int i_mpi = 0;
     const int j_mpi = 0;
@@ -774,7 +774,7 @@ public:
 
     // init gravity field
     gravity(i, j, IX) = gravity_x;
-    gravity(i, j, IT) = gravity_y;
+    gravity(i, j, IY) = gravity_y;
 
   } // end operator ()
 

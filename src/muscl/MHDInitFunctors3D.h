@@ -60,7 +60,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
@@ -293,7 +293,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
@@ -413,7 +413,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     [[maybe_unused]] const int i_mpi = params.myMpiPos[IX];
-    [[maybe_unused]] const int j_mpi = params.myMpiPos[IT];
+    [[maybe_unused]] const int j_mpi = params.myMpiPos[IY];
     [[maybe_unused]] const int k_mpi = params.myMpiPos[IZ];
 #else
     [[maybe_unused]] const int i_mpi = 0;
@@ -587,7 +587,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
@@ -793,7 +793,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
@@ -980,7 +980,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
     // const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
@@ -1028,7 +1028,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
     // const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
