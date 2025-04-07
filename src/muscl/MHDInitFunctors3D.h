@@ -60,7 +60,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
@@ -181,30 +181,30 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    // const int j_mpi = params.myMpiPos[IT];
-    // const int k_mpi = params.myMpiPos[IZ];
+    const int j_mpi = params.myMpiPos[IY];
+    const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
-    // const int                  j_mpi = 0;
-    // const int                  k_mpi = 0;
+    const int j_mpi = 0;
+    const int k_mpi = 0;
 #endif
 
     const int nx = params.nx;
-    // const int ny = params.ny;
-    // const int nz = params.ny;
+    const int ny = params.ny;
+    const int nz = params.ny;
 
-    const real_t xmin = params.xmin;
-    // const real_t xmax = params.xmax;
-    //  const real_t ymin = params.ymin;
-    //  const real_t zmin = params.zmin;
-    const real_t dx = params.dx;
-    // const real_t dy = params.dy;
-    // const real_t dz = params.dz;
+    [[maybe_unused]] const real_t xmin = params.xmin;
+    [[maybe_unused]] const real_t ymin = params.ymin;
+    [[maybe_unused]] const real_t zmin = params.zmin;
+    const real_t                  dx = params.dx;
+    const real_t                  dy = params.dy;
+    const real_t                  dz = params.dz;
 
     const real_t gamma0 = params.settings.gamma0;
 
     real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
-    // real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
+    real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
+    real_t z = zmin + dz / 2 + (k + nz * k_mpi - ghostWidth) * dz;
 
     // left state
     const real_t rhoL = this->bwparams.rhoL;
@@ -222,28 +222,36 @@ public:
 
     const real_t xd = this->bwparams.xd;
 
+    const real_t pos = this->bwparams.direction == BrioWuParams::Direction::X     ? x
+                       : (this->bwparams.direction == BrioWuParams::Direction::Y) ? y
+                                                                                  : z;
+
+    const int dir0 = this->bwparams.direction;
+    const int dir1 = (dir0 + 1) % 3;
+    const int dir2 = (dir0 + 2) % 3;
+
     // init cell centered values
-    if (x <= xd)
+    if (pos <= xd)
     {
       Udata(i, j, k, ID) = rhoL;
       Udata(i, j, k, IP) = pL / (gamma0 - 1.0) + 0.5 * rhoL * uL * uL + 0.5 * (Bx * Bx + ByL * ByL);
-      Udata(i, j, k, IU) = rhoL * uL;
-      Udata(i, j, k, IV) = 0.0;
-      Udata(i, j, k, IW) = 0.0;
-      Udata(i, j, k, IA) = Bx;
-      Udata(i, j, k, IB) = ByL;
-      Udata(i, j, k, IC) = 0.0;
+      Udata(i, j, k, IU + dir0) = rhoL * uL;
+      Udata(i, j, k, IU + dir1) = 0.0;
+      Udata(i, j, k, IU + dir2) = 0.0;
+      Udata(i, j, k, IA + dir0) = Bx;
+      Udata(i, j, k, IA + dir1) = ByL;
+      Udata(i, j, k, IA + dir2) = 0.0;
     }
     else
     {
       Udata(i, j, k, ID) = rhoR;
       Udata(i, j, k, IP) = pR / (gamma0 - 1.0) + 0.5 * rhoR * uR * uR + 0.5 * (Bx * Bx + ByR * ByR);
-      Udata(i, j, k, IU) = rhoR * uR;
-      Udata(i, j, k, IV) = 0.0;
-      Udata(i, j, k, IW) = 0.0;
-      Udata(i, j, k, IA) = Bx;
-      Udata(i, j, k, IB) = ByR;
-      Udata(i, j, k, IC) = 0.0;
+      Udata(i, j, k, IU + dir0) = rhoR * uR;
+      Udata(i, j, k, IU + dir1) = 0.0;
+      Udata(i, j, k, IU + dir2) = 0.0;
+      Udata(i, j, k, IA + dir0) = Bx;
+      Udata(i, j, k, IA + dir1) = ByR;
+      Udata(i, j, k, IA + dir2) = 0.0;
     }
 
   } // end operator ()
@@ -285,7 +293,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
@@ -405,7 +413,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     [[maybe_unused]] const int i_mpi = params.myMpiPos[IX];
-    [[maybe_unused]] const int j_mpi = params.myMpiPos[IT];
+    [[maybe_unused]] const int j_mpi = params.myMpiPos[IY];
     [[maybe_unused]] const int k_mpi = params.myMpiPos[IZ];
 #else
     [[maybe_unused]] const int i_mpi = 0;
@@ -579,7 +587,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
@@ -785,7 +793,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
     const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
@@ -972,7 +980,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
     // const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;
@@ -1020,7 +1028,7 @@ public:
 
 #ifdef EULER_KOKKOS_USE_MPI
     const int i_mpi = params.myMpiPos[IX];
-    const int j_mpi = params.myMpiPos[IT];
+    const int j_mpi = params.myMpiPos[IY];
     // const int k_mpi = params.myMpiPos[IZ];
 #else
     const int i_mpi = 0;

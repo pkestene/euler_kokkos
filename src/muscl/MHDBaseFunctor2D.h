@@ -114,7 +114,7 @@ public:
 
     // clang-format off
     db[IX] = data(i + 1, j    , IA) - data(i, j, IA);
-    db[IT] = data(i    , j + 1, IB) - data(i, j, IB);
+    db[IY] = data(i    , j + 1, IB) - data(i, j, IB);
     db[IZ] = 0.0;
     // clang-format on
 
@@ -364,7 +364,7 @@ public:
     // clang-format on
 
     MHDState & dqX = dq[IX];
-    MHDState & dqY = dq[IT];
+    MHDState & dqY = dq[IY];
 
     if (slope_type == 1 or slope_type == 2)
     { // minmod or average
@@ -467,7 +467,7 @@ public:
     // clang-format on
 
     real_t(&dbfX)[3] = dbf[IX];
-    real_t(&dbfY)[3] = dbf[IT];
+    real_t(&dbfY)[3] = dbf[IY];
 
     // default values for magnetic field slopes
     for (int nVar = 0; nVar < 3; ++nVar)
@@ -503,7 +503,7 @@ public:
       dlim = slop;
       if ((dlft * drgt) <= ZERO_F)
         dlim = ZERO_F;
-      dbfX[IT] = dsgn * fmin(dlim, fabs(dcen));
+      dbfX[IY] = dsgn * fmin(dlim, fabs(dcen));
     }
 
   } // slope_unsplit_mhd_2d
@@ -892,19 +892,19 @@ public:
     dBx *= 0.5;
 
     // Cell centered TVD slopes in Y direction
-    real_t dry = dq[IT][ID];
+    real_t dry = dq[IY][ID];
     dry *= 0.5;
-    real_t dpy = dq[IT][IP];
+    real_t dpy = dq[IY][IP];
     dpy *= 0.5;
-    real_t duy = dq[IT][IU];
+    real_t duy = dq[IY][IU];
     duy *= 0.5;
-    real_t dvy = dq[IT][IV];
+    real_t dvy = dq[IY][IV];
     dvy *= 0.5;
-    real_t dwy = dq[IT][IW];
+    real_t dwy = dq[IY][IW];
     dwy *= 0.5;
-    real_t dCy = dq[IT][IC];
+    real_t dCy = dq[IY][IC];
     dCy *= 0.5;
-    real_t dAy = dq[IT][IA];
+    real_t dAy = dq[IY][IA];
     dAy *= 0.5;
 
     /*
@@ -913,7 +913,7 @@ public:
     real_t bfNeighbors[6];
     real_t dbf[2][3];
     real_t(&dbfX)[3] = dbf[IX];
-    real_t(&dbfY)[3] = dbf[IT];
+    real_t(&dbfY)[3] = dbf[IY];
 
     // clang-format off
     bfNeighbors[0] = bfNb[CENTER    ][CENTER    ][IBFX];
@@ -928,7 +928,7 @@ public:
 
     // Face centered TVD slopes in transverse direction
     real_t dALy = 0.5 * dbfY[IX];
-    real_t dBLx = 0.5 * dbfX[IT];
+    real_t dBLx = 0.5 * dbfX[IY];
 
     // change neighbors to i+1, j and recompute dbf
     // clang-format off
@@ -956,7 +956,7 @@ public:
 
     slope_unsplit_mhd_2d(bfNeighbors, dbf);
 
-    real_t dBRx = 0.5 * dbfX[IT];
+    real_t dBRx = 0.5 * dbfX[IY];
 
     // Cell centered slopes in normal direction
     real_t dAx = 0.5 * (AR - AL);
