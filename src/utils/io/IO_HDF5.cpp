@@ -222,7 +222,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
     }
 
     // density
-    xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(ID) << "\">"
+    xdmfFile << "      <Attribute Center=\"Cell\" Name=\"" << variables_names.at(ID) << "\">"
              << std::endl;
     xdmfFile << "        <DataStructure" << std::endl;
     xdmfFile << "           DataType=\"" << dataTypeName << "\"" << std::endl;
@@ -237,7 +237,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
     xdmfFile << "      </Attribute>" << std::endl;
 
     // energy
-    xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IE) << "\">"
+    xdmfFile << "      <Attribute Center=\"Cell\" Name=\"" << variables_names.at(IE) << "\">"
              << std::endl;
     xdmfFile << "        <DataStructure" << std::endl;
     xdmfFile << "           DataType=\"" << dataTypeName << "\"" << std::endl;
@@ -252,7 +252,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
     xdmfFile << "      </Attribute>" << std::endl;
 
     // momentum X
-    xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IU) << "\">"
+    xdmfFile << "      <Attribute Center=\"Cell\" Name=\"" << variables_names.at(IU) << "\">"
              << std::endl;
     xdmfFile << "        <DataStructure" << std::endl;
     xdmfFile << "           DataType=\"" << dataTypeName << "\"" << std::endl;
@@ -267,7 +267,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
     xdmfFile << "      </Attribute>" << std::endl;
 
     // momentum Y
-    xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IV) << "\">"
+    xdmfFile << "      <Attribute Center=\"Cell\" Name=\"" << variables_names.at(IV) << "\">"
              << std::endl;
     xdmfFile << "        <DataStructure" << std::endl;
     xdmfFile << "           DataType=\"" << dataTypeName << "\"" << std::endl;
@@ -284,7 +284,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
     // momentum Z
     if (dimType == THREE_D and !mhdEnabled)
     {
-      xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IW) << "\">"
+      xdmfFile << "      <Attribute Center=\"Cell\" Name=\"" << variables_names.at(IW) << "\">"
                << std::endl;
       xdmfFile << "        <DataStructure" << std::endl;
       xdmfFile << "           DataType=\"" << dataTypeName << "\"" << std::endl;
@@ -300,7 +300,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
     if (mhdEnabled)
     {
       // momentum Z
-      xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IW) << "\">"
+      xdmfFile << "      <Attribute Center=\"Cell\" Name=\"" << variables_names.at(IW) << "\">"
                << std::endl;
       xdmfFile << "        <DataStructure" << std::endl;
       xdmfFile << "           DataType=\"" << dataTypeName << "\"" << std::endl;
@@ -316,7 +316,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
       xdmfFile << "      </Attribute>" << std::endl;
 
       // magnetic field X
-      xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IA) << "\">"
+      xdmfFile << "      <Attribute Center=\"Cell\" Name=\"" << variables_names.at(IA) << "\">"
                << std::endl;
       xdmfFile << "        <DataStructure" << std::endl;
       xdmfFile << "           DataType=\"" << dataTypeName << "\"" << std::endl;
@@ -332,7 +332,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
       xdmfFile << "      </Attribute>" << std::endl;
 
       // magnetic field Y
-      xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IB) << "\">"
+      xdmfFile << "      <Attribute Center=\"Cell\" Name=\"" << variables_names.at(IB) << "\">"
                << std::endl;
       xdmfFile << "        <DataStructure" << std::endl;
       xdmfFile << "           DataType=\"" << dataTypeName << "\"" << std::endl;
@@ -348,7 +348,7 @@ writeXdmfForHdf5Wrapper(HydroParams &                      params,
       xdmfFile << "      </Attribute>" << std::endl;
 
       // magnetic field Z
-      xdmfFile << "      <Attribute Center=\"Node\" Name=\"" << variables_names.at(IC) << "\">"
+      xdmfFile << "      <Attribute Center=\"Cell\" Name=\"" << variables_names.at(IC) << "\">"
                << std::endl;
       xdmfFile << "        <DataStructure" << std::endl;
       xdmfFile << "           DataType=\"" << dataTypeName << "\"" << std::endl;
