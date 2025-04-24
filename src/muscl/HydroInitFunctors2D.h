@@ -670,20 +670,20 @@ public:
   RayleighTaylorInstabilityFunctor2D(HydroParams                     params,
                                      RayleighTaylorInstabilityParams rtiparams,
                                      DataArray2d                     Udata,
-                                     VectorField2d                   gravity)
+                                     VectorField2d                   gravity_field)
     : HydroBaseFunctor2D(params)
     , rtiparams(rtiparams)
     , Udata(Udata)
-    , gravity(gravity){};
+    , gravity_field(gravity_field){};
 
   // static method which does it all: create and execute functor
   static void
   apply(HydroParams                     params,
         RayleighTaylorInstabilityParams rtiparams,
         DataArray2d                     Udata,
-        VectorField2d                   gravity)
+        VectorField2d                   gravity_field)
   {
-    RayleighTaylorInstabilityFunctor2D functor(params, rtiparams, Udata, gravity);
+    RayleighTaylorInstabilityFunctor2D functor(params, rtiparams, Udata, gravity_field);
     Kokkos::parallel_for(
       "RayleighTaylorInstabilityFunctor2D",
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
@@ -773,14 +773,14 @@ public:
     Udata(i, j, IE) = (P0 + Udata(i, j, ID) * (gravity_x * x + gravity_y * y)) / (gamma0 - 1.0);
 
     // init gravity field
-    gravity(i, j, IX) = gravity_x;
-    gravity(i, j, IY) = gravity_y;
+    gravity_field(i, j, IX) = gravity_x;
+    gravity_field(i, j, IY) = gravity_y;
 
   } // end operator ()
 
   RayleighTaylorInstabilityParams rtiparams;
   DataArray2d                     Udata;
-  VectorField2d                   gravity;
+  VectorField2d                   gravity_field;
 
 }; // class RayleighTaylorInstabilityFunctor2D
 

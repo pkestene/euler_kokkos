@@ -105,18 +105,22 @@ public:
    */
   ComputeDtGravityFunctor3D(HydroParams   params,
                             real_t        cfl,
-                            VectorField3d gravity,
+                            VectorField3d gravity_field,
                             DataArray3d   Udata)
     : HydroBaseFunctor3D(params)
     , cfl(cfl)
-    , gravity(gravity)
+    , gravity_field(gravity_field)
     , Udata(Udata){};
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams params, real_t cfl, VectorField3d gravity, DataArray3d Udata, real_t & invDt)
+  apply(HydroParams   params,
+        real_t        cfl,
+        VectorField3d gravity_field,
+        DataArray3d   Udata,
+        real_t &      invDt)
   {
-    ComputeDtGravityFunctor3D functor(params, cfl, gravity, Udata);
+    ComputeDtGravityFunctor3D functor(params, cfl, gravity_field, Udata);
     Kokkos::Max<real_t>       reducer(invDt);
     Kokkos::parallel_reduce("ComputeDtGravityFunctor3D",
                             Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
@@ -169,8 +173,8 @@ public:
        * u / dx has to be corrected by a factor k / (sqrt(1 + 2k) - 1)
        * in order to satisfy the new CFL, where k = g dx cfl / u^2
        */
-      double kk =
-        fabs(gravity(i, j, k, IX)) + fabs(gravity(i, j, k, IY)) + fabs(gravity(i, j, k, IZ));
+      double kk = fabs(gravity_field(i, j, k, IX)) + fabs(gravity_field(i, j, k, IY)) +
+                  fabs(gravity_field(i, j, k, IZ));
 
       kk *= cfl * dx / (velocity * velocity);
 
@@ -185,7 +189,7 @@ public:
   } // operator ()
 
   real_t        cfl;
-  VectorField3d gravity;
+  VectorField3d gravity_field;
   DataArray3d   Udata;
 
 }; // ComputeDtGravityFunctor3D
@@ -278,8 +282,8 @@ public:
    * \param[out] FluxData_x flux coming from the left neighbor along X
    * \param[out] FluxData_y flux coming from the left neighbor along Y
    * \param[out] FluxData_z flux coming from the left neighbor along Z
-   * \param[in] gravity_enabled boolean value to activate static gravity
-   * \param[in] gravity is a vector field
+   * \param[in] gravity boolean value to activate static gravity
+   * \param[in] gravity_field is a vector field
    */
   ComputeAndStoreFluxesFunctor3D(HydroParams   params,
                                  DataArray3d   Qdata,
@@ -287,8 +291,8 @@ public:
                                  DataArray3d   FluxData_y,
                                  DataArray3d   FluxData_z,
                                  real_t        dt,
-                                 bool          gravity_enabled,
-                                 VectorField3d gravity)
+                                 GravityParams gravity,
+                                 VectorField3d gravity_field)
     : HydroBaseFunctor3D(params)
     , Qdata(Qdata)
     , FluxData_x(FluxData_x)
@@ -298,8 +302,8 @@ public:
     , dtdx(dt / params.dx)
     , dtdy(dt / params.dy)
     , dtdz(dt / params.dz)
-    , gravity_enabled(gravity_enabled)
-    , gravity(gravity){};
+    , gravity(gravity)
+    , gravity_field(gravity_field){};
 
   // static method which does it all: create and execute functor
   static void
@@ -309,11 +313,11 @@ public:
         DataArray3d   FluxData_y,
         DataArray3d   FluxData_z,
         real_t        dt,
-        bool          gravity_enabled,
-        VectorField3d gravity)
+        GravityParams gravity,
+        VectorField3d gravity_field)
   {
     ComputeAndStoreFluxesFunctor3D functor(
-      params, Qdata, FluxData_x, FluxData_y, FluxData_z, dt, gravity_enabled, gravity);
+      params, Qdata, FluxData_x, FluxData_y, FluxData_z, dt, gravity, gravity_field);
     Kokkos::parallel_for("ComputeAndStoreFluxesFunctor3D",
                          Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
                            { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
@@ -482,18 +486,18 @@ public:
       trace_unsplit_3d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dqZ_neighbor, dtdx, dtdy, dtdz, FACE_XMAX, qleft);
 
-      if (gravity_enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
 
-        qleft[IU] += 0.5 * dt * gravity(i - 1, j, k, IX);
-        qleft[IV] += 0.5 * dt * gravity(i - 1, j, k, IY);
-        qleft[IW] += 0.5 * dt * gravity(i - 1, j, k, IZ);
+        qleft[IU] += 0.5 * dt * gravity_field(i - 1, j, k, IX);
+        qleft[IV] += 0.5 * dt * gravity_field(i - 1, j, k, IY);
+        qleft[IW] += 0.5 * dt * gravity_field(i - 1, j, k, IZ);
 
-        qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
-        qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
+        qright[IU] += 0.5 * dt * gravity_field(i, j, k, IX);
+        qright[IV] += 0.5 * dt * gravity_field(i, j, k, IY);
+        qright[IW] += 0.5 * dt * gravity_field(i, j, k, IZ);
       }
 
       // Solve Riemann problem at X-interfaces and compute X-fluxes
@@ -575,18 +579,18 @@ public:
       trace_unsplit_3d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dqZ_neighbor, dtdx, dtdy, dtdz, FACE_YMAX, qleft);
 
-      if (gravity_enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
 
-        qleft[IU] += 0.5 * dt * gravity(i, j - 1, k, IX);
-        qleft[IV] += 0.5 * dt * gravity(i, j - 1, k, IY);
-        qleft[IW] += 0.5 * dt * gravity(i, j - 1, k, IZ);
+        qleft[IU] += 0.5 * dt * gravity_field(i, j - 1, k, IX);
+        qleft[IV] += 0.5 * dt * gravity_field(i, j - 1, k, IY);
+        qleft[IW] += 0.5 * dt * gravity_field(i, j - 1, k, IZ);
 
-        qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
-        qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
+        qright[IU] += 0.5 * dt * gravity_field(i, j, k, IX);
+        qright[IV] += 0.5 * dt * gravity_field(i, j, k, IY);
+        qright[IW] += 0.5 * dt * gravity_field(i, j, k, IZ);
       }
 
       // Solve Riemann problem at Y-interfaces and compute Y-fluxes
@@ -670,18 +674,18 @@ public:
       trace_unsplit_3d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dqZ_neighbor, dtdx, dtdy, dtdz, FACE_ZMAX, qleft);
 
-      if (gravity_enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
 
-        qleft[IU] += 0.5 * dt * gravity(i, j, k - 1, IX);
-        qleft[IV] += 0.5 * dt * gravity(i, j, k - 1, IY);
-        qleft[IW] += 0.5 * dt * gravity(i, j, k - 1, IZ);
+        qleft[IU] += 0.5 * dt * gravity_field(i, j, k - 1, IX);
+        qleft[IV] += 0.5 * dt * gravity_field(i, j, k - 1, IY);
+        qleft[IW] += 0.5 * dt * gravity_field(i, j, k - 1, IZ);
 
-        qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
-        qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
+        qright[IU] += 0.5 * dt * gravity_field(i, j, k, IX);
+        qright[IV] += 0.5 * dt * gravity_field(i, j, k, IY);
+        qright[IW] += 0.5 * dt * gravity_field(i, j, k, IZ);
       }
 
       // Solve Riemann problem at Z-interfaces and compute Z-fluxes
@@ -707,8 +711,8 @@ public:
   DataArray3d   FluxData_y;
   DataArray3d   FluxData_z;
   real_t        dt, dtdx, dtdy, dtdz;
-  bool          gravity_enabled;
-  VectorField3d gravity;
+  GravityParams gravity;
+  VectorField3d gravity_field;
 
 }; // ComputeAndStoreFluxesFunctor3D
 
@@ -1094,8 +1098,8 @@ public:
                                   DataArray3d   Slopes_z,
                                   DataArray3d   Fluxes,
                                   real_t        dt,
-                                  bool          gravity_enabled,
-                                  VectorField3d gravity)
+                                  GravityParams gravity,
+                                  VectorField3d gravity_field)
     : HydroBaseFunctor3D(params)
     , Qdata(Qdata)
     , Slopes_x(Slopes_x)
@@ -1106,8 +1110,8 @@ public:
     , dtdx(dt / params.dx)
     , dtdy(dt / params.dy)
     , dtdz(dt / params.dz)
-    , gravity_enabled(gravity_enabled)
-    , gravity(gravity){};
+    , gravity(gravity)
+    , gravity_field(gravity_field){};
 
   // static method which does it all: create and execute functor
   static void
@@ -1118,11 +1122,11 @@ public:
         DataArray3d   Slopes_z,
         DataArray3d   Fluxes,
         real_t        dt,
-        bool          gravity_enabled,
-        VectorField3d gravity)
+        GravityParams gravity,
+        VectorField3d gravity_field)
   {
     ComputeTraceAndFluxes_Functor3D<dir> functor(
-      params, Qdata, Slopes_x, Slopes_y, Slopes_z, Fluxes, dt, gravity_enabled, gravity);
+      params, Qdata, Slopes_x, Slopes_y, Slopes_z, Fluxes, dt, gravity, gravity_field);
     Kokkos::parallel_for("ComputeTraceAndFluxes_Functor3D",
                          Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
                            { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
@@ -1196,14 +1200,14 @@ public:
         // left interface : right state
         trace_unsplit_3d_along_dir(qLoc, dqX, dqY, dqZ, dtdx, dtdy, dtdz, FACE_XMIN, qright);
 
-        if (gravity_enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
 
-          qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-          qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
-          qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
+          qright[IU] += 0.5 * dt * gravity_field(i, j, k, IX);
+          qright[IV] += 0.5 * dt * gravity_field(i, j, k, IY);
+          qright[IW] += 0.5 * dt * gravity_field(i, j, k, IZ);
         }
 
         qLocNeighbor[ID] = Qdata(i - 1, j, k, ID);
@@ -1242,14 +1246,14 @@ public:
                                    FACE_XMAX,
                                    qleft);
 
-        if (gravity_enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
 
-          qleft[IU] += 0.5 * dt * gravity(i - 1, j, k, IX);
-          qleft[IV] += 0.5 * dt * gravity(i - 1, j, k, IY);
-          qleft[IW] += 0.5 * dt * gravity(i - 1, j, k, IZ);
+          qleft[IU] += 0.5 * dt * gravity_field(i - 1, j, k, IX);
+          qleft[IV] += 0.5 * dt * gravity_field(i - 1, j, k, IY);
+          qleft[IW] += 0.5 * dt * gravity_field(i - 1, j, k, IZ);
         }
 
         // Solve Riemann problem at X-interfaces and compute X-fluxes
@@ -1270,14 +1274,14 @@ public:
         // left interface : right state
         trace_unsplit_3d_along_dir(qLoc, dqX, dqY, dqZ, dtdx, dtdy, dtdz, FACE_YMIN, qright);
 
-        if (gravity_enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
 
-          qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-          qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
-          qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
+          qright[IU] += 0.5 * dt * gravity_field(i, j, k, IX);
+          qright[IV] += 0.5 * dt * gravity_field(i, j, k, IY);
+          qright[IW] += 0.5 * dt * gravity_field(i, j, k, IZ);
         }
 
         qLocNeighbor[ID] = Qdata(i, j - 1, k, ID);
@@ -1316,14 +1320,14 @@ public:
                                    FACE_YMAX,
                                    qleft);
 
-        if (gravity_enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
 
-          qleft[IU] += 0.5 * dt * gravity(i, j - 1, k, IX);
-          qleft[IV] += 0.5 * dt * gravity(i, j - 1, k, IY);
-          qleft[IW] += 0.5 * dt * gravity(i, j - 1, k, IZ);
+          qleft[IU] += 0.5 * dt * gravity_field(i, j - 1, k, IX);
+          qleft[IV] += 0.5 * dt * gravity_field(i, j - 1, k, IY);
+          qleft[IW] += 0.5 * dt * gravity_field(i, j - 1, k, IZ);
         }
 
         // Solve Riemann problem at Y-interfaces and compute Y-fluxes
@@ -1382,14 +1386,14 @@ public:
                                    FACE_ZMAX,
                                    qleft);
 
-        if (gravity_enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
 
-          qleft[IU] += 0.5 * dt * gravity(i, j, k - 1, IX);
-          qleft[IV] += 0.5 * dt * gravity(i, j, k - 1, IY);
-          qleft[IW] += 0.5 * dt * gravity(i, j, k - 1, IZ);
+          qleft[IU] += 0.5 * dt * gravity_field(i, j, k - 1, IX);
+          qleft[IV] += 0.5 * dt * gravity_field(i, j, k - 1, IY);
+          qleft[IW] += 0.5 * dt * gravity_field(i, j, k - 1, IZ);
         }
 
         // Solve Riemann problem at Y-interfaces and compute Y-fluxes
@@ -1415,8 +1419,8 @@ public:
   DataArray3d   Slopes_x, Slopes_y, Slopes_z;
   DataArray3d   Fluxes;
   real_t        dt, dtdx, dtdy, dtdz;
-  bool          gravity_enabled;
-  VectorField3d gravity;
+  GravityParams gravity;
+  VectorField3d gravity_field;
 
 }; // ComputeTraceAndFluxes_Functor3D
 
@@ -1431,8 +1435,8 @@ public:
                                      DataArray3d   Qdata,
                                      DataArray3d   Udata,
                                      real_t        dt,
-                                     bool          gravity_enabled,
-                                     VectorField3d gravity)
+                                     GravityParams gravity,
+                                     VectorField3d gravity_field)
     : HydroBaseFunctor3D(params)
     , Qdata(Qdata)
     , Udata(Udata)
@@ -1440,8 +1444,8 @@ public:
     , dtdx(dt / params.dx)
     , dtdy(dt / params.dy)
     , dtdz(dt / params.dz)
-    , gravity_enabled(gravity_enabled)
-    , gravity(gravity){};
+    , gravity(gravity)
+    , gravity_field(gravity_field){};
 
   // static method which does it all: create and execute functor
   static void
@@ -1449,10 +1453,10 @@ public:
         DataArray3d   Qdata,
         DataArray3d   Udata,
         real_t        dt,
-        bool          gravity_enabled,
-        VectorField3d gravity)
+        GravityParams gravity,
+        VectorField3d gravity_field)
   {
-    ComputeAllFluxesAndUpdateFunctor3D functor(params, Qdata, Udata, dt, gravity_enabled, gravity);
+    ComputeAllFluxesAndUpdateFunctor3D functor(params, Qdata, Udata, dt, gravity, gravity_field);
     Kokkos::parallel_for("ComputeAllFluxesAndUpdateFunctor3D",
                          Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
                            { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
@@ -1625,18 +1629,18 @@ public:
       trace_unsplit_3d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dqZ_neighbor, dtdx, dtdy, dtdz, FACE_XMAX, qleft);
 
-      if (gravity_enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
 
-        qleft[IU] += 0.5 * dt * gravity(i - 1, j, k, IX);
-        qleft[IV] += 0.5 * dt * gravity(i - 1, j, k, IY);
-        qleft[IW] += 0.5 * dt * gravity(i - 1, j, k, IZ);
+        qleft[IU] += 0.5 * dt * gravity_field(i - 1, j, k, IX);
+        qleft[IV] += 0.5 * dt * gravity_field(i - 1, j, k, IY);
+        qleft[IW] += 0.5 * dt * gravity_field(i - 1, j, k, IZ);
 
-        qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
-        qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
+        qright[IU] += 0.5 * dt * gravity_field(i, j, k, IX);
+        qright[IV] += 0.5 * dt * gravity_field(i, j, k, IY);
+        qright[IW] += 0.5 * dt * gravity_field(i, j, k, IZ);
       }
 
       // Solve Riemann problem at X-interfaces and compute X-fluxes
@@ -1732,18 +1736,18 @@ public:
       trace_unsplit_3d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dqZ_neighbor, dtdx, dtdy, dtdz, FACE_YMAX, qleft);
 
-      if (gravity_enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
 
-        qleft[IU] += 0.5 * dt * gravity(i, j - 1, k, IX);
-        qleft[IV] += 0.5 * dt * gravity(i, j - 1, k, IY);
-        qleft[IW] += 0.5 * dt * gravity(i, j - 1, k, IZ);
+        qleft[IU] += 0.5 * dt * gravity_field(i, j - 1, k, IX);
+        qleft[IV] += 0.5 * dt * gravity_field(i, j - 1, k, IY);
+        qleft[IW] += 0.5 * dt * gravity_field(i, j - 1, k, IZ);
 
-        qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
-        qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
+        qright[IU] += 0.5 * dt * gravity_field(i, j, k, IX);
+        qright[IV] += 0.5 * dt * gravity_field(i, j, k, IY);
+        qright[IW] += 0.5 * dt * gravity_field(i, j, k, IZ);
       }
 
       // Solve Riemann problem at Y-interfaces and compute Y-fluxes
@@ -1841,18 +1845,18 @@ public:
       trace_unsplit_3d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dqZ_neighbor, dtdx, dtdy, dtdz, FACE_ZMAX, qleft);
 
-      if (gravity_enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
 
-        qleft[IU] += 0.5 * dt * gravity(i, j, k - 1, IX);
-        qleft[IV] += 0.5 * dt * gravity(i, j, k - 1, IY);
-        qleft[IW] += 0.5 * dt * gravity(i, j, k - 1, IZ);
+        qleft[IU] += 0.5 * dt * gravity_field(i, j, k - 1, IX);
+        qleft[IV] += 0.5 * dt * gravity_field(i, j, k - 1, IY);
+        qleft[IW] += 0.5 * dt * gravity_field(i, j, k - 1, IZ);
 
-        qright[IU] += 0.5 * dt * gravity(i, j, k, IX);
-        qright[IV] += 0.5 * dt * gravity(i, j, k, IY);
-        qright[IW] += 0.5 * dt * gravity(i, j, k, IZ);
+        qright[IU] += 0.5 * dt * gravity_field(i, j, k, IX);
+        qright[IV] += 0.5 * dt * gravity_field(i, j, k, IY);
+        qright[IW] += 0.5 * dt * gravity_field(i, j, k, IZ);
       }
 
       // Solve Riemann problem at Z-interfaces and compute Z-fluxes
@@ -1888,8 +1892,8 @@ public:
   DataArray3d   Qdata;
   DataArray3d   Udata;
   real_t        dt, dtdx, dtdy, dtdz;
-  bool          gravity_enabled;
-  VectorField3d gravity;
+  GravityParams gravity;
+  VectorField3d gravity_field;
 
 }; // ComputeAllFluxesAndUpdateFunctor3D
 
@@ -1910,12 +1914,12 @@ public:
   GravitySourceTermFunctor3D(HydroParams   params,
                              DataArray3d   Udata_in,
                              DataArray3d   Udata_out,
-                             VectorField3d gravity,
+                             VectorField3d gravity_field,
                              real_t        dt)
     : HydroBaseFunctor3D(params)
     , Udata_in(Udata_in)
     , Udata_out(Udata_out)
-    , gravity(gravity)
+    , gravity_field(gravity_field)
     , dt(dt){};
 
   // static method which does it all: create and execute functor
@@ -1923,10 +1927,10 @@ public:
   apply(HydroParams   params,
         DataArray3d   Udata_in,
         DataArray3d   Udata_out,
-        VectorField3d gravity,
+        VectorField3d gravity_field,
         real_t        dt)
   {
-    GravitySourceTermFunctor3D functor(params, Udata_in, Udata_out, gravity, dt);
+    GravitySourceTermFunctor3D functor(params, Udata_in, Udata_out, gravity_field, dt);
     Kokkos::parallel_for("GravitySourceTermFunctor3D",
                          Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
                            { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
@@ -1957,9 +1961,9 @@ public:
       real_t ekin_old = 0.5 * (rhou * rhou + rhov * rhov + rhow * rhow) / rhoNew;
 
       // update momentum
-      rhou += 0.5 * dt * gravity(i, j, k, IX) * (rhoOld + rhoNew);
-      rhov += 0.5 * dt * gravity(i, j, k, IY) * (rhoOld + rhoNew);
-      rhow += 0.5 * dt * gravity(i, j, k, IZ) * (rhoOld + rhoNew);
+      rhou += 0.5 * dt * gravity_field(i, j, k, IX) * (rhoOld + rhoNew);
+      rhov += 0.5 * dt * gravity_field(i, j, k, IY) * (rhoOld + rhoNew);
+      rhow += 0.5 * dt * gravity_field(i, j, k, IZ) * (rhoOld + rhoNew);
 
       Udata_out(i, j, k, IU) = rhou;
       Udata_out(i, j, k, IV) = rhov;
@@ -1975,7 +1979,7 @@ public:
   } // end operator ()
 
   DataArray3d   Udata_in, Udata_out;
-  VectorField3d gravity;
+  VectorField3d gravity_field;
   real_t        dt;
 
 }; // GravitySourceTermFunctor3D
