@@ -1,32 +1,31 @@
-add_library(muscl "")
+add_library(
+  euler_kokkos_muscl
+  hydro_shared.h
+  HydroBaseFunctor2D.h
+  HydroBaseFunctor3D.h
+  HydroRunFunctors2D.h
+  HydroRunFunctors3D.h
+  HydroInitFunctors2D.h
+  HydroInitFunctors3D.h
+  MHDBaseFunctor2D.h
+  MHDBaseFunctor3D.h
+  MHDRunFunctors2D.h
+  MHDRunFunctors3D.h
+  MHDInitFunctors2D.h
+  MHDInitFunctors3D.h
+  SolverHydroMuscl.h
+  SolverHydroMuscl.cpp
+  SolverMHDMuscl.h
+  SolverMHDMuscl.cpp)
 
-target_sources(
-  muscl
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/hydro_shared.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/HydroBaseFunctor2D.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/HydroBaseFunctor3D.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/HydroRunFunctors2D.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/HydroRunFunctors3D.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/HydroInitFunctors2D.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/HydroInitFunctors3D.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/MHDBaseFunctor2D.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/MHDBaseFunctor3D.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/MHDRunFunctors2D.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/MHDRunFunctors3D.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/MHDInitFunctors2D.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/MHDInitFunctors3D.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/SolverHydroMuscl.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/SolverHydroMuscl.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/SolverMHDMuscl.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/SolverMHDMuscl.cpp)
+target_include_directories(euler_kokkos_muscl PUBLIC ${CMAKE_SOURCE_DIR}/src
+                                                     ${CMAKE_BINARY_DIR}/src)
 
-target_include_directories(muscl PUBLIC ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src)
-
-target_link_libraries(muscl PUBLIC Kokkos::kokkos)
+target_link_libraries(euler_kokkos_muscl PUBLIC Kokkos::kokkos)
 
 if(EULER_KOKKOS_USE_MPI)
-  target_link_libraries(muscl PUBLIC EulerKokkos::mpiUtils)
+  target_link_libraries(euler_kokkos_muscl PUBLIC EulerKokkos::mpiUtils)
 endif(EULER_KOKKOS_USE_MPI)
 
 # Add an alias so that library can be used inside the build tree
-add_library(EulerKokkos::muscl ALIAS muscl)
+add_library(EulerKokkos::muscl ALIAS euler_kokkos_muscl)
