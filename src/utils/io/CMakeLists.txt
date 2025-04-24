@@ -1,10 +1,8 @@
 add_library(io "")
 
 target_sources(
-  io
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/IO_common.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/IO_ReadWrite.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/IO_VTK.cpp)
+  io PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/IO_common.cpp ${CMAKE_CURRENT_SOURCE_DIR}/IO_ReadWrite.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/IO_VTK.cpp)
 
 if(EULER_KOKKOS_USE_HDF5)
   target_sources(io PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/IO_HDF5.cpp)

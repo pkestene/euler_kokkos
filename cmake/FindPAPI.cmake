@@ -42,7 +42,6 @@ find_path(
   PATH_SUFFIXES include)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(PAPI REQUIRED_VARS PAPI_LIBRARY
-                                                     PAPI_INCLUDE_DIR)
+find_package_handle_standard_args(PAPI REQUIRED_VARS PAPI_LIBRARY PAPI_INCLUDE_DIR)
 
 mark_as_advanced(PAPI_LIBRARY PAPI_INCLUDE_DIR)

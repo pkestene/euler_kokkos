@@ -16,13 +16,11 @@ if(EULER_KOKKOS_USE_MPI)
       NAMES ompi_info
       HINTS ${MPI_CXX_LIBRARIES}/../bin)
 
-    # Full command line to probe if cuda support in MPI implementation is
-    # enabled ompi_info --parsable --all | grep
-    # mpi_built_with_cuda_support:value
+    # Full command line to probe if cuda support in MPI implementation is enabled ompi_info
+    # --parsable --all | grep mpi_built_with_cuda_support:value
     if(OMPI_INFO)
       execute_process(COMMAND ${OMPI_INFO} OUTPUT_VARIABLE _output)
-      if((_output MATCHES "smcuda") OR (EULER_KOKKOS_USE_MPI_CUDA_AWARE_ENFORCED
-                                       ))
+      if((_output MATCHES "smcuda") OR (EULER_KOKKOS_USE_MPI_CUDA_AWARE_ENFORCED))
         set(EULER_KOKKOS_USE_MPI_CUDA_AWARE_ENABLED ON)
         message(STATUS "Found OpenMPI with CUDA support built.")
       else()
@@ -33,10 +31,7 @@ if(EULER_KOKKOS_USE_MPI)
     endif(OMPI_INFO)
 
   else(MPI_CXX_FOUND)
-    message(
-      WARNING
-        "Not compiling with MPI. Suppress this warning with -DEULER_KOKKOS_USE_MPI=OFF"
-    )
+    message(WARNING "Not compiling with MPI. Suppress this warning with -DEULER_KOKKOS_USE_MPI=OFF")
     set(EULER_KOKKOS_USE_MPI OFF)
   endif(MPI_CXX_FOUND)
 

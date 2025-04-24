@@ -7,8 +7,8 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
   cmake_policy(SET CMP0076 NEW)
 endif()
 
-# CMake 3.24 and above prefers to set the timestamps of all extracted contents
-# to the time of the extraction.
+# CMake 3.24 and above prefers to set the timestamps of all extracted contents to the time of the
+# extraction.
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
   cmake_policy(SET CMP0135 NEW)
 endif()
@@ -33,22 +33,16 @@ include(preventBuildInSource)
 include(initBuildType)
 
 # options
-option(EULER_KOKKOS_BUILD_DOC
-       "Enable / disable documentation build (sphinx/html)" OFF)
-option(EULER_KOKKOS_USE_SPHINX_EXHALE
-       "Enable / disable building API documentation (very long)" OFF)
+option(EULER_KOKKOS_BUILD_DOC "Enable / disable documentation build (sphinx/html)" OFF)
+option(EULER_KOKKOS_USE_SPHINX_EXHALE "Enable / disable building API documentation (very long)" OFF)
 option(EULER_KOKKOS_USE_MPI "Activate / want MPI build" OFF)
 option(EULER_KOKKOS_USE_VTK "Activate / want VTK build" OFF)
 option(EULER_KOKKOS_USE_DOUBLE "build with double precision" ON)
 option(EULER_KOKKOS_USE_HDF5 "build HDF5 input/output support" OFF)
-option(EULER_KOKKOS_USE_PNETCDF
-       "build PNETCDF input/output support (MPI required)" OFF)
-option(EULER_KOKKOS_USE_FPE_DEBUG
-       "build with floating point Nan tracing (signal handler)" OFF)
-option(
-  EULER_KOKKOS_USE_MPI_CUDA_AWARE_ENFORCED
-  "Some MPI cuda-aware implementation are not well detected; use this to enforce"
-  OFF)
+option(EULER_KOKKOS_USE_PNETCDF "build PNETCDF input/output support (MPI required)" OFF)
+option(EULER_KOKKOS_USE_FPE_DEBUG "build with floating point Nan tracing (signal handler)" OFF)
+option(EULER_KOKKOS_USE_MPI_CUDA_AWARE_ENFORCED
+       "Some MPI cuda-aware implementation are not well detected; use this to enforce" OFF)
 
 # disable base languages
 unset(PROJECT_LANGUAGES)
@@ -58,13 +52,10 @@ set(PROJECT_LANGUAGES ${PROJECT_LANGUAGES} C CXX)
 set(EULER_KOKKOS_VERSION "0.9.0")
 
 # deduce EULER_KOKKOS_SHORT_VERSION using regex
-string(REGEX MATCH "^[0-9]+\.[0-9]+\.[0-9]+" EULER_KOKKOS_SHORT_VERSION
-             ${EULER_KOKKOS_VERSION})
+string(REGEX MATCH "^[0-9]+\.[0-9]+\.[0-9]+" EULER_KOKKOS_SHORT_VERSION ${EULER_KOKKOS_VERSION})
 if("${EULER_KOKKOS_SHORT_VERSION}" STREQUAL "")
   message(
-    FATAL_ERROR
-      "Unable to compute short version from EULER_KOKKOS_VERSION=${EULER_KOKKOS_VERSION}"
-  )
+    FATAL_ERROR "Unable to compute short version from EULER_KOKKOS_VERSION=${EULER_KOKKOS_VERSION}")
 endif()
 
 project(
@@ -76,13 +67,9 @@ project(
 if(EULER_KOKKOS_BUILD_DOC)
   set(EULER_KOKKOS_DOC_TYPE
       "Undefined"
-      CACHE
-        STRING
-        "The documentation type to generate. Available values are html and doxygen"
-  )
+      CACHE STRING "The documentation type to generate. Available values are html and doxygen")
   # Set the possible values for documentation type
-  set_property(CACHE EULER_KOKKOS_DOC_TYPE PROPERTY STRINGS "html" "doxygen"
-                                                    "Undefined")
+  set_property(CACHE EULER_KOKKOS_DOC_TYPE PROPERTY STRINGS "html" "doxygen" "Undefined")
   add_subdirectory(doc)
   return()
 endif()
@@ -94,16 +81,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# ##############################################################################
+# ##################################################################################################
 #
 # check MPI, VTK, HDF5, PNETCDF, ...
 #
-# ##############################################################################
+# ##################################################################################################
 include(cmake/config_mpi.cmake)
 
 if(EULER_KOKKOS_USE_VTK)
-  # look for VTK only if requested; VTK macro might even be not present on the
-  # target platform
+  # look for VTK only if requested; VTK macro might even be not present on the target platform
   find_package(
     VTK
     COMPONENTS CommonCore
@@ -130,14 +116,14 @@ if(EULER_KOKKOS_USE_VTK)
   endif()
 endif(EULER_KOKKOS_USE_VTK)
 
-# ##############################################################################
+# ##################################################################################################
 # HDF5
-# ##############################################################################
+# ##################################################################################################
 include(cmake/config_hdf5.cmake)
 
-# ##############################################################################
+# ##################################################################################################
 # PNETCDF
-# ##############################################################################
+# ##################################################################################################
 if(EULER_KOKKOS_USE_MPI)
   if(EULER_KOKKOS_USE_PNETCDF)
     find_package(PNETCDF)
@@ -154,16 +140,14 @@ endif(EULER_KOKKOS_USE_MPI)
 include(build_or_find_kokkos)
 
 #
-# Using flags -Wextra, it's to strong for Kokkos, too many warnings But -Wall is
-# really a minimum
+# Using flags -Wextra, it's to strong for Kokkos, too many warnings But -Wall is really a minimum
 #
-# add_definitions(-Wall -Wextra -Wconversion -Wshadow -Wnon-virtual-dtor
-# -Wold-style-cast -Wcast-align -Wcast-qual -Wunused -Woverloaded-virtual
-# -pedantic ) add_definitions( -Wall -Wextra )
+# add_definitions(-Wall -Wextra -Wconversion -Wshadow -Wnon-virtual-dtor -Wold-style-cast
+# -Wcast-align -Wcast-qual -Wunused -Woverloaded-virtual -pedantic ) add_definitions( -Wall -Wextra
+# )
 add_definitions(-Wall)
 
-# Generate euler_kokkos_config.h and euler_kokkos_version.h (with git info and
-# build date)
+# Generate euler_kokkos_config.h and euler_kokkos_version.h (with git info and build date)
 #
 include(cmake/generate_config_h.cmake)
 
@@ -188,8 +172,8 @@ message("  CMake install prefix   : ${CMAKE_INSTALL_PREFIX}")
 message("  CMake system processor : ${CMAKE_SYSTEM_PROCESSOR}")
 message("  CMake system name (OS) : ${CMAKE_SYSTEM_NAME}")
 message("")
-message("  C++ Compiler : ${CMAKE_CXX_COMPILER_ID} "
-        "${CMAKE_CXX_COMPILER_VERSION} " "${CMAKE_CXX_COMPILER_WRAPPER}")
+message("  C++ Compiler : ${CMAKE_CXX_COMPILER_ID} " "${CMAKE_CXX_COMPILER_VERSION} "
+        "${CMAKE_CXX_COMPILER_WRAPPER}")
 message("                 ${CMAKE_CXX_COMPILER}")
 
 message("  MPI enabled                  = ${EULER_KOKKOS_USE_MPI}")
@@ -228,9 +212,8 @@ if(Kokkos_ENABLE_CUDA)
   endif()
 
   message("  Kokkos CUDA   flags          = ${KOKKOS_CUDA_OPTIONS}")
-  # message("  CUDA Compiler      : ${CMAKE_CUDA_COMPILER}") message("  CUDA
-  # Compiler exec : ${CUDA_NVCC_EXECUTABLE}") message("  CUDA Compile flags :
-  # ${CUDA_NVCC_FLAGS}")
+  # message("  CUDA Compiler      : ${CMAKE_CUDA_COMPILER}") message("  CUDA Compiler exec :
+  # ${CUDA_NVCC_EXECUTABLE}") message("  CUDA Compile flags : ${CUDA_NVCC_FLAGS}")
 endif(Kokkos_ENABLE_CUDA)
 
 if(Kokkos_ENABLE_HIP)

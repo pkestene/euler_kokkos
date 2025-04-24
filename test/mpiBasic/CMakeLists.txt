@@ -4,9 +4,8 @@
 macro(MPI_TEST_ADD_EXEC test_name)
   set(EXE_NAME ${test_name})
   add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
-  target_link_libraries(
-    ${EXE_NAME} PRIVATE Kokkos::kokkos EulerKokkos::monitoring
-                        EulerKokkos::mpiUtils)
+  target_link_libraries(${EXE_NAME} PRIVATE Kokkos::kokkos EulerKokkos::monitoring
+                                            EulerKokkos::mpiUtils)
 endmacro(MPI_TEST_ADD_EXEC)
 
 #
@@ -31,8 +30,7 @@ if(EULER_KOKKOS_USE_VTK)
     endif()
     # cmake-format: on
 
-    target_include_directories(testVtkXMLPImageDataWriter
-                               PUBLIC ${VTK_INCLUDE_DIRS})
+    target_include_directories(testVtkXMLPImageDataWriter PUBLIC ${VTK_INCLUDE_DIRS})
 
     target_link_libraries(testVtkXMLPImageDataWriter PRIVATE ${VTK_LIBRARIES})
   endif(VTK_FOUND)

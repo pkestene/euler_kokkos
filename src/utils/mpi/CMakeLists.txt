@@ -17,8 +17,7 @@ add_library(mpiUtils ${MPI_UTILS_SRCS})
 # Set target properties
 target_include_directories(
   mpiUtils
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
          $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/src>)
 
 target_link_libraries(mpiUtils PUBLIC Kokkos::kokkos)

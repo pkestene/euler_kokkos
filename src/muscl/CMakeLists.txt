@@ -20,8 +20,7 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/SolverMHDMuscl.h
           ${CMAKE_CURRENT_SOURCE_DIR}/SolverMHDMuscl.cpp)
 
-target_include_directories(muscl PUBLIC ${CMAKE_SOURCE_DIR}/src
-                                        ${CMAKE_BINARY_DIR}/src)
+target_include_directories(muscl PUBLIC ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src)
 
 target_link_libraries(muscl PUBLIC Kokkos::kokkos)
 

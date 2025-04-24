@@ -38,12 +38,10 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/mhd_utils.h
           ${CMAKE_CURRENT_SOURCE_DIR}/solver_utils.h)
 
-target_include_directories(
-  shared PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-                $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/src>)
+target_include_directories(shared PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+                                         $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/src>)
 
-target_link_libraries(shared PUBLIC Kokkos::kokkos EulerKokkos::config
-                                    EulerKokkos::io)
+target_link_libraries(shared PUBLIC Kokkos::kokkos EulerKokkos::config EulerKokkos::io)
 if(EULER_KOKKOS_USE_MPI)
   target_link_libraries(shared PUBLIC EulerKokkos::mpiUtils)
 endif(EULER_KOKKOS_USE_MPI)
@@ -51,13 +49,12 @@ endif(EULER_KOKKOS_USE_MPI)
 # Add an alias so that library can be used inside the build tree
 add_library(EulerKokkos::shared ALIAS shared)
 
-# ##############################################################################
+# ##################################################################################################
 # SOLVER FACTORY ####
-# ##############################################################################
+# ##################################################################################################
 add_library(solver_factory "")
-target_sources(
-  solver_factory PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/SolverFactory.cpp
-                         ${CMAKE_CURRENT_SOURCE_DIR}/SolverFactory.h)
+target_sources(solver_factory PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/SolverFactory.cpp
+                                      ${CMAKE_CURRENT_SOURCE_DIR}/SolverFactory.h)
 target_include_directories(
   solver_factory PUBLIC ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/muscl
                         ${CMAKE_BINARY_DIR}/src)

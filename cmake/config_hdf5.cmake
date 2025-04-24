@@ -8,7 +8,10 @@ endif(EULER_KOKKOS_USE_MPI)
 
 if(EULER_KOKKOS_USE_HDF5)
   set(HDF5_FIND_DEBUG True)
-  find_package(HDF5 COMPONENTS C CXX HL REQUIRED)
+  find_package(
+    HDF5
+    COMPONENTS C CXX HL
+    REQUIRED)
   if(HDF5_FOUND)
     set(EULER_KOKKOS_USE_HDF5_VERSION ${HDF5_VERSION})
     include_directories(${HDF5_INCLUDE_DIRS})
@@ -21,6 +24,6 @@ if(EULER_KOKKOS_USE_HDF5)
     endif()
   else()
     set(EULER_KOKKOS_USE_HDF5_VERSION "")
-      message(WARNING "HDF5 not found")
+    message(WARNING "HDF5 not found")
   endif(HDF5_FOUND)
 endif(EULER_KOKKOS_USE_HDF5)
