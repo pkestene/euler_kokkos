@@ -23,12 +23,21 @@ SolverBase::SolverBase(HydroParams & params, ConfigMap & configMap)
   : params(params)
   , configMap(configMap)
   , solver_type(SOLVER_UNDEFINED)
+  , m_restart_run_enabled(configMap.getInteger("run", "restart_enabled", 0))
+  , m_restart_run_filename(configMap.getString("run", "restart_filename", ""))
+  , m_t(configMap.getFloat("run", "tCurrent", 0.0))
+  , m_dt(0.0)
+  , m_iteration(0)
+  , m_tEnd(configMap.getFloat("run", "tEnd", 0.0))
+  , m_cfl(configMap.getFloat("hydro", "cfl", 1.0))
+  , m_nlog(configMap.getFloat("run", "nlog", 10))
+  , m_nCells(0)
+  , m_nDofsPerCell(0)
+  , m_problem_name(configMap.getString("hydro", "problem", "unknown"))
+  , m_solver_name(configMap.getString("run", "solver_name", "unknown"))
+  , m_static_gravity_enabled(configMap.getBool("gravity", "static", false))
+  , m_gravity(configMap)
 {
-
-  /*
-   * init some variables by reading parameter file.
-   */
-  read_config();
 
   /*
    * other variables initialization.
@@ -106,37 +115,6 @@ SolverBase::~SolverBase()
   // delete m_io_reader_writer;
 
 } // SolverBase::~SolverBase
-
-// =======================================================
-// =======================================================
-void
-SolverBase::read_config()
-{
-
-  m_t = configMap.getFloat("run", "tCurrent", 0.0);
-  m_tEnd = configMap.getFloat("run", "tEnd", 0.0);
-  m_dt = m_tEnd;
-  m_cfl = configMap.getFloat("hydro", "cfl", 1.0);
-  m_nlog = configMap.getFloat("run", "nlog", 10);
-  m_iteration = 0;
-
-  m_problem_name = configMap.getString("hydro", "problem", "unknown");
-
-  m_solver_name = configMap.getString("run", "solver_name", "unknown");
-
-  /* restart run : default is no */
-  m_restart_run_enabled = configMap.getInteger("run", "restart_enabled", 0);
-  m_restart_run_filename = configMap.getString("run", "restart_filename", "");
-
-  /*
-   * Gravity enabled (either static or self).
-   * self-gravity requires a poisson solver (FFT-based): TODO
-   */
-  m_static_gravity_enabled = configMap.getBool("gravity", "static", false);
-  // selfGravityEnabled = configMap.getBool("gravity", "self", false);
-  m_gravity_enabled = m_static_gravity_enabled; // || m_self_gravity_enabled;
-
-} // SolverBase::read_config
 
 // =======================================================
 // =======================================================

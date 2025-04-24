@@ -2,18 +2,19 @@
 #define SOLVER_BASE_H_
 
 #include <shared/euler_kokkos_config.h> // for EULER_KOKKOS_USE_HDF5, ...
-#include "shared/HydroParams.h"
-#include "utils/config/ConfigMap.h"
-#include "shared/kokkos_shared.h"
+#include <shared/HydroParams.h>
+#include <utils/config/ConfigMap.h>
+#include <shared/kokkos_shared.h>
+#include <shared/GravityParams.h>
 
 #include <map>
 #include <memory> // for std::unique_ptr / std::shared_ptr
 
 // for timer
 #ifdef KOKKOS_ENABLE_CUDA
-#  include "utils/monitoring/CudaTimer.h"
+#  include <utils/monitoring/CudaTimer.h>
 #else
-#  include "utils/monitoring/OpenMPTimer.h"
+#  include <utils/monitoring/OpenMPTimer.h>
 #endif
 
 //! this enum helps identifying the type of solver used
@@ -84,8 +85,8 @@ public:
   std::string m_solver_name;
 
   //! gravity enabled ?
-  bool m_static_gravity_enabled;
-  bool m_gravity_enabled;
+  bool          m_static_gravity_enabled;
+  GravityParams m_gravity;
 
   /*
    *
@@ -93,10 +94,6 @@ public:
    * concrete implementation.
    *
    */
-
-  //! Read and parse the configuration file (ini format).
-  virtual void
-  read_config();
 
   //! Compute CFL condition (allowed time step), over all MPI process.
   virtual void

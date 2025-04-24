@@ -84,7 +84,7 @@ public:
   DataArray Slopes_z; //!< implementation 1 only
 
   /* Gravity field */
-  VectorField gravity;
+  VectorField gravity_field;
 
   // riemann_solver_t riemann_solver_fn; //!< riemann solver function pointer
 
@@ -110,7 +110,7 @@ public:
   void
   init_isentropic_vortex(DataArray Udata); // 2d only
   void
-  init_rayleigh_taylor(DataArray Udata, VectorField gravity); // 2d and 3d
+  init_rayleigh_taylor(DataArray Udata, VectorField gravity_field); // 2d and 3d
 
   //! init restart (load data from file)
   void
@@ -225,9 +225,9 @@ SolverHydroMuscl<dim>::SolverHydroMuscl(HydroParams & params, ConfigMap & config
         isize * jsize * nbvar * sizeof(real_t) * 3; // 1+1+1 for Slopes_x+Slopes_y+Fluxes_x
     }
 
-    if (m_gravity_enabled)
+    if (m_gravity.enabled)
     {
-      gravity = VectorField("gravity field", isize, jsize);
+      gravity_field = VectorField("gravity field", isize, jsize);
       total_mem_size += isize * jsize * 2;
     }
   }
@@ -265,9 +265,9 @@ SolverHydroMuscl<dim>::SolverHydroMuscl(HydroParams & params, ConfigMap & config
       total_mem_size += isize * jsize * ksize * nbvar * sizeof(real_t) * 4; // 1+1+1+1=4 Slopes
     }
 
-    if (m_gravity_enabled)
+    if (m_gravity.enabled)
     {
-      gravity = VectorField("gravity field", isize, jsize, ksize);
+      gravity_field = VectorField("gravity field", isize, jsize, ksize);
       total_mem_size += isize * jsize * ksize * 3;
     }
 
@@ -602,7 +602,7 @@ SolverHydroMuscl<dim>::compute_dt_local()
   else
     Udata = U2;
 
-  if (m_gravity_enabled)
+  if (m_gravity.enabled)
   {
 
     // alias to actual device functor
@@ -610,7 +610,7 @@ SolverHydroMuscl<dim>::compute_dt_local()
       conditional<dim == 2, ComputeDtGravityFunctor2D, ComputeDtGravityFunctor3D>::type;
 
     // call device functor
-    ComputeDtFunctor::apply(params, params.settings.cfl, gravity, Udata, invDt);
+    ComputeDtFunctor::apply(params, params.settings.cfl, gravity_field, Udata, invDt);
   }
   else
   {

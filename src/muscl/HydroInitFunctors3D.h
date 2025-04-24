@@ -551,20 +551,20 @@ public:
   RayleighTaylorInstabilityFunctor3D(HydroParams                     params,
                                      RayleighTaylorInstabilityParams rtiparams,
                                      DataArray3d                     Udata,
-                                     VectorField3d                   gravity)
+                                     VectorField3d                   gravity_field)
     : HydroBaseFunctor3D(params)
     , rtiparams(rtiparams)
     , Udata(Udata)
-    , gravity(gravity){};
+    , gravity_field(gravity_field){};
 
   // static method which does it all: create and execute functor
   static void
   apply(HydroParams                     params,
         RayleighTaylorInstabilityParams rtiparams,
         DataArray3d                     Udata,
-        VectorField3d                   gravity)
+        VectorField3d                   gravity_field)
   {
-    RayleighTaylorInstabilityFunctor3D functor(params, rtiparams, Udata, gravity);
+    RayleighTaylorInstabilityFunctor3D functor(params, rtiparams, Udata, gravity_field);
     Kokkos::parallel_for("RayleighTaylorInstabilityFunctor3D",
                          Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
                            { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
@@ -663,15 +663,15 @@ public:
       (P0 + Udata(i, j, k, ID) * (gravity_x * x + gravity_y * y + gravity_z * z)) / (gamma0 - 1);
 
     // init gravity field
-    gravity(i, j, k, IX) = gravity_x;
-    gravity(i, j, k, IY) = gravity_y;
-    gravity(i, j, k, IZ) = gravity_z;
+    gravity_field(i, j, k, IX) = gravity_x;
+    gravity_field(i, j, k, IY) = gravity_y;
+    gravity_field(i, j, k, IZ) = gravity_z;
 
   } // end operator ()
 
   RayleighTaylorInstabilityParams rtiparams;
   DataArray3d                     Udata;
-  VectorField3d                   gravity;
+  VectorField3d                   gravity_field;
 
 }; // class RayleighTaylorInstabilityFunctor3D
 

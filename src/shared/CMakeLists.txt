@@ -10,6 +10,7 @@ add_library(
   euler_kokkos_build_info.cpp
   euler_kokkos_git_info.h
   euler_kokkos_git_info.cpp
+  GravityParams.h
   HydroParams.cpp
   HydroParams.h
   HydroState.h
