@@ -499,7 +499,7 @@ public:
    * \param[in] Qdata primitive variables (at cell center)
    * \param[out] FluxData_x flux coming from the left neighbor along X
    * \param[out] FluxData_y flux coming from the left neighbor along Y
-   * \param[in] gravity_params static gravity parameters
+   * \param[in] gravity static gravity parameters
    * \param[in] gravity_field gravity vector field
    */
   ComputeAndStoreFluxesFunctor2D(HydroParams   params,
@@ -507,7 +507,7 @@ public:
                                  DataArray2d   FluxData_x,
                                  DataArray2d   FluxData_y,
                                  real_t        dt,
-                                 GravityParams gravity_params,
+                                 GravityParams gravity,
                                  VectorField2d gravity_field)
     : HydroBaseFunctor2D(params)
     , Qdata(Qdata)
@@ -516,7 +516,7 @@ public:
     , dt(dt)
     , dtdx(dt / params.dx)
     , dtdy(dt / params.dy)
-    , gravity_params(gravity_params)
+    , gravity(gravity)
     , gravity_field(gravity_field){};
 
   // static method which does it all: create and execute functor
@@ -526,11 +526,11 @@ public:
         DataArray2d   FluxData_x,
         DataArray2d   FluxData_y,
         real_t        dt,
-        GravityParams gravity_params,
+        GravityParams gravity,
         VectorField2d gravity_field)
   {
     ComputeAndStoreFluxesFunctor2D functor(
-      params, Qdata, FluxData_x, FluxData_y, dt, gravity_params, gravity_field);
+      params, Qdata, FluxData_x, FluxData_y, dt, gravity, gravity_field);
     Kokkos::parallel_for(
       "ComputeAndStoreFluxesFunctor2D",
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
@@ -653,7 +653,7 @@ public:
       trace_unsplit_2d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dtdx, dtdy, FACE_XMAX, qleft);
 
-      if (gravity_params.enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
@@ -727,7 +727,7 @@ public:
       trace_unsplit_2d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dtdx, dtdy, FACE_YMAX, qleft);
 
-      if (gravity_params.enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
@@ -761,7 +761,7 @@ public:
   DataArray2d   FluxData_x;
   DataArray2d   FluxData_y;
   real_t        dt, dtdx, dtdy;
-  GravityParams gravity_params;
+  GravityParams gravity;
   VectorField2d gravity_field;
 
 
@@ -1143,7 +1143,7 @@ public:
         // left interface : right state
         trace_unsplit_2d_along_dir(qLoc, dqX, dqY, dtdx, dtdy, FACE_XMIN, qright);
 
-        if (gravity.enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
@@ -1172,7 +1172,7 @@ public:
         trace_unsplit_2d_along_dir(
           qLocNeighbor, dqX_neighbor, dqY_neighbor, dtdx, dtdy, FACE_XMAX, qleft);
 
-        if (gravity.enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
@@ -1198,7 +1198,7 @@ public:
         // left interface : right state
         trace_unsplit_2d_along_dir(qLoc, dqX, dqY, dtdx, dtdy, FACE_YMIN, qright);
 
-        if (gravity.enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
@@ -1227,7 +1227,7 @@ public:
         trace_unsplit_2d_along_dir(
           qLocNeighbor, dqX_neighbor, dqY_neighbor, dtdx, dtdy, FACE_YMAX, qleft);
 
-        if (gravity.enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
@@ -1417,7 +1417,7 @@ public:
       trace_unsplit_2d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dtdx, dtdy, FACE_XMAX, qleft);
 
-      if (gravity.enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
@@ -1501,7 +1501,7 @@ public:
       trace_unsplit_2d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dtdx, dtdy, FACE_YMAX, qleft);
 
-      if (gravity.enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)

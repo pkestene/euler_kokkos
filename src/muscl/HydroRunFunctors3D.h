@@ -486,7 +486,7 @@ public:
       trace_unsplit_3d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dqZ_neighbor, dtdx, dtdy, dtdz, FACE_XMAX, qleft);
 
-      if (gravity.enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
@@ -579,7 +579,7 @@ public:
       trace_unsplit_3d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dqZ_neighbor, dtdx, dtdy, dtdz, FACE_YMAX, qleft);
 
-      if (gravity.enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
@@ -674,7 +674,7 @@ public:
       trace_unsplit_3d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dqZ_neighbor, dtdx, dtdy, dtdz, FACE_ZMAX, qleft);
 
-      if (gravity.enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
@@ -1200,7 +1200,7 @@ public:
         // left interface : right state
         trace_unsplit_3d_along_dir(qLoc, dqX, dqY, dqZ, dtdx, dtdy, dtdz, FACE_XMIN, qright);
 
-        if (gravity.enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
@@ -1246,7 +1246,7 @@ public:
                                    FACE_XMAX,
                                    qleft);
 
-        if (gravity.enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
@@ -1274,7 +1274,7 @@ public:
         // left interface : right state
         trace_unsplit_3d_along_dir(qLoc, dqX, dqY, dqZ, dtdx, dtdy, dtdz, FACE_YMIN, qright);
 
-        if (gravity.enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
@@ -1320,7 +1320,7 @@ public:
                                    FACE_YMAX,
                                    qleft);
 
-        if (gravity.enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
@@ -1386,7 +1386,7 @@ public:
                                    FACE_ZMAX,
                                    qleft);
 
-        if (gravity.enabled)
+        if (gravity.enabled and gravity.hancock_predictor_enabled)
         {
           // we need to modify input to flux computation with
           // gravity predictor (half time step)
@@ -1629,7 +1629,7 @@ public:
       trace_unsplit_3d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dqZ_neighbor, dtdx, dtdy, dtdz, FACE_XMAX, qleft);
 
-      if (gravity.enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
@@ -1736,7 +1736,7 @@ public:
       trace_unsplit_3d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dqZ_neighbor, dtdx, dtdy, dtdz, FACE_YMAX, qleft);
 
-      if (gravity.enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
@@ -1845,7 +1845,7 @@ public:
       trace_unsplit_3d_along_dir(
         qLocNeighbor, dqX_neighbor, dqY_neighbor, dqZ_neighbor, dtdx, dtdy, dtdz, FACE_ZMAX, qleft);
 
-      if (gravity.enabled)
+      if (gravity.enabled and gravity.hancock_predictor_enabled)
       {
         // we need to modify input to flux computation with
         // gravity predictor (half time step)
