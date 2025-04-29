@@ -643,21 +643,16 @@ public:
     // h_U(i,j,IU) = 0.0;
     // h_U(i,j,IV) = amplitude*(1+cos(2*M_PI*x))*(1+cos(0.5*M_PI*y))/4;
 
-    if (z > (zmin + zmax) / 2)
-    {
-      Udata(i, j, k, ID) = d1;
-    }
-    else
-    {
-      Udata(i, j, k, ID) = d0;
-    }
+    const real_t d = (z > (zmin + zmax) / 2) ? d1 : d0;
+    Udata(i, j, k, ID) = d;
+
     Udata(i, j, k, IU) = 0.0;
     Udata(i, j, k, IV) = 0.0;
     // if (randomEnabled)
     //   Udata(i,j,IV) = amplitude * ( rand() * 1.0 / RAND_MAX - 0.5);
     // else
     Udata(i, j, k, IW) =
-      amplitude * (1 + cos(2 * M_PI * x / Lx)) * (1 + cos(2 * M_PI * y / Ly)) / 4;
+      amplitude * d * (1 + cos(2 * M_PI * x / Lx)) * (1 + cos(2 * M_PI * y / Ly)) / 4;
 
     Udata(i, j, k, IE) =
       (P0 + Udata(i, j, k, ID) * (gravity_x * x + gravity_y * y + gravity_z * z)) / (gamma0 - 1);
