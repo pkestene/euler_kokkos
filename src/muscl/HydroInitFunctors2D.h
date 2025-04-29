@@ -753,19 +753,14 @@ public:
     // h_U(i,j,IU) = 0.0;
     // h_U(i,j,IV) = amplitude*(1+cos(2*M_PI*x))*(1+cos(0.5*M_PI*y))/4;
 
-    if (y > (ymin + ymax) / 2)
-    {
-      Udata(i, j, ID) = d1;
-    }
-    else
-    {
-      Udata(i, j, ID) = d0;
-    }
+    const real_t d = (y > (ymin + ymax) / 2) ? d1 : d0;
+    Udata(i, j, ID) = d;
     Udata(i, j, IU) = 0.0;
     // if (randomEnabled)
     //   Udata(i,j,IV) = amplitude * ( rand() * 1.0 / RAND_MAX - 0.5);
     // else
-    Udata(i, j, IV) = amplitude * (1 + cos(2 * M_PI * x / Lx)) * (1 + cos(2 * M_PI * y / Ly)) / 4;
+    Udata(i, j, IV) =
+      amplitude * d * (1 + cos(2 * M_PI * x / Lx)) * (1 + cos(2 * M_PI * y / Ly)) / 4;
 
     // initial hydrostatic equilibrium :
     // -dP/dz + rho*g = 0
