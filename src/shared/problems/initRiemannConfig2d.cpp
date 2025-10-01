@@ -483,4 +483,179 @@ getRiemannConfig2d(int numConfig)
   return Us;
 };
 
+// =====================================================================
+// =====================================================================
+KOKKOS_FUNCTION
+RiemannConfig<3>::HydroStates_t
+getRiemannConfig3d(int numConfig)
+{
+  RiemannConfig<3>::HydroStates_t  Us;
+  RiemannConfig<3>::HydroState_t & U0 = Us[0];
+  RiemannConfig<3>::HydroState_t & U1 = Us[1];
+  RiemannConfig<3>::HydroState_t & U2 = Us[2];
+  RiemannConfig<3>::HydroState_t & U3 = Us[3];
+  RiemannConfig<3>::HydroState_t & U4 = Us[4];
+  RiemannConfig<3>::HydroState_t & U5 = Us[5];
+  RiemannConfig<3>::HydroState_t & U6 = Us[6];
+  RiemannConfig<3>::HydroState_t & U7 = Us[7];
+
+  printf("k");
+  switch (numConfig)
+  {
+    case 2:
+      // Config 3
+      U0[ID] = 0.5323;
+      U0[IU] = 0.0;
+      U0[IV] = 0.0;
+      U0[IW] = 1.206;
+      U0[IP] = 0.3;
+
+      U1[ID] = 0.138;
+      U1[IU] = 1.206;
+      U1[IV] = 0.0;
+      U1[IW] = 1.206;
+      U1[IP] = 0.029;
+
+      U2[ID] = 0.138;
+      U2[IU] = 1.206;
+      U2[IV] = 1.206;
+      U2[IW] = 1.206;
+      U2[IP] = 0.029;
+
+      U3[ID] = 0.138;
+      U3[IU] = 0.0;
+      U3[IV] = 1.206;
+      U3[IW] = 1.206;
+      U3[IP] = 0.029;
+
+      U4[ID] = 1.5;
+      U4[IU] = 0.0;
+      U4[IV] = 0.0;
+      U4[IW] = 0.0;
+      U4[IP] = 1.5;
+
+      U5[ID] = 0.5323;
+      U5[IU] = 1.206;
+      U5[IV] = 0.0;
+      U5[IW] = 0.0;
+      U5[IP] = 0.3;
+
+      U6[ID] = 0.138;
+      U6[IU] = 1.206;
+      U6[IV] = 1.206;
+      U6[IW] = 0.0;
+      U6[IP] = 0.029;
+
+      U7[ID] = 0.5323;
+      U7[IU] = 0.0;
+      U7[IV] = 1.206;
+      U7[IW] = 0.0;
+      U7[IP] = 0.3;
+      break;
+
+    case 3:
+      // Config 4
+      U0[ID] = 1.1;
+      U0[IU] = 0.0;
+      U0[IV] = 0.0;
+      U0[IW] = 0.0;
+      U0[IP] = 1.1;
+
+      U1[ID] = 0.5065;
+      U1[IU] = 0.8939;
+      U1[IV] = 0.0;
+      U1[IW] = 0.0;
+      U1[IP] = 0.35;
+
+      U2[ID] = 1.1;
+      U2[IU] = 0.8939;
+      U2[IV] = 0.8939;
+      U2[IW] = 0.0;
+      U2[IP] = 1.1;
+
+      U3[ID] = 0.5065;
+      U3[IU] = 0.0;
+      U3[IV] = 0.8939;
+      U3[IW] = 0.0;
+      U3[IP] = 0.35;
+
+      U4[ID] = 0.5065;
+      U4[IU] = 0.0;
+      U4[IV] = 0.0;
+      U4[IW] = 0.8939;
+      U4[IP] = 0.35;
+
+      U5[ID] = 1.1;
+      U5[IU] = 0.8939;
+      U5[IV] = 0.0;
+      U5[IW] = 0.8939;
+      U5[IP] = 1.1;
+
+      U6[ID] = 1.1;
+      U6[IU] = 0.8939;
+      U6[IV] = 0.8939;
+      U6[IW] = 0.8939;
+      U6[IP] = 1.1;
+
+      U7[ID] = 0.5065;
+      U7[IU] = 0.0;
+      U7[IV] = 0.8939;
+      U7[IW] = 0.8939;
+      U7[IP] = 0.35;
+      break;
+
+    default:
+      // Config 4
+      U0[ID] = 1.1;
+      U0[IU] = 0.0;
+      U0[IV] = 0.0;
+      U0[IW] = 0.0;
+      U0[IP] = 1.1;
+
+      U1[ID] = 0.5065;
+      U1[IU] = 0.8939;
+      U1[IV] = 0.0;
+      U1[IW] = 0.0;
+      U1[IP] = 0.35;
+
+      U2[ID] = 1.1;
+      U2[IU] = 0.8939;
+      U2[IV] = 0.8939;
+      U2[IW] = 0.0;
+      U2[IP] = 1.1;
+
+      U3[ID] = 0.5065;
+      U3[IU] = 0.0;
+      U3[IV] = 0.8939;
+      U3[IW] = 0.0;
+      U3[IP] = 0.35;
+
+      U4[ID] = 0.5065;
+      U4[IU] = 0.0;
+      U4[IV] = 0.0;
+      U4[IW] = 0.8939;
+      U4[IP] = 0.35;
+
+      U5[ID] = 1.1;
+      U5[IU] = 0.8939;
+      U5[IV] = 0.0;
+      U5[IW] = 0.8939;
+      U5[IP] = 1.1;
+
+      U6[ID] = 1.1;
+      U6[IU] = 0.8939;
+      U6[IV] = 0.8939;
+      U6[IW] = 0.8939;
+      U6[IP] = 1.1;
+
+      U7[ID] = 0.5065;
+      U7[IU] = 0.0;
+      U7[IV] = 0.8939;
+      U7[IW] = 0.8939;
+      U7[IP] = 0.35;
+  }
+
+  return Us;
+}
+
 } // namespace euler_kokkos

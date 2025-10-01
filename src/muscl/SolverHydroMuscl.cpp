@@ -62,19 +62,6 @@ SolverHydroMuscl<3>::make_boundaries(DataArray Udata)
 
 // =======================================================
 // =======================================================
-/**
- */
-template <>
-void
-SolverHydroMuscl<2>::init_four_quadrant(DataArray Udata)
-{
-
-  InitFourQuadrantFunctor2D::apply(configMap, params, Udata);
-
-} // SolverHydroMuscl<2>::init_four_quadrant
-
-// =======================================================
-// =======================================================
 template <>
 void
 SolverHydroMuscl<2>::init_isentropic_vortex(DataArray Udata)
@@ -195,6 +182,11 @@ SolverHydroMuscl<3>::init(DataArray Udata)
     {
 
       init_gresho_vortex(Udata);
+    }
+    else if (!m_problem_name.compare("four_quadrant"))
+    {
+
+      init_four_quadrant(Udata);
     }
     else if (!m_problem_name.compare("rayleigh_taylor"))
     {

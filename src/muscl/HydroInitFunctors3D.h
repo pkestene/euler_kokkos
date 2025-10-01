@@ -538,6 +538,187 @@ public:
 /*************************************************/
 /*************************************************/
 /*************************************************/
+class InitFourQuadrantFunctor3D : public HydroBaseFunctor3D
+{
+
+public:
+  using HydroState_t = RiemannConfig<3>::HydroState_t;
+  using HydroStates_t = RiemannConfig<3>::HydroStates_t;
+
+  InitFourQuadrantFunctor3D(HydroParams   params,
+                            DataArray3d   Udata,
+                            HydroStates_t Us,
+                            real_t        xt,
+                            real_t        yt,
+                            real_t        zt)
+    : HydroBaseFunctor3D(params)
+    , Udata(Udata)
+    , Us(Us)
+    , xt(xt)
+    , yt(yt)
+    , zt(zt){};
+
+  // static method which does it all: create and execute functor
+  static void
+  apply(ConfigMap const & configMap, HydroParams params, DataArray3d Udata)
+  {
+    int    configNumber = configMap.getInteger("riemann2d", "config_number", 0);
+    real_t xt = configMap.getFloat("riemann2d", "x", 0.8);
+    real_t yt = configMap.getFloat("riemann2d", "y", 0.8);
+    real_t zt = configMap.getFloat("riemann2d", "z", 0.8);
+
+    auto Us = getRiemannConfig3d(configNumber);
+
+    primToCons<3>(Us[0], params.settings.gamma0);
+    primToCons<3>(Us[1], params.settings.gamma0);
+    primToCons<3>(Us[2], params.settings.gamma0);
+    primToCons<3>(Us[3], params.settings.gamma0);
+    primToCons<3>(Us[4], params.settings.gamma0);
+    primToCons<3>(Us[5], params.settings.gamma0);
+    primToCons<3>(Us[6], params.settings.gamma0);
+    primToCons<3>(Us[7], params.settings.gamma0);
+
+    InitFourQuadrantFunctor3D functor(params, Udata, Us, xt, yt, zt);
+    Kokkos::parallel_for("InitFourQuadrantFunctor3D",
+                         Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                           { 0, 0, 0 }, { params.isize, params.jsize, params.ksize }),
+                         functor);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int & i, const int & j, const int & k) const
+  {
+
+    const int ghostWidth = params.ghostWidth;
+
+#ifdef EULER_KOKKOS_USE_MPI
+    const int i_mpi = params.myMpiPos[IX];
+    const int j_mpi = params.myMpiPos[IY];
+    const int k_mpi = params.myMpiPos[IZ];
+#else
+    const int i_mpi = 0;
+    const int j_mpi = 0;
+    const int k_mpi = 0;
+#endif
+
+    const int nx = params.nx;
+    const int ny = params.ny;
+    const int nz = params.nz;
+
+    const real_t xmin = params.xmin;
+    const real_t ymin = params.ymin;
+    const real_t zmin = params.zmin;
+    const real_t dx = params.dx;
+    const real_t dy = params.dy;
+    const real_t dz = params.dz;
+
+    real_t x = xmin + dx / 2 + (i + nx * i_mpi - ghostWidth) * dx;
+    real_t y = ymin + dy / 2 + (j + ny * j_mpi - ghostWidth) * dy;
+    real_t z = zmin + dz / 2 + (k + nz * k_mpi - ghostWidth) * dz;
+
+    if (x < xt)
+    {
+      if (y < yt)
+      {
+        if (z < zt)
+        {
+          // region 2
+          Udata(i, j, k, ID) = Us[2][ID];
+          Udata(i, j, k, IP) = Us[2][IP];
+          Udata(i, j, k, IU) = Us[2][IU];
+          Udata(i, j, k, IV) = Us[2][IV];
+          Udata(i, j, k, IW) = Us[2][IW];
+        }
+        else
+        {
+          // region 6
+          Udata(i, j, k, ID) = Us[6][ID];
+          Udata(i, j, k, IP) = Us[6][IP];
+          Udata(i, j, k, IU) = Us[6][IU];
+          Udata(i, j, k, IV) = Us[6][IV];
+          Udata(i, j, k, IW) = Us[6][IW];
+        }
+      }
+      else
+      {
+        if (z < zt)
+        {
+          // region 1
+          Udata(i, j, k, ID) = Us[1][ID];
+          Udata(i, j, k, IP) = Us[1][IP];
+          Udata(i, j, k, IU) = Us[1][IU];
+          Udata(i, j, k, IV) = Us[1][IV];
+          Udata(i, j, k, IW) = Us[1][IW];
+        }
+        else
+        {
+          // region 5
+          Udata(i, j, k, ID) = Us[5][ID];
+          Udata(i, j, k, IP) = Us[5][IP];
+          Udata(i, j, k, IU) = Us[5][IU];
+          Udata(i, j, k, IV) = Us[5][IV];
+          Udata(i, j, k, IW) = Us[5][IW];
+        }
+      }
+    }
+    else
+    {
+      if (y < yt)
+      {
+        if (z < zt)
+        {
+          // region 3
+          Udata(i, j, k, ID) = Us[3][ID];
+          Udata(i, j, k, IP) = Us[3][IP];
+          Udata(i, j, k, IU) = Us[3][IU];
+          Udata(i, j, k, IV) = Us[3][IV];
+          Udata(i, j, k, IW) = Us[3][IW];
+        }
+        else
+        {
+          // region 7
+          Udata(i, j, k, ID) = Us[7][ID];
+          Udata(i, j, k, IP) = Us[7][IP];
+          Udata(i, j, k, IU) = Us[7][IU];
+          Udata(i, j, k, IV) = Us[7][IV];
+          Udata(i, j, k, IW) = Us[7][IW];
+        }
+      }
+      else
+      {
+        if (z < zt)
+        {
+          // region 0
+          Udata(i, j, k, ID) = Us[0][ID];
+          Udata(i, j, k, IP) = Us[0][IP];
+          Udata(i, j, k, IU) = Us[0][IU];
+          Udata(i, j, k, IV) = Us[0][IV];
+          Udata(i, j, k, IW) = Us[0][IW];
+        }
+        else
+        {
+          // region 4
+          Udata(i, j, k, ID) = Us[4][ID];
+          Udata(i, j, k, IP) = Us[4][IP];
+          Udata(i, j, k, IU) = Us[4][IU];
+          Udata(i, j, k, IV) = Us[4][IV];
+          Udata(i, j, k, IW) = Us[4][IW];
+        }
+      }
+    }
+
+  } // end operator ()
+
+  DataArray3d   Udata;
+  HydroStates_t Us;
+  real_t        xt, yt, zt;
+
+}; // InitFourQuadrantFunctor3D
+
+/*************************************************/
+/*************************************************/
+/*************************************************/
 /**
  * Test of the Rayleigh-Taylor instability.
  * See

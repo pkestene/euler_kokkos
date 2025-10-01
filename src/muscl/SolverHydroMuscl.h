@@ -106,7 +106,7 @@ public:
   void
   init_gresho_vortex(DataArray Udata); // 2d and 3d
   void
-  init_four_quadrant(DataArray Udata); // 2d only
+  init_four_quadrant(DataArray Udata); // 2d and 3d
   void
   init_isentropic_vortex(DataArray Udata); // 2d only
   void
@@ -449,16 +449,15 @@ template <int dim>
 void
 SolverHydroMuscl<dim>::init_four_quadrant(DataArray Udata)
 {
-
-  // specialized only for 2d
-  std::cerr << "You shouldn't be here: four quadrant problem is not implemented in 3D !\n";
-
+  if constexpr (dim == 2)
+  {
+    InitFourQuadrantFunctor2D::apply(configMap, params, Udata);
+  }
+  else if constexpr (dim == 3)
+  {
+    InitFourQuadrantFunctor3D::apply(configMap, params, Udata);
+  }
 } // SolverHydroMuscl<dim>::init_four_quadrant
-
-// 2d specialization
-template <>
-void
-SolverHydroMuscl<2>::init_four_quadrant(DataArray Udata);
 
 // =======================================================
 // =======================================================
