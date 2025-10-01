@@ -21,6 +21,7 @@ add_library(
   problems/FieldLoopParams.h
   problems/GreshoParams.h
   problems/ImplodeParams.h
+  problems/initRiemannConfig2d.cpp
   problems/initRiemannConfig2d.h
   problems/IsentropicVortexParams.h
   problems/JetParams.h

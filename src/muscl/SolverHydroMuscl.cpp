@@ -62,31 +62,6 @@ SolverHydroMuscl<3>::make_boundaries(DataArray Udata)
 
 // =======================================================
 // =======================================================
-/**
- */
-template <>
-void
-SolverHydroMuscl<2>::init_four_quadrant(DataArray Udata)
-{
-
-  int    configNumber = configMap.getInteger("riemann2d", "config_number", 0);
-  real_t xt = configMap.getFloat("riemann2d", "x", 0.8);
-  real_t yt = configMap.getFloat("riemann2d", "y", 0.8);
-
-  HydroState2d U0, U1, U2, U3;
-  getRiemannConfig2d(configNumber, U0, U1, U2, U3);
-
-  primToCons_2D(U0, params.settings.gamma0);
-  primToCons_2D(U1, params.settings.gamma0);
-  primToCons_2D(U2, params.settings.gamma0);
-  primToCons_2D(U3, params.settings.gamma0);
-
-  InitFourQuadrantFunctor2D::apply(params, Udata, configNumber, U0, U1, U2, U3, xt, yt);
-
-} // SolverHydroMuscl<2>::init_four_quadrant
-
-// =======================================================
-// =======================================================
 template <>
 void
 SolverHydroMuscl<2>::init_isentropic_vortex(DataArray Udata)
@@ -207,6 +182,11 @@ SolverHydroMuscl<3>::init(DataArray Udata)
     {
 
       init_gresho_vortex(Udata);
+    }
+    else if (!m_problem_name.compare("four_quadrant"))
+    {
+
+      init_four_quadrant(Udata);
     }
     else if (!m_problem_name.compare("rayleigh_taylor"))
     {
