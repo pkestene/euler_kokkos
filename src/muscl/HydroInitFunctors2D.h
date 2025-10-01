@@ -452,37 +452,36 @@ class InitFourQuadrantFunctor2D : public HydroBaseFunctor2D
 {
 
 public:
-  InitFourQuadrantFunctor2D(HydroParams params,
-                            DataArray2d Udata,
-                            int         configNumber,
-                            HydroState  U0,
-                            HydroState  U1,
-                            HydroState  U2,
-                            HydroState  U3,
-                            real_t      xt,
-                            real_t      yt)
+  using HydroState_t = RiemannConfig<2>::HydroState_t;
+  using HydroStates_t = RiemannConfig<2>::HydroStates_t;
+
+  InitFourQuadrantFunctor2D(HydroParams   params,
+                            DataArray2d   Udata,
+                            HydroStates_t Us,
+                            real_t        xt,
+                            real_t        yt)
     : HydroBaseFunctor2D(params)
     , Udata(Udata)
-    , U0(U0)
-    , U1(U1)
-    , U2(U2)
-    , U3(U3)
+    , Us(Us)
     , xt(xt)
     , yt(yt){};
 
   // static method which does it all: create and execute functor
   static void
-  apply(HydroParams params,
-        DataArray2d Udata,
-        int         configNumber,
-        HydroState  U0,
-        HydroState  U1,
-        HydroState  U2,
-        HydroState  U3,
-        real_t      xt,
-        real_t      yt)
+  apply(ConfigMap const & configMap, HydroParams params, DataArray2d Udata)
   {
-    InitFourQuadrantFunctor2D functor(params, Udata, configNumber, U0, U1, U2, U3, xt, yt);
+    int    configNumber = configMap.getInteger("riemann2d", "config_number", 0);
+    real_t xt = configMap.getFloat("riemann2d", "x", 0.8);
+    real_t yt = configMap.getFloat("riemann2d", "y", 0.8);
+
+    auto Us = getRiemannConfig2d(configNumber);
+
+    primToCons<2>(Us[0], params.settings.gamma0);
+    primToCons<2>(Us[1], params.settings.gamma0);
+    primToCons<2>(Us[2], params.settings.gamma0);
+    primToCons<2>(Us[3], params.settings.gamma0);
+
+    InitFourQuadrantFunctor2D functor(params, Udata, Us, xt, yt);
     Kokkos::parallel_for(
       "InitFourQuadrantFunctor2D",
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { params.isize, params.jsize }),
@@ -520,18 +519,18 @@ public:
       if (y < yt)
       {
         // quarter 2
-        Udata(i, j, ID) = U2[ID];
-        Udata(i, j, IP) = U2[IP];
-        Udata(i, j, IU) = U2[IU];
-        Udata(i, j, IV) = U2[IV];
+        Udata(i, j, ID) = Us[2][ID];
+        Udata(i, j, IP) = Us[2][IP];
+        Udata(i, j, IU) = Us[2][IU];
+        Udata(i, j, IV) = Us[2][IV];
       }
       else
       {
         // quarter 1
-        Udata(i, j, ID) = U1[ID];
-        Udata(i, j, IP) = U1[IP];
-        Udata(i, j, IU) = U1[IU];
-        Udata(i, j, IV) = U1[IV];
+        Udata(i, j, ID) = Us[1][ID];
+        Udata(i, j, IP) = Us[1][IP];
+        Udata(i, j, IU) = Us[1][IU];
+        Udata(i, j, IV) = Us[1][IV];
       }
     }
     else
@@ -539,26 +538,26 @@ public:
       if (y < yt)
       {
         // quarter 3
-        Udata(i, j, ID) = U3[ID];
-        Udata(i, j, IP) = U3[IP];
-        Udata(i, j, IU) = U3[IU];
-        Udata(i, j, IV) = U3[IV];
+        Udata(i, j, ID) = Us[3][ID];
+        Udata(i, j, IP) = Us[3][IP];
+        Udata(i, j, IU) = Us[3][IU];
+        Udata(i, j, IV) = Us[3][IV];
       }
       else
       {
         // quarter 0
-        Udata(i, j, ID) = U0[ID];
-        Udata(i, j, IP) = U0[IP];
-        Udata(i, j, IU) = U0[IU];
-        Udata(i, j, IV) = U0[IV];
+        Udata(i, j, ID) = Us[0][ID];
+        Udata(i, j, IP) = Us[0][IP];
+        Udata(i, j, IU) = Us[0][IU];
+        Udata(i, j, IV) = Us[0][IV];
       }
     }
 
   } // end operator ()
 
-  DataArray2d  Udata;
-  HydroState2d U0, U1, U2, U3;
-  real_t       xt, yt;
+  DataArray2d   Udata;
+  HydroStates_t Us;
+  real_t        xt, yt;
 
 }; // InitFourQuadrantFunctor2D
 

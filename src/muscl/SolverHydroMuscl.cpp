@@ -69,19 +69,7 @@ void
 SolverHydroMuscl<2>::init_four_quadrant(DataArray Udata)
 {
 
-  int    configNumber = configMap.getInteger("riemann2d", "config_number", 0);
-  real_t xt = configMap.getFloat("riemann2d", "x", 0.8);
-  real_t yt = configMap.getFloat("riemann2d", "y", 0.8);
-
-  HydroState2d U0, U1, U2, U3;
-  getRiemannConfig2d(configNumber, U0, U1, U2, U3);
-
-  primToCons_2D(U0, params.settings.gamma0);
-  primToCons_2D(U1, params.settings.gamma0);
-  primToCons_2D(U2, params.settings.gamma0);
-  primToCons_2D(U3, params.settings.gamma0);
-
-  InitFourQuadrantFunctor2D::apply(params, Udata, configNumber, U0, U1, U2, U3, xt, yt);
+  InitFourQuadrantFunctor2D::apply(configMap, params, Udata);
 
 } // SolverHydroMuscl<2>::init_four_quadrant
 
