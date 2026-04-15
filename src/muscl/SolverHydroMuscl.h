@@ -738,7 +738,9 @@ SolverHydroMuscl<dim>::convertToPrimitives(DataArray Udata)
     conditional<dim == 2, ConvertToPrimitivesFunctor2D, ConvertToPrimitivesFunctor3D>::type;
 
   // call device functor
+  timers[TIMER_COMPUTE_PRIMITIVES]->start();
   ConvertToPrimitivesFunctor::apply(params, Udata, Q);
+  timers[TIMER_COMPUTE_PRIMITIVES]->stop();
 
 } // SolverHydroMuscl::convertToPrimitives
 
