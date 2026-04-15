@@ -152,21 +152,21 @@ public:
   TimerMap timers;
 
   void
-  save_data(DataArray2d U, DataArray2d::HostMirror Uh, int iStep, real_t time);
+  save_data(DataArray2d U, DataArray2d::host_mirror_type Uh, int iStep, real_t time);
 
   void
-  save_data(DataArray3d U, DataArray3d::HostMirror Uh, int iStep, real_t time);
+  save_data(DataArray3d U, DataArray3d::host_mirror_type Uh, int iStep, real_t time);
 
   void
   save_data_debug(DataArray2d             U,
-                  DataArray2d::HostMirror Uh,
+                  DataArray2d::host_mirror_type Uh,
                   int                     iStep,
                   real_t                  time,
                   std::string             debug_name);
 
   void
   save_data_debug(DataArray3d             U,
-                  DataArray3d::HostMirror Uh,
+                  DataArray3d::host_mirror_type Uh,
                   int                     iStep,
                   real_t                  time,
                   std::string             debug_name);
@@ -176,10 +176,10 @@ public:
    * This routine change iStep and time (loaded from file).
    */
   void
-  load_data(DataArray2d U, DataArray2d::HostMirror Uh, int & iStep, real_t & time);
+  load_data(DataArray2d U, DataArray2d::host_mirror_type Uh, int & iStep, real_t & time);
 
   void
-  load_data(DataArray3d U, DataArray3d::HostMirror Uh, int & iStep, real_t & time);
+  load_data(DataArray3d U, DataArray3d::host_mirror_type Uh, int & iStep, real_t & time);
 
 
   virtual void

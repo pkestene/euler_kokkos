@@ -23,7 +23,7 @@ isBigEndian()
 // =======================================================
 void
 save_VTK_2D(DataArray2d                        Udata,
-            DataArray2d::HostMirror            Uhost,
+            DataArray2d::host_mirror_type            Uhost,
             HydroParams &                      params,
             ConfigMap &                        configMap,
             int                                nbvar,
@@ -211,7 +211,7 @@ save_VTK_2D(DataArray2d                        Udata,
 // =======================================================
 void
 save_VTK_3D(DataArray3d                        Udata,
-            DataArray3d::HostMirror            Uhost,
+            DataArray3d::host_mirror_type            Uhost,
             HydroParams &                      params,
             ConfigMap &                        configMap,
             int                                nbvar,
@@ -413,7 +413,7 @@ save_VTK_3D(DataArray3d                        Udata,
 // =======================================================
 void
 save_VTK_2D_mpi(DataArray2d                        Udata,
-                DataArray2d::HostMirror            Uhost,
+                DataArray2d::host_mirror_type            Uhost,
                 HydroParams &                      params,
                 ConfigMap &                        configMap,
                 int                                nbvar,
@@ -630,7 +630,7 @@ save_VTK_2D_mpi(DataArray2d                        Udata,
  */
 void
 save_VTK_3D_mpi(DataArray3d                        Udata,
-                DataArray3d::HostMirror            Uhost,
+                DataArray3d::host_mirror_type            Uhost,
                 HydroParams &                      params,
                 ConfigMap &                        configMap,
                 int                                nbvar,
