@@ -22,24 +22,24 @@ enum KokkosLayout
 // last index is hydro variable
 // n-1 first indexes are space (i,j,k,....)
 using DataArray2d = Kokkos::View<real_t ***, Device>;
-using DataArray2dHost = DataArray2d::HostMirror;
+using DataArray2dHost = DataArray2d::host_mirror_type;
 
 using DataArray3d = Kokkos::View<real_t ****, Device>;
-using DataArray3dHost = DataArray3d::HostMirror;
+using DataArray3dHost = DataArray3d::host_mirror_type;
 
 // for 2D
 using DataArrayScalar = Kokkos::View<real_t **, Device>;
-using DataArrayScalarHost = DataArrayScalar::HostMirror;
+using DataArrayScalarHost = DataArrayScalar::host_mirror_type;
 using DataArrayVector2 = Kokkos::View<real_t ** [2], Device>;
-using DataArrayVector2Host = DataArrayVector2::HostMirror;
+using DataArrayVector2Host = DataArrayVector2::host_mirror_type;
 using VectorField2d = DataArrayVector2;
-using VectorField2dHost = DataArrayVector2::HostMirror;
+using VectorField2dHost = DataArrayVector2::host_mirror_type;
 
 // for 3D
 using DataArrayVector3 = Kokkos::View<real_t *** [3], Device>;
-using DataArrayVector3Host = DataArrayVector3::HostMirror;
+using DataArrayVector3Host = DataArrayVector3::host_mirror_type;
 using VectorField3d = DataArrayVector3;
-using VectorField3dHost = DataArrayVector3::HostMirror;
+using VectorField3dHost = DataArrayVector3::host_mirror_type;
 
 /**
  * Retrieve cartesian coordinate from index, using memory layout information.

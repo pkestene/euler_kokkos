@@ -23,23 +23,23 @@ public:
 
   virtual void
   save_data(DataArray2d             Udata,
-            DataArray2d::HostMirror Uhost,
+            DataArray2d::host_mirror_type Uhost,
             int                     iStep,
             real_t                  time,
             std::string             debug_name) {};
 
   virtual void
   save_data(DataArray3d             Udata,
-            DataArray3d::HostMirror Uhost,
+            DataArray3d::host_mirror_type Uhost,
             int                     iStep,
             real_t                  time,
             std::string             debug_name) {};
 
   virtual void
-  load_data(DataArray2d Udata, DataArray2d::HostMirror Uhost, int & iStep, real_t & time) {};
+  load_data(DataArray2d Udata, DataArray2d::host_mirror_type Uhost, int & iStep, real_t & time) {};
 
   virtual void
-  load_data(DataArray3d Udata, DataArray3d::HostMirror Uhost, int & iStep, real_t & time) {};
+  load_data(DataArray3d Udata, DataArray3d::host_mirror_type Uhost, int & iStep, real_t & time) {};
 
 }; // class IO_ReadWriteBase
 
