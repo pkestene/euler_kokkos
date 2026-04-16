@@ -235,11 +235,15 @@ SolverHydroMuscl<2>::godunov_unsplit_impl(DataArray data_in, DataArray data_out,
   {
 
     // compute fluxes (if gravity_enabled is false, the last parameter is not used)
+    timers[TIMER_COMPUTE_FLUXES]->start();
     ComputeAndStoreFluxesFunctor2D::apply(
       params, Q, Fluxes_x, Fluxes_y, dt, m_gravity, gravity_field);
+    timers[TIMER_COMPUTE_FLUXES]->stop();
 
     // actual update
+    timers[TIMER_HYDRO_UPDATE]->start();
     UpdateFunctor2D::apply(params, data_out, Fluxes_x, Fluxes_y);
+    timers[TIMER_HYDRO_UPDATE]->stop();
 
     // gravity source term
     if (m_gravity.enabled)

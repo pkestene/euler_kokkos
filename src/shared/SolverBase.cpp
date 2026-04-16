@@ -51,6 +51,8 @@ SolverBase::SolverBase(HydroParams & params, ConfigMap & configMap)
   timers[TIMER_IO] = std::make_shared<Timer>();
   timers[TIMER_DT] = std::make_shared<Timer>();
   timers[TIMER_COMPUTE_PRIMITIVES] = std::make_shared<Timer>();
+  timers[TIMER_COMPUTE_FLUXES] = std::make_shared<Timer>();
+  timers[TIMER_HYDRO_UPDATE] = std::make_shared<Timer>();
   timers[TIMER_BOUNDARIES] = std::make_shared<Timer>();
   timers[TIMER_NUM_SCHEME] = std::make_shared<Timer>();
 
