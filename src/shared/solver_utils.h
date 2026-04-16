@@ -18,6 +18,9 @@ print_solver_monitoring_info(SolverBase * solver)
   real_t t_tot = solver->timers[TIMER_TOTAL]->elapsed();
   real_t t_comp = solver->timers[TIMER_NUM_SCHEME]->elapsed();
   real_t t_dt = solver->timers[TIMER_DT]->elapsed();
+  real_t t_comp_prim = solver->timers[TIMER_COMPUTE_PRIMITIVES]->elapsed();
+  real_t t_comp_flux = solver->timers[TIMER_COMPUTE_FLUXES]->elapsed();
+  real_t t_hydro_update = solver->timers[TIMER_HYDRO_UPDATE]->elapsed();
   real_t t_bound = solver->timers[TIMER_BOUNDARIES]->elapsed();
   real_t t_io = solver->timers[TIMER_IO]->elapsed();
 
@@ -34,13 +37,17 @@ print_solver_monitoring_info(SolverBase * solver)
   if (myRank == 0)
   {
 
-    printf("total       time : %5.3f secondes\n", t_tot);
-    printf("godunov     time : %5.3f secondes %5.2f%%\n", t_comp, 100 * t_comp / t_tot);
-    printf("compute dt  time : %5.3f secondes %5.2f%%\n", t_dt, 100 * t_dt / t_tot);
-    printf("boundaries  time : %5.3f secondes %5.2f%%\n", t_bound, 100 * t_bound / t_tot);
-    printf("io          time : %5.3f secondes %5.2f%%\n", t_io, 100 * t_io / t_tot);
+    printf("total        time : %5.3f secondes\n", t_tot);
+    printf("godunov      time : %5.3f secondes %5.2f%%\n", t_comp, 100 * t_comp / t_tot);
+    printf("compute dt   time : %5.3f secondes %5.2f%%\n", t_dt, 100 * t_dt / t_tot);
+    printf("boundaries   time : %5.3f secondes %5.2f%%\n", t_bound, 100 * t_bound / t_tot);
+    printf("comp. prim.  time : %5.3f secondes %5.2f%%\n", t_comp_prim, 100 * t_comp_prim / t_tot);
+    printf("comp. flux   time : %5.3f secondes %5.2f%%\n", t_comp_flux, 100 * t_comp_flux / t_tot);
+    printf(
+      "hydro update time : %5.3f secondes %5.2f%%\n", t_hydro_update, 100 * t_hydro_update / t_tot);
+    printf("io           time : %5.3f secondes %5.2f%%\n", t_io, 100 * t_io / t_tot);
 
-    printf("Perf             : %5.3f number of Mcell-updates/s\n",
+    printf("Perf              : %5.3f number of Mcell-updates/s\n",
            solver->m_iteration * solver->m_nCells * nProcs / t_tot * 1e-6);
 
   } // end myRank==0

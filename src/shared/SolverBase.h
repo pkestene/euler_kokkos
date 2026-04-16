@@ -37,8 +37,11 @@ enum TimerIds
   TIMER_TOTAL = 0,
   TIMER_IO = 1,
   TIMER_DT = 2,
-  TIMER_BOUNDARIES = 3,
-  TIMER_NUM_SCHEME = 4
+  TIMER_COMPUTE_PRIMITIVES = 3,
+  TIMER_COMPUTE_FLUXES = 4,
+  TIMER_HYDRO_UPDATE = 5,
+  TIMER_BOUNDARIES = 6,
+  TIMER_NUM_SCHEME = 7
 }; // enum TimerIds
 
 namespace euler_kokkos

@@ -8,8 +8,8 @@
 # NOTE about required C++ standard we better chose to set the minimum C++ standard level if not
 # already done:
 #
-# * when building kokkos <  4.0.00, it defaults to c++-14
-# * when building kokkos >= 4.0.00, it defaults to c++-17
+# * when building kokkos <  5.0.00, it defaults to c++-17
+# * when building kokkos >= 5.0.00, it defaults to c++-20
 # * when using installed kokkos, we set C++ standard according to kokkos version
 
 #

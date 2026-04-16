@@ -60,8 +60,8 @@ public:
   void
   eos(real_t rho, real_t eint, real_t * p, real_t * c) const
   {
-    real_t gamma0 = params.settings.gamma0;
-    real_t smallp = params.settings.smallp;
+    auto const & gamma0 = params.settings.gamma0;
+    auto const & smallp = params.settings.smallp;
 
     *p = fmax((gamma0 - ONE_F) * rho * eint, rho * smallp);
     *c = sqrt(gamma0 * (*p) / rho);
@@ -80,9 +80,9 @@ public:
   void
   computePrimitives(const HydroState & u, real_t * c, HydroState & q) const
   {
-    real_t gamma0 = params.settings.gamma0;
-    real_t smallr = params.settings.smallr;
-    real_t smallp = params.settings.smallp;
+    auto const & gamma0 = params.settings.gamma0;
+    auto const & smallr = params.settings.smallr;
+    auto const & smallp = params.settings.smallp;
 
     real_t d, p, ux, uy;
 
@@ -132,8 +132,8 @@ public:
                    HydroState &       qp_y) const
   {
 
-    real_t gamma0 = params.settings.gamma0;
-    real_t smallr = params.settings.smallr;
+    auto const & gamma0 = params.settings.gamma0;
+    auto const & smallr = params.settings.smallr;
 
     // first compute slopes
     HydroState dqX, dqY;
@@ -224,8 +224,8 @@ public:
                              HydroState &       qface) const
   {
 
-    real_t gamma0 = params.settings.gamma0;
-    real_t smallr = params.settings.smallr;
+    auto const & gamma0 = params.settings.gamma0;
+    auto const & smallr = params.settings.smallr;
 
     // Cell centered values
     real_t r = q[ID];
@@ -321,9 +321,9 @@ public:
                          HydroState &       qp_y) const
   {
 
-    real_t gamma0 = params.settings.gamma0;
-    real_t smallr = params.settings.smallr;
-    real_t smallp = params.settings.smallp;
+    auto const & gamma0 = params.settings.gamma0;
+    auto const & smallr = params.settings.smallr;
+    auto const & smallp = params.settings.smallp;
 
     // Cell centered values
     real_t r = q[ID];
@@ -428,7 +428,7 @@ public:
                                 real_t * dqX,
                                 real_t * dqY) const
   {
-    real_t slope_type = params.settings.slope_type;
+    auto const & slope_type = params.settings.slope_type;
 
     real_t dlft, drgt, dcen, dsgn, slop, dlim;
 
@@ -483,7 +483,7 @@ public:
                          HydroState &       dqY) const
   {
 
-    real_t slope_type = params.settings.slope_type;
+    auto const & slope_type = params.settings.slope_type;
 
     if (slope_type == 0)
     {
