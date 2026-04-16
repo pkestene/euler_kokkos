@@ -20,7 +20,7 @@ template <class HydroState>
 KOKKOS_INLINE_FUNCTION void
 cmpflx(const HydroState & qgdnv, HydroState & flux, const HydroParams & params)
 {
-  real_t gamma0 = params.settings.gamma0;
+  auto const & gamma0 = params.settings.gamma0;
 
   // Compute fluxes
   // Mass density
@@ -64,12 +64,12 @@ riemann_approx(const HydroState &  qleft,
                HydroState &        flux,
                const HydroParams & params)
 {
-  real_t gamma0 = params.settings.gamma0;
-  real_t gamma6 = params.settings.gamma6;
-  real_t smallr = params.settings.smallr;
-  real_t smallc = params.settings.smallc;
-  real_t smallp = params.settings.smallp;
-  real_t smallpp = params.settings.smallpp;
+  auto const & gamma0 = params.settings.gamma0;
+  auto const & gamma6 = params.settings.gamma6;
+  auto const & smallr = params.settings.smallr;
+  auto const & smallc = params.settings.smallc;
+  auto const & smallp = params.settings.smallp;
+  auto const & smallpp = params.settings.smallpp;
 
   // Pressure, density and velocity
   real_t rl = fmax(qleft[ID], smallr);
@@ -226,9 +226,9 @@ riemann_llf(const HydroState &  qleft,
   // 1D LLF Riemann solver
 
   // constants
-  real_t gamma0 = params.settings.gamma0;
-  real_t smallr = params.settings.smallr;
-  real_t smallp = params.settings.smallp;
+  auto const & gamma0 = params.settings.gamma0;
+  auto const & smallr = params.settings.smallr;
+  auto const & smallp = params.settings.smallp;
 
   const real_t entho = ONE_F / (gamma0 - ONE_F);
 
@@ -352,12 +352,12 @@ riemann_hll(const HydroState &  qleft,
   // 1D HLL Riemann solver
 
   // constants
-  real_t gamma0 = params.settings.gamma0;
-  real_t smallr = params.settings.smallr;
-  real_t smallp = params.settings.smallp;
-  // real_t smallc = params.settings.smallc;
+  auto const & gamma0 = params.settings.gamma0;
+  auto const & smallr = params.settings.smallr;
+  auto const & smallp = params.settings.smallp;
+  // auto const & smallc = params.settings.smallc;
 
-  // const real_t smallp = smallc*smallc/gamma0;
+  // const auto const & smallp = smallc*smallc/gamma0;
   const real_t entho = ONE_F / (gamma0 - ONE_F);
 
   // Maximum wave speed
@@ -452,10 +452,10 @@ riemann_hllc(const HydroState &  qleft,
 {
   UNUSED(qgdnv);
 
-  real_t gamma0 = params.settings.gamma0;
-  real_t smallr = params.settings.smallr;
-  real_t smallp = params.settings.smallp;
-  real_t smallc = params.settings.smallc;
+  auto const & gamma0 = params.settings.gamma0;
+  auto const & smallr = params.settings.smallr;
+  auto const & smallp = params.settings.smallp;
+  auto const & smallc = params.settings.smallc;
 
   const real_t entho = ONE_F / (gamma0 - ONE_F);
 
@@ -466,7 +466,7 @@ riemann_hllc(const HydroState &  qleft,
 
   real_t ecinl = HALF_F * rl * ul * ul;
   ecinl += HALF_F * rl * qleft[IV] * qleft[IV];
-  if (std::is_same<HydroState, HydroState3d>::value)
+  if constexpr (std::is_same<HydroState, HydroState3d>::value)
     ecinl += HALF_F * rl * qleft[IW] * qleft[IW];
 
   real_t etotl = pl * entho + ecinl;
@@ -479,7 +479,7 @@ riemann_hllc(const HydroState &  qleft,
 
   real_t ecinr = HALF_F * rr * ur * ur;
   ecinr += HALF_F * rr * qright[IV] * qright[IV];
-  if (std::is_same<HydroState, HydroState3d>::value)
+  if constexpr (std::is_same<HydroState, HydroState3d>::value)
     ecinr += HALF_F * rr * qright[IW] * qright[IW];
 
   real_t etotr = pr * entho + ecinr;
@@ -553,7 +553,7 @@ riemann_hllc(const HydroState &  qleft,
     flux[IV] = flux[ID] * qright[IV];
   }
 
-  if (std::is_same<HydroState, HydroState3d>::value)
+  if constexpr (std::is_same<HydroState, HydroState3d>::value)
   {
     if (flux[ID] > ZERO_F)
     {
