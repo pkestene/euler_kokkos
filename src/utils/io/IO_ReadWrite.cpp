@@ -47,11 +47,11 @@ IO_ReadWrite::IO_ReadWrite(HydroParams &                params,
 // =======================================================
 // =======================================================
 void
-IO_ReadWrite::save_data(DataArray2d             Udata,
+IO_ReadWrite::save_data(DataArray2d                   Udata,
                         DataArray2d::host_mirror_type Uhost,
-                        int                     iStep,
-                        real_t                  time,
-                        std::string             debug_name)
+                        int                           iStep,
+                        double                        time,
+                        std::string                   debug_name)
 {
 
   save_data_impl(Udata, Uhost, iStep, time, debug_name);
@@ -61,11 +61,11 @@ IO_ReadWrite::save_data(DataArray2d             Udata,
 // =======================================================
 // =======================================================
 void
-IO_ReadWrite::save_data(DataArray3d             Udata,
+IO_ReadWrite::save_data(DataArray3d                   Udata,
                         DataArray3d::host_mirror_type Uhost,
-                        int                     iStep,
-                        real_t                  time,
-                        std::string             debug_name)
+                        int                           iStep,
+                        double                        time,
+                        std::string                   debug_name)
 {
 
   save_data_impl(Udata, Uhost, iStep, time, debug_name);
@@ -75,11 +75,11 @@ IO_ReadWrite::save_data(DataArray3d             Udata,
 // =======================================================
 // =======================================================
 void
-IO_ReadWrite::save_data_impl(DataArray2d             Udata,
+IO_ReadWrite::save_data_impl(DataArray2d                   Udata,
                              DataArray2d::host_mirror_type Uhost,
-                             int                     iStep,
-                             real_t                  time,
-                             std::string             debug_name)
+                             int                           iStep,
+                             double                        time,
+                             std::string                   debug_name)
 {
 
   if (vtk_enabled)
@@ -123,11 +123,11 @@ IO_ReadWrite::save_data_impl(DataArray2d             Udata,
 // =======================================================
 // =======================================================
 void
-IO_ReadWrite::save_data_impl(DataArray3d             Udata,
+IO_ReadWrite::save_data_impl(DataArray3d                   Udata,
                              DataArray3d::host_mirror_type Uhost,
-                             int                     iStep,
-                             real_t                  time,
-                             std::string             debug_name)
+                             int                           iStep,
+                             double                        time,
+                             std::string                   debug_name)
 {
 
   if (vtk_enabled)
@@ -171,10 +171,10 @@ IO_ReadWrite::save_data_impl(DataArray3d             Udata,
 // =======================================================
 // =======================================================
 void
-IO_ReadWrite::load_data(DataArray2d             Udata,
+IO_ReadWrite::load_data(DataArray2d                   Udata,
                         DataArray2d::host_mirror_type Uhost,
-                        int &                   iStep,
-                        real_t &                time)
+                        int &                         iStep,
+                        double &                      time)
 {
 
   load_data_impl(Udata, Uhost, iStep, time);
@@ -184,10 +184,10 @@ IO_ReadWrite::load_data(DataArray2d             Udata,
 // =======================================================
 // =======================================================
 void
-IO_ReadWrite::load_data(DataArray3d             Udata,
+IO_ReadWrite::load_data(DataArray3d                   Udata,
                         DataArray3d::host_mirror_type Uhost,
-                        int &                   iStep,
-                        real_t &                time)
+                        int &                         iStep,
+                        double &                      time)
 {
 
   load_data_impl(Udata, Uhost, iStep, time);
@@ -197,10 +197,10 @@ IO_ReadWrite::load_data(DataArray3d             Udata,
 // =======================================================
 // =======================================================
 void
-IO_ReadWrite::load_data_impl(DataArray2d             Udata,
+IO_ReadWrite::load_data_impl(DataArray2d                   Udata,
                              DataArray2d::host_mirror_type Uhost,
-                             int &                   iStep,
-                             real_t &                time)
+                             int &                         iStep,
+                             double &                      time)
 {
 
   // get input filename from configMap
@@ -210,7 +210,7 @@ IO_ReadWrite::load_data_impl(DataArray2d             Udata,
   std::string h5Suffix(".h5");
   std::string ncSuffix(".nc"); // pnetcdf file only available when MPI is activated
 
-  bool                  isHdf5 = false;
+  [[maybe_unused]] bool isHdf5 = false;
   [[maybe_unused]] bool isNcdf = false;
   if (inputFilename.length() >= 3)
   {
@@ -244,10 +244,10 @@ IO_ReadWrite::load_data_impl(DataArray2d             Udata,
 // =======================================================
 // =======================================================
 void
-IO_ReadWrite::load_data_impl(DataArray3d             Udata,
+IO_ReadWrite::load_data_impl(DataArray3d                   Udata,
                              DataArray3d::host_mirror_type Uhost,
-                             int &                   iStep,
-                             real_t &                time)
+                             int &                         iStep,
+                             double &                      time)
 {
 
   // get input filename from configMap
@@ -257,7 +257,7 @@ IO_ReadWrite::load_data_impl(DataArray3d             Udata,
   std::string h5Suffix(".h5");
   std::string ncSuffix(".nc"); // pnetcdf file only available when MPI is activated
 
-  bool                  isHdf5 = false;
+  [[maybe_unused]] bool isHdf5 = false;
   [[maybe_unused]] bool isNcdf = false;
   if (inputFilename.length() >= 3)
   {
