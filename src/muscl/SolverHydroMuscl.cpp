@@ -1,6 +1,5 @@
 #include <string>
 #include <cstdio>
-#include <cstdbool>
 
 #include "muscl/SolverHydroMuscl.h"
 #include "shared/HydroParams.h"

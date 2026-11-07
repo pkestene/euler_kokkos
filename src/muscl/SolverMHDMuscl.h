@@ -8,7 +8,6 @@
 
 #include <string>
 #include <cstdio>
-#include <cstdbool>
 #include <iostream>
 
 // shared
