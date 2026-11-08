@@ -1,5 +1,4 @@
 #include <cstdio>
-#include <cstdbool>
 
 #include "muscl/SolverMHDMuscl.h"
 #include "shared/HydroParams.h"

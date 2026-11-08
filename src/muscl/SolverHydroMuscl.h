@@ -7,7 +7,6 @@
 #define SOLVER_HYDRO_MUSCL_H_
 
 #include <cstdio>
-#include <cstdbool>
 #include <iostream>
 
 // shared
